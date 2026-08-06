@@ -44,6 +44,22 @@ class Usuario extends Model {
         return $user ?: null;
     }
 
+    public function crearSocio(array $datos): bool {
+        $stmt = $this->db->prepare("
+            INSERT INTO usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta, estado)
+            VALUES (:cedula, :nombre_completo, :telefono, :fecha_nacimiento, :password_hash, :rol_id, :tope, 400000.00, 1)
+        ");
+        return $stmt->execute([
+            ':cedula' => $datos['cedula'],
+            ':nombre_completo' => $datos['nombre_completo'],
+            ':telefono' => $datos['telefono'] ?? null,
+            ':fecha_nacimiento' => !empty($datos['fecha_nacimiento']) ? $datos['fecha_nacimiento'] : null,
+            ':password_hash' => password_hash($datos['password'] ?: '123456', PASSWORD_DEFAULT),
+            ':rol_id' => $datos['rol_id'],
+            ':tope' => $datos['tope_prestamo_personalizado'] ?? 2000000.00
+        ]);
+    }
+
     public function actualizarSocio(int $id, array $datos): bool {
         $fields = [
             'nombre_completo = :nombre_completo',

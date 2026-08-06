@@ -37,6 +37,25 @@ class Reunion extends Model {
         return $stmt->fetch() ?: null;
     }
 
+    public function crearReunion(array $datos): bool {
+        // Calcular número de quincena automáticamente
+        $stmtMax = $this->db->query("SELECT IFNULL(MAX(numero_quincena), 0) + 1 as siguiente FROM reuniones");
+        $siguienteNum = (int)$stmtMax->fetch()['siguiente'];
+
+        $stmt = $this->db->prepare("
+            INSERT INTO reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
+            VALUES (:num, :fecha, :hora, :cuota, :evento, :premio, 'PROGRAMADA')
+        ");
+        return $stmt->execute([
+            ':num' => $siguienteNum,
+            ':fecha' => $datos['fecha_reunion'],
+            ':hora' => $datos['hora_reunion'] ?? '14:00:00',
+            ':cuota' => $datos['valor_cuota_base'] ?? 55000.00,
+            ':evento' => $datos['tipo_evento_extra'] ?? 'NINGUNO',
+            ':premio' => $datos['monto_premio_extra'] ?? 0.00
+        ]);
+    }
+
     public function actualizarReunion(int $id, array $datos): bool {
         $stmt = $this->db->prepare("
             UPDATE reuniones SET 

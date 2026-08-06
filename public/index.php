@@ -61,10 +61,12 @@ $router->post('/admin/notificaciones/suscribir', [NotificacionController::class,
 
 // Rutas Admin - Gestión de Reuniones y Cuotas
 $router->get('/admin/reuniones', [ReunionController::class, 'index']);
+$router->post('/admin/reuniones/crear', [ReunionController::class, 'crear']);
 $router->post('/admin/reuniones/actualizar', [ReunionController::class, 'actualizar']);
 
 // Rutas Admin - Gestión de Socios
 $router->get('/admin/socios', [SocioController::class, 'gestionarSocios']);
+$router->post('/admin/socios/crear', [SocioController::class, 'crearSocio']);
 $router->post('/admin/socios/actualizar', [SocioController::class, 'actualizarSocio']);
 
 // Rutas Socio

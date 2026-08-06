@@ -22,6 +22,38 @@ class ReunionController extends Controller {
         ]);
     }
 
+    public function crear(): void {
+        $this->requireRole(['Presidente', 'Secretaria General']);
+
+        $fecha = trim($_POST['fecha_reunion'] ?? '');
+        $hora = trim($_POST['hora_reunion'] ?? '14:00:00');
+        $cuota = (float)($_POST['valor_cuota_base'] ?? 55000);
+        $evento = trim($_POST['tipo_evento_extra'] ?? 'NINGUNO');
+        $premio = (float)($_POST['monto_premio_extra'] ?? 0);
+
+        if (empty($fecha) || $cuota <= 0) {
+            $_SESSION['error'] = "Ingresa una fecha y valor de cuota válidos.";
+            $this->redirect('/admin/reuniones');
+        }
+
+        $reunionModel = new Reunion();
+        $ok = $reunionModel->crearReunion([
+            'fecha_reunion' => $fecha,
+            'hora_reunion' => $hora,
+            'valor_cuota_base' => $cuota,
+            'tipo_evento_extra' => $evento,
+            'monto_premio_extra' => $premio
+        ]);
+
+        if ($ok) {
+            $_SESSION['success'] = "Nueva reunión programada exitosamente.";
+        } else {
+            $_SESSION['error'] = "Ocurrió un error al crear la reunión.";
+        }
+
+        $this->redirect('/admin/reuniones');
+    }
+
     public function actualizar(): void {
         $this->requireRole(['Presidente', 'Secretaria General']);
 

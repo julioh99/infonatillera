@@ -124,6 +124,44 @@ class SocioController extends Controller {
         ]);
     }
 
+    public function crearSocio(): void {
+        $this->requireRole(['Presidente', 'Secretaria General']);
+
+        $nombreCompleto = trim($_POST['nombre_completo'] ?? '');
+        $cedula = trim($_POST['cedula'] ?? '');
+        $telefono = trim($_POST['telefono'] ?? '');
+        $fechaNacimiento = trim($_POST['fecha_nacimiento'] ?? '');
+        $rolId = (int)($_POST['rol_id'] ?? 5); // Default Socio
+        $password = trim($_POST['password'] ?? '123456');
+
+        if (empty($nombreCompleto) || empty($cedula)) {
+            $_SESSION['error'] = "Nombre y cédula son obligatorios.";
+            $this->redirect('/admin/socios');
+        }
+
+        $usuarioModel = new Usuario();
+        try {
+            $ok = $usuarioModel->crearSocio([
+                'nombre_completo' => $nombreCompleto,
+                'cedula' => $cedula,
+                'telefono' => $telefono,
+                'fecha_nacimiento' => $fechaNacimiento,
+                'rol_id' => $rolId,
+                'password' => $password
+            ]);
+
+            if ($ok) {
+                $_SESSION['success'] = "Nuevo socio '{$nombreCompleto}' registrado exitosamente.";
+            } else {
+                $_SESSION['error'] = "No se pudo registrar el socio.";
+            }
+        } catch (Exception $e) {
+            $_SESSION['error'] = "Error al crear socio (posible cédula duplicada).";
+        }
+
+        $this->redirect('/admin/socios');
+    }
+
     public function actualizarSocio(): void {
         $this->requireRole(['Presidente', 'Secretaria General']);
 

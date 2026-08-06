@@ -6,9 +6,12 @@
         </h2>
         <p class="text-muted m-0 fs-7">Consulta y actualización de datos personales, teléfonos, fechas de cumpleaños y roles.</p>
     </div>
-    <div class="col-12 col-md-6 text-md-end">
+    <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2">
         <button type="button" class="btn btn-outline-dark rounded-pill fw-semibold btn-sm shadow-sm" data-bs-toggle="collapse" data-bs-target="#collapseCumpleanos">
-            <i class="fa-solid fa-cake-candles text-danger me-1"></i>Ver Cumpleaños de Socios
+            <i class="fa-solid fa-cake-candles text-danger me-1"></i>Ver Cumpleaños
+        </button>
+        <button type="button" class="btn btn-primary rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoSocio">
+            <i class="fa-solid fa-user-plus me-1"></i>Nuevo Socio
         </button>
     </div>
 </div>
@@ -171,6 +174,60 @@
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Guardar Cambios</button>
+                </div>
+            </form>
+</div>
+
+<!-- Modal Registrar Nuevo Socio -->
+<div class="modal fade" id="modalNuevoSocio" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Socio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/socios/crear" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="new_nombre_completo" class="form-label fw-semibold fs-7">Nombre Completo</label>
+                        <input type="text" name="nombre_completo" id="new_nombre_completo" class="form-control fw-bold" placeholder="Ej: Juan Pérez" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="new_cedula" class="form-label fw-semibold fs-7">Cédula de Identidad</label>
+                            <input type="text" name="cedula" id="new_cedula" class="form-control" placeholder="Ej: 1010999888" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="new_telefono" class="form-label fw-semibold fs-7">Teléfono de Contacto</label>
+                            <input type="text" name="telefono" id="new_telefono" class="form-control" placeholder="Ej: 3001234567">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="new_fecha_nacimiento" class="form-label fw-semibold fs-7">Fecha de Nacimiento</label>
+                            <input type="date" name="fecha_nacimiento" id="new_fecha_nacimiento" class="form-control">
+                        </div>
+                        <div class="col-6">
+                            <label for="new_rol_id" class="form-label fw-semibold fs-7">Rol Asignado</label>
+                            <select name="rol_id" id="new_rol_id" class="form-select" required>
+                                <?php foreach ($roles as $r): ?>
+                                    <option value="<?= $r['id'] ?>" <?= $r['nombre'] === 'Socio' ? 'selected' : '' ?>><?= htmlspecialchars($r['nombre']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 border-top pt-3">
+                        <label for="new_password" class="form-label fw-semibold fs-7 text-muted">Contraseña Inicial</label>
+                        <input type="password" name="password" id="new_password" class="form-control" value="123456" required>
+                        <small class="text-muted fs-8">Por defecto es '123456'</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Crear Socio</button>
                 </div>
             </form>
         </div>

@@ -1,10 +1,7 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # Si la petición no es un archivo ni un directorio existente
+    
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-
-    # Redirigir todas las solicitudes al Front Controller index.php
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>

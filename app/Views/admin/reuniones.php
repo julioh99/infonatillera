@@ -5,6 +5,10 @@
             Programación y Valor de Reuniones
         </h2>
         <p class="text-muted m-0 fs-7">Edición de fechas, horas, valor de cuota base ($55k, $60k, $65k) y pasarelas de Rifa/Ronda (exclusivo Presidente y Secretaria General).</p>
+    <div class="col-12 col-md-4 text-md-end">
+        <button type="button" class="btn btn-warning rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaReunion">
+            <i class="fa-solid fa-plus me-1"></i>Nueva Reunión
+        </button>
     </div>
 </div>
 
@@ -157,11 +161,73 @@
                     <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Guardar Cambios</button>
                 </div>
             </form>
+</div>
+
+<!-- Modal Registrar Nueva Reunión -->
+<div class="modal fade" id="modalNuevaReunion" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-calendar-plus me-2"></i>Programar Nueva Reunión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/reuniones/crear" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label for="new_fecha_reunion" class="form-label fw-semibold fs-7">Fecha de Reunión</label>
+                            <input type="date" name="fecha_reunion" id="new_fecha_reunion" class="form-control fw-bold" value="<?= date('Y-m-d') ?>" required>
+                        </div>
+                        <div class="col-5">
+                            <label for="new_hora_reunion" class="form-label fw-semibold fs-7">Hora</label>
+                            <input type="time" name="hora_reunion" id="new_hora_reunion" class="form-control fw-bold" value="14:00" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="new_valor_cuota_base" class="form-label fw-semibold fs-7">Valor Cuota Base (COP)</label>
+                            <input type="number" step="5000" min="10000" name="valor_cuota_base" id="new_valor_cuota_base" class="form-control text-success fw-bold" value="55000" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="new_tipo_evento_extra" class="form-label fw-semibold fs-7">Tipo de Evento</label>
+                            <select name="tipo_evento_extra" id="new_tipo_evento_extra" class="form-select" onchange="autoFillPremioNew(this.value)">
+                                <option value="NINGUNO">Ninguno (Regular $55k)</option>
+                                <option value="RIFA">Rifa Interna ($150k)</option>
+                                <option value="RONDA">Ronda de Turno ($300k)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="new_monto_premio_extra" class="form-label fw-semibold fs-7">Monto Premio (COP)</label>
+                        <input type="number" step="10000" min="0" name="monto_premio_extra" id="new_monto_premio_extra" class="form-control text-warning fw-bold" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Crear Reunión</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
+function autoFillPremioNew(evento) {
+    const inputPremio = document.getElementById('new_monto_premio_extra');
+    const inputCuota = document.getElementById('new_valor_cuota_base');
+    if (evento === 'RIFA') {
+        inputPremio.value = 150000;
+        inputCuota.value = 60000;
+    } else if (evento === 'RONDA') {
+        inputPremio.value = 300000;
+        inputCuota.value = 65000;
+    } else {
+        inputPremio.value = 0;
+        inputCuota.value = 55000;
+    }
+}
 function autoFillPremio(evento) {
     const inputPremio = document.getElementById('edit_monto_premio_extra');
     const inputCuota = document.getElementById('edit_valor_cuota_base');
