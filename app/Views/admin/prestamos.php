@@ -4,12 +4,12 @@
             <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
             Gestión de Préstamos e Intereses
         </h2>
-        <p class="text-muted m-0 fs-7">Control de créditos directos, fiadores, autopréstamos y amortizaciones.</p>
+        <p class="text-muted m-0 fs-7">Control directo a socios, abonos a capital/interés e historial de cuotas.</p>
     </div>
     <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2">
         <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
             <button type="button" class="btn btn-outline-dark rounded-pill fw-semibold btn-sm" data-bs-toggle="modal" data-bs-target="#modalTopeCredit">
-                <i class="fa-solid fa-sliders me-1"></i>Ajustar Tope / Tasa Socio
+                <i class="fa-solid fa-sliders me-1"></i>Ajustar Tope Socio
             </button>
         <?php endif; ?>
         <button type="button" class="btn btn-warning rounded-pill fw-bold btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
@@ -24,8 +24,8 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
                 <tr>
-                    <th class="ps-4">Socio Deudor / Fiador</th>
-                    <th>Tipo / Tercero</th>
+                    <th class="ps-4">Socio Deudor</th>
+                    <th>Referencia / Persona Referente</th>
                     <th>Monto Prestado</th>
                     <th>Tasa %</th>
                     <th>Capital Pagado</th>
@@ -42,20 +42,20 @@
                 <?php else: ?>
                     <?php foreach ($prestamos as $p): 
                         $saldoCapital = (float)$p['monto_prestado'] - (float)$p['total_capital_pagado'];
+                        $refText = !empty($p['nombre_referencia']) ? $p['nombre_referencia'] : (!empty($p['tercero_nombre']) ? $p['tercero_nombre'] : '');
                     ?>
                         <tr>
                             <td class="ps-4">
                                 <div class="fw-bold text-dark font-outfit"><?= htmlspecialchars($p['deudor_nombre']) ?></div>
-                                <?php if (!empty($p['fiador_nombre'])): ?>
-                                    <small class="text-muted d-block"><i class="fa-solid fa-user-shield text-info me-1"></i>Fiador: <?= htmlspecialchars($p['fiador_nombre']) ?></small>
-                                <?php endif; ?>
+                                <small class="text-muted">C.C. <?= htmlspecialchars($p['deudor_cedula']) ?></small>
                             </td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-dark border rounded-pill">
-                                    <?= htmlspecialchars($p['tipo_prestamo']) ?>
-                                </span>
-                                <?php if (!empty($p['tercero_nombre'])): ?>
-                                    <small class="d-block text-primary fw-semibold"><?= htmlspecialchars($p['tercero_nombre']) ?></small>
+                                <?php if (!empty($refText)): ?>
+                                    <span class="badge bg-light text-dark border fw-medium px-2 py-1">
+                                        <i class="fa-solid fa-bookmark text-primary me-1"></i><?= htmlspecialchars($refText) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-muted fs-7">---</span>
                                 <?php endif; ?>
                             </td>
                             <td class="fw-bold text-dark font-outfit">$<?= number_format($p['monto_prestado'], 0, ',', '.') ?></td>
@@ -66,22 +66,44 @@
                                 <?php if ($p['anulado_sin_interes']): ?>
                                     <span class="badge bg-secondary">Anulado 24h</span>
                                 <?php elseif ($p['estado'] === 'PAGADO'): ?>
-                                    <span class="badge bg-success">Pagado</span>
+                                    <span class="badge bg-success">Pagado ✔</span>
                                 <?php else: ?>
                                     <span class="badge bg-danger">Activo (Bal: $<?= number_format($saldoCapital, 0, ',', '.') ?>)</span>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end pe-4">
-                                <?php if ($p['estado'] === 'ACTIVO' && !$p['anulado_sin_interes']): ?>
-                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 btnAbonar" 
-                                            data-id="<?= $p['id'] ?>" 
-                                            data-deudor="<?= htmlspecialchars($p['deudor_nombre']) ?>" 
-                                            data-saldo="<?= $saldoCapital ?>"
-                                            data-tasa="<?= $p['tasa_interes_mensual'] ?>"
-                                            data-bs-toggle="modal" data-bs-target="#modalAbono">
-                                        <i class="fa-solid fa-coins me-1"></i>Abonar
+                                <div class="d-flex justify-content-end gap-1">
+                                    <?php if ($p['estado'] === 'ACTIVO' && !$p['anulado_sin_interes']): ?>
+                                        <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1 btnAbonar" 
+                                                data-id="<?= $p['id'] ?>" 
+                                                data-deudor="<?= htmlspecialchars($p['deudor_nombre']) ?>" 
+                                                data-saldo="<?= $saldoCapital ?>"
+                                                data-bs-toggle="modal" data-bs-target="#modalAbono">
+                                            <i class="fa-solid fa-coins me-1"></i>Abonar
+                                        </button>
+                                    <?php endif; ?>
+
+                                    <!-- Ver / Editar Cuotas -->
+                                    <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 btnVerCuotas"
+                                            data-id="<?= $p['id'] ?>"
+                                            data-bs-toggle="modal" data-bs-target="#modalHistorialCuotas">
+                                        <i class="fa-solid fa-list-check me-1"></i>Cuotas
                                     </button>
-                                <?php endif; ?>
+
+                                    <!-- Editar Préstamo (Presidente / Sec General) -->
+                                    <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btnEditarPrestamo"
+                                                data-id="<?= $p['id'] ?>"
+                                                data-deudor-id="<?= $p['socio_deudor_id'] ?>"
+                                                data-monto="<?= $p['monto_prestado'] ?>"
+                                                data-tasa="<?= $p['tasa_interes_mensual'] ?>"
+                                                data-ref="<?= htmlspecialchars($refText) ?>"
+                                                data-estado="<?= $p['estado'] ?>"
+                                                data-bs-toggle="modal" data-bs-target="#modalEditarPrestamo">
+                                            <i class="fa-solid fa-pen me-1"></i>Editar
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -114,27 +136,9 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="tipo_prestamo" class="form-label fw-semibold fs-7">Tipo de Préstamo</label>
-                        <select name="tipo_prestamo" id="tipo_prestamo" class="form-select" onchange="toggleTerceroFields(this.value)">
-                            <option value="DIRECTO">Directo al Socio</option>
-                            <option value="TERCERO">A Tercero (con Socio Fiador)</option>
-                        </select>
-                    </div>
-
-                    <div id="divTercero" class="d-none border rounded-3 p-3 bg-light mb-3">
-                        <div class="mb-2">
-                            <label for="tercero_nombre" class="form-label fw-semibold fs-7">Nombre del Tercero</label>
-                            <input type="text" name="tercero_nombre" id="tercero_nombre" class="form-control" placeholder="Ej: Pedro Pérez">
-                        </div>
-                        <div>
-                            <label for="socio_fiador_id" class="form-label fw-semibold fs-7">Socio Fiador Responsable</label>
-                            <select name="socio_fiador_id" id="socio_fiador_id" class="form-select">
-                                <option value="">-- Seleccionar Fiador --</option>
-                                <?php foreach ($socios as $s): ?>
-                                    <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre_completo']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
+                        <label for="nombre_referencia" class="form-label fw-semibold fs-7">Persona Referente / Nombre de Referencia (Opcional)</label>
+                        <input type="text" name="nombre_referencia" id="nombre_referencia" class="form-control" placeholder="Ej: Para negocio de empanadas / Ref: Juan">
+                        <small class="text-muted fs-8">Sirve como alias para identificar rápidamente el motivo o referente del préstamo.</small>
                     </div>
 
                     <div class="row g-2 mb-3">
@@ -157,7 +161,107 @@
     </div>
 </div>
 
-<!-- Modal Registrar Abono -->
+<!-- Modal Editar Préstamo (Presidente / Secretaria General) -->
+<?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
+<div class="modal fade" id="modalEditarPrestamo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Editar Préstamo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/prestamos/actualizar" method="POST">
+                <input type="hidden" name="prestamo_id" id="edit_prestamo_id">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="edit_socio_deudor_id" class="form-label fw-semibold fs-7">Socio Deudor</label>
+                        <select name="socio_deudor_id" id="edit_socio_deudor_id" class="form-select" required>
+                            <?php foreach ($socios as $s): ?>
+                                <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre_completo']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_nombre_referencia" class="form-label fw-semibold fs-7">Persona Referente / Alias</label>
+                        <input type="text" name="nombre_referencia" id="edit_nombre_referencia" class="form-control">
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="edit_monto_prestado" class="form-label fw-semibold fs-7">Monto Prestado (COP)</label>
+                            <input type="number" step="10000" min="10000" name="monto_prestado" id="edit_monto_prestado" class="form-control fw-bold" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="edit_tasa_interes_mensual" class="form-label fw-semibold fs-7">Tasa Interés (%)</label>
+                            <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="edit_tasa_interes_mensual" class="form-control fw-bold" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_estado" class="form-label fw-semibold fs-7">Estado del Préstamo</label>
+                        <select name="estado" id="edit_estado" class="form-select fw-bold">
+                            <option value="ACTIVO">ACTIVO (Pendiente de Pago)</option>
+                            <option value="PAGADO">PAGADO (Finalizado)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal Historial y Edición de Cuotas / Abonos -->
+<div class="modal fade" id="modalHistorialCuotas" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-navy text-white border-0 bg-gradient-navy">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-list-check me-2 text-warning"></i>Historial de Cuotas / Abonos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-dark">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <div>
+                        <h6 class="m-0 fw-bold font-outfit text-primary" id="cuotas_deudor_nombre">---</h6>
+                        <small class="text-muted" id="cuotas_prestamo_resumen">---</small>
+                    </div>
+                    <span id="cuotas_estado_badge" class="badge bg-secondary">---</span>
+                </div>
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-dark font-outfit fs-7">
+                            <tr>
+                                <th>Fecha Abono</th>
+                                <th>Abono Capital</th>
+                                <th>Abono Interés</th>
+                                <th>Registrado Por</th>
+                                <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
+                                    <th class="text-end">Acciones</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody id="tblCuotasBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">Cargando cuotas...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registrar Abono Individual -->
 <div class="modal fade" id="modalAbono" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
@@ -168,7 +272,7 @@
             <form action="/admin/prestamos/abono" method="POST">
                 <input type="hidden" name="prestamo_id" id="abono_prestamo_id">
                 <div class="modal-body p-4">
-                    <p class="mb-3">Socio: <strong id="abono_deudor_nombre" class="text-primary font-outfit"></strong></p>
+                    <p class="mb-2">Socio: <strong id="abono_deudor_nombre" class="text-primary font-outfit"></strong></p>
                     <p class="mb-3 text-muted fs-7">Saldo Pendiente Capital: <strong id="abono_saldo_capital" class="text-dark"></strong></p>
 
                     <div class="mb-3">
@@ -188,6 +292,41 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Editar Cuota Específica -->
+<?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
+<div class="modal fade" id="modalEditarCuotaItem" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-pen me-2"></i>Editar Cuota / Abono</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/prestamos/abono/actualizar" method="POST">
+                <input type="hidden" name="abono_id" id="edit_abono_id">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="edit_fecha_abono" class="form-label fw-semibold fs-7">Fecha del Abono</label>
+                        <input type="text" name="fecha_abono" id="edit_fecha_abono" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_monto_capital_pagado" class="form-label fw-semibold fs-7">Monto Capital (COP)</label>
+                        <input type="number" step="1000" min="0" name="monto_capital_pagado" id="edit_monto_capital_pagado" class="form-control text-success fw-bold" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_monto_interes_pagado" class="form-label fw-semibold fs-7">Monto Interés (COP)</label>
+                        <input type="number" step="1000" min="0" name="monto_interes_pagado" id="edit_monto_interes_pagado" class="form-control text-warning fw-bold" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Actualizar Cuota</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Modal Excepción Tope de Crédito -->
 <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
@@ -225,19 +364,13 @@
 <?php endif; ?>
 
 <script>
-function toggleTerceroFields(tipo) {
-    const div = document.getElementById('divTercero');
-    if (tipo === 'TERCERO') {
-        div.classList.remove('d-none');
-    } else {
-        div.classList.add('d-none');
-    }
-}
+const isCanEdit = <?= json_encode(in_array($userRole, ['Presidente', 'Secretaria General'])) ?>;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Abrir Modal de Abono
     const btnsAbonar = document.querySelectorAll('.btnAbonar');
     btnsAbonar.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', () => {
             const id = btn.getAttribute('data-id');
             const deudor = btn.getAttribute('data-deudor');
             const saldo = btn.getAttribute('data-saldo');
@@ -245,6 +378,104 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('abono_prestamo_id').value = id;
             document.getElementById('abono_deudor_nombre').innerText = deudor;
             document.getElementById('abono_saldo_capital').innerText = '$' + new Intl.NumberFormat('es-CO').format(saldo);
+        });
+    });
+
+    // Abrir Modal de Editar Préstamo
+    const btnsEditarPrestamo = document.querySelectorAll('.btnEditarPrestamo');
+    btnsEditarPrestamo.forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('edit_prestamo_id').value = btn.getAttribute('data-id');
+            document.getElementById('edit_socio_deudor_id').value = btn.getAttribute('data-deudor-id');
+            document.getElementById('edit_monto_prestado').value = btn.getAttribute('data-monto');
+            document.getElementById('edit_tasa_interes_mensual').value = btn.getAttribute('data-tasa');
+            document.getElementById('edit_nombre_referencia').value = btn.getAttribute('data-ref') || '';
+            document.getElementById('edit_estado').value = btn.getAttribute('data-estado');
+        });
+    });
+
+    // Cargar Historial de Cuotas via AJAX
+    const btnsVerCuotas = document.querySelectorAll('.btnVerCuotas');
+    btnsVerCuotas.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const prestamoId = btn.getAttribute('data-id');
+            const tbody = document.getElementById('tblCuotasBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando cuotas...</td></tr>';
+
+            fetch(`/admin/prestamos/abonos-json?prestamo_id=${prestamoId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.prestamo) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error al cargar datos.</td></tr>';
+                        return;
+                    }
+
+                    const p = data.prestamo;
+                    document.getElementById('cuotas_deudor_nombre').innerText = p.deudor_nombre;
+                    document.getElementById('cuotas_prestamo_resumen').innerText = `Préstamo N° ${p.id} - Monto: $${new Intl.NumberFormat('es-CO').format(p.monto_prestado)} - Tasa: ${p.tasa_interes_mensual}%`;
+                    document.getElementById('cuotas_estado_badge').className = `badge bg-${p.estado === 'PAGADO' ? 'success' : 'danger'}`;
+                    document.getElementById('cuotas_estado_badge').innerText = p.estado;
+
+                    if (!data.abonos || data.abonos.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Aún no se han registrado abonos a este préstamo.</td></tr>';
+                        return;
+                    }
+
+                    let html = '';
+                    data.abonos.forEach(a => {
+                        const capFormatted = new Intl.NumberFormat('es-CO').format(a.monto_capital_pagado);
+                        const intFormatted = new Intl.NumberFormat('es-CO').format(a.monto_interes_pagado);
+                        const fecha = a.fecha_abono ? a.fecha_abono.substring(0, 16) : '';
+                        const usuario = a.registrado_por_nombre || 'Sistema';
+
+                        html += `
+                            <tr>
+                                <td>${fecha}</td>
+                                <td class="text-success fw-bold">$${capFormatted}</td>
+                                <td class="text-warning fw-bold">$${intFormatted}</td>
+                                <td>${usuario}</td>
+                                ${isCanEdit ? `
+                                    <td class="text-end">
+                                        <button class="btn btn-xs btn-outline-primary me-1 btnEditCuotaItem"
+                                                data-id="${a.id}"
+                                                data-cap="${a.monto_capital_pagado}"
+                                                data-int="${a.monto_interes_pagado}"
+                                                data-fecha="${fecha}">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <form action="/admin/prestamos/abono/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta cuota/abono?')">
+                                            <input type="hidden" name="abono_id" value="${a.id}">
+                                            <button type="submit" class="btn btn-xs btn-outline-danger">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                ` : ''}
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = html;
+
+                    // Listener para los botones dinámicos de editar cuota
+                    document.querySelectorAll('.btnEditCuotaItem').forEach(b => {
+                        b.addEventListener('click', () => {
+                            document.getElementById('edit_abono_id').value = b.getAttribute('data-id');
+                            document.getElementById('edit_monto_capital_pagado').value = b.getAttribute('data-cap');
+                            document.getElementById('edit_monto_interes_pagado').value = b.getAttribute('data-int');
+                            document.getElementById('edit_fecha_abono').value = b.getAttribute('data-fecha');
+                            
+                            const modalCuotas = bootstrap.Modal.getInstance(document.getElementById('modalHistorialCuotas'));
+                            if (modalCuotas) modalCuotas.hide();
+
+                            const modalEditCuota = new bootstrap.Modal(document.getElementById('modalEditarCuotaItem'));
+                            modalEditCuota.show();
+                        });
+                    });
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
+                });
         });
     });
 });

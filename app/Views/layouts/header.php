@@ -17,110 +17,233 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="bg-light-gradient min-vh-100 d-flex flex-column">
+<body class="bg-light-gradient min-vh-100">
 
-<?php if (isset($_SESSION['usuario'])): ?>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-glass-dark sticky-top shadow-sm py-2">
-        <div class="container-fluid px-3 px-lg-4">
-            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-gradient-gold" href="/socio/dashboard">
+<?php if (isset($_SESSION['usuario'])): 
+    $role = $_SESSION['usuario']['rol_nombre'] ?? '';
+    $activeMode = $_SESSION['active_mode'] ?? $role;
+    $isAdminAccess = ($role === 'Presidente' && $activeMode === 'Presidente') || in_array($role, ['Tesorera', 'Secretaria General', 'Secretaria Actividades']);
+    $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    if (strpos($currentUri, '/public/') === 0) {
+        $currentUri = substr($currentUri, 7);
+    }
+?>
+
+    <!-- Sidebar Navegación Desktop -->
+    <aside class="app-sidebar shadow-lg">
+        <div class="sidebar-brand d-flex align-items-center justify-content-between">
+            <a class="d-flex align-items-center gap-2 fw-bold text-gradient-gold text-decoration-none" href="/socio/dashboard">
                 <i class="fa-solid fa-coins fs-4 text-warning"></i>
                 <span class="font-outfit fs-5">InfoNatillera</span>
             </a>
-            
-            <div class="d-flex align-items-center gap-2 order-lg-last ms-auto ms-lg-0">
-                <!-- Dual Mode Toggle para el Presidente -->
-                <?php if (($_SESSION['usuario']['rol_nombre'] ?? '') === 'Presidente'): ?>
-                    <form action="/toggle-mode" method="POST" class="m-0">
-                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3 d-flex align-items-center gap-1 shadow-sm fs-7">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                            <span class="d-none d-sm-inline">Modo:</span>
-                            <strong class="text-uppercase"><?= htmlspecialchars($_SESSION['active_mode'] ?? 'Presidente') ?></strong>
-                        </button>
-                    </form>
-                <?php endif; ?>
+        </div>
 
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-dark rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:38px; height:38px;" data-bs-toggle="dropdown">
-                        <i class="fa-solid fa-user-gear text-light"></i>
+        <?php if ($role === 'Presidente'): ?>
+            <div class="px-3 py-3 border-bottom border-white border-opacity-10 bg-white bg-opacity-5">
+                <form action="/toggle-mode" method="POST" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-warning w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 fs-7 fw-semibold">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Modo: <strong class="text-uppercase"><?= htmlspecialchars($activeMode) ?></strong></span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2">
-                        <li class="px-3 py-2 border-bottom">
-                            <div class="fw-bold text-dark font-outfit"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
-                            <small class="badge bg-primary text-uppercase"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
-                        </li>
-                        <li><a class="dropdown-item py-2" href="/socio/dashboard"><i class="fa-solid fa-user-circle me-2 text-primary"></i>Mi Perfil / Mi Saldo</a></li>
-                        <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil"><i class="fa-solid fa-user-pen me-2 text-info"></i>Editar Mis Datos</button></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item py-2 text-danger fw-semibold" href="/logout"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar Sesión</a></li>
-                    </ul>
-                </div>
-
-                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                </form>
             </div>
+        <?php endif; ?>
 
-            <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-lg-1">
-                    <?php 
-                    $role = $_SESSION['usuario']['rol_nombre'] ?? '';
-                    $activeMode = $_SESSION['active_mode'] ?? $role;
-                    $isAdminAccess = ($role === 'Presidente' && $activeMode === 'Presidente') || in_array($role, ['Tesorera', 'Secretaria General', 'Secretaria Actividades']);
-                    ?>
+        <ul class="sidebar-nav">
+            <?php if ($isAdminAccess): ?>
+                <li class="nav-header">Módulos Directiva</li>
 
-                    <?php if ($isAdminAccess): ?>
-                        <?php if (in_array($role, ['Presidente', 'Tesorera'])): ?>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/llamado-lista">
-                                    <i class="fa-solid fa-clipboard-check text-success me-1"></i> Llamado a Lista
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/prestamos">
-                                    <i class="fa-solid fa-hand-holding-dollar text-warning me-1"></i> Préstamos
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if (in_array($role, ['Presidente', 'Secretaria Actividades'])): ?>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/actividades">
-                                    <i class="fa-solid fa-utensils text-info me-1"></i> Actividades (Tamales)
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php if (in_array($role, ['Presidente', 'Secretaria General'])): ?>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/reuniones">
-                                    <i class="fa-solid fa-calendar-days text-warning me-1"></i> Programación Reuniones
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/notificaciones">
-                                    <i class="fa-solid fa-bell text-danger me-1"></i> Notificaciones Push
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/admin/socios">
-                                    <i class="fa-solid fa-users-gear text-primary me-1"></i> Gestión Socios
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    <?php endif; ?>
-
-                    <li class="nav-item">
-                        <a class="nav-link py-2 px-3 rounded-2 fw-medium" href="/socio/dashboard">
-                            <i class="fa-solid fa-chart-line text-primary me-1"></i> Mi Dashboard
+                <?php if (in_array($role, ['Presidente', 'Tesorera'])): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/llamado-lista') === 0 ? 'active' : '' ?>" href="/admin/llamado-lista">
+                            <i class="fa-solid fa-clipboard-check text-success"></i>
+                            <span>Llamado a Lista</span>
                         </a>
                     </li>
-                </ul>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/prestamos') === 0 ? 'active' : '' ?>" href="/admin/prestamos">
+                            <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
+                            <span>Préstamos</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['Presidente', 'Secretaria Actividades'])): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/actividades') === 0 ? 'active' : '' ?>" href="/admin/actividades">
+                            <i class="fa-solid fa-utensils text-info"></i>
+                            <span>Actividades (Tamales)</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['Presidente', 'Secretaria General'])): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/reuniones') === 0 ? 'active' : '' ?>" href="/admin/reuniones">
+                            <i class="fa-solid fa-calendar-days text-warning"></i>
+                            <span>Programación Reuniones</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/notificaciones') === 0 ? 'active' : '' ?>" href="/admin/notificaciones">
+                            <i class="fa-solid fa-bell text-danger"></i>
+                            <span>Notificaciones Push</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/socios') === 0 ? 'active' : '' ?>" href="/admin/socios">
+                            <i class="fa-solid fa-users-gear text-primary"></i>
+                            <span>Gestión Socios</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <li class="nav-header">Mi Cuenta</li>
+            <li>
+                <a class="nav-link <?= strpos($currentUri, '/socio/dashboard') === 0 ? 'active' : '' ?>" href="/socio/dashboard">
+                    <i class="fa-solid fa-chart-line text-primary"></i>
+                    <span>Mi Dashboard</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-user-footer">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <div class="fw-bold font-outfit text-white text-truncate fs-7"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
+                    <small class="badge bg-secondary text-uppercase fs-8"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
+                </div>
+            </div>
+            <div class="d-flex gap-1 mt-2">
+                <button type="button" class="btn btn-xs btn-outline-light w-50 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+                    <i class="fa-solid fa-user-pen me-1"></i>Perfil
+                </button>
+                <a href="/logout" class="btn btn-xs btn-outline-danger w-50 rounded-pill text-decoration-none text-center">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i>Salir
+                </a>
             </div>
         </div>
-    </nav>
+    </aside>
+
+    <!-- Header Móvil (< 992px) -->
+    <header class="navbar navbar-dark bg-glass-dark d-lg-none sticky-top shadow-sm py-2 px-3">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-gradient-gold text-decoration-none" href="/socio/dashboard">
+            <i class="fa-solid fa-coins fs-4 text-warning"></i>
+            <span class="font-outfit fs-5">InfoNatillera</span>
+        </a>
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </header>
+
+    <!-- Offcanvas Mobile Sidebar -->
+    <div class="offcanvas offcanvas-start bg-dark text-white d-lg-none" tabindex="-1" id="offcanvasSidebar">
+        <div class="offcanvas-header border-bottom border-white border-opacity-10">
+            <h5 class="offcanvas-title font-outfit fw-bold text-gradient-gold"><i class="fa-solid fa-coins me-2 text-warning"></i>InfoNatillera</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <?php if ($role === 'Presidente'): ?>
+                <div class="p-3 border-bottom border-white border-opacity-10 bg-white bg-opacity-5">
+                    <form action="/toggle-mode" method="POST" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-outline-warning w-100 rounded-pill d-flex align-items-center justify-content-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Modo: <strong class="text-uppercase"><?= htmlspecialchars($activeMode) ?></strong></span>
+                        </button>
+                    </form>
+                </div>
+            <?php endif; ?>
+
+            <ul class="sidebar-nav">
+                <?php if ($isAdminAccess): ?>
+                    <li class="nav-header">Módulos Directiva</li>
+
+                    <?php if (in_array($role, ['Presidente', 'Tesorera'])): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/llamado-lista') === 0 ? 'active' : '' ?>" href="/admin/llamado-lista">
+                                <i class="fa-solid fa-clipboard-check text-success"></i>
+                                <span>Llamado a Lista</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/prestamos') === 0 ? 'active' : '' ?>" href="/admin/prestamos">
+                                <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
+                                <span>Préstamos</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (in_array($role, ['Presidente', 'Secretaria Actividades'])): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/actividades') === 0 ? 'active' : '' ?>" href="/admin/actividades">
+                                <i class="fa-solid fa-utensils text-info"></i>
+                                <span>Actividades (Tamales)</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if (in_array($role, ['Presidente', 'Secretaria General'])): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/reuniones') === 0 ? 'active' : '' ?>" href="/admin/reuniones">
+                                <i class="fa-solid fa-calendar-days text-warning"></i>
+                                <span>Programación Reuniones</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/notificaciones') === 0 ? 'active' : '' ?>" href="/admin/notificaciones">
+                                <i class="fa-solid fa-bell text-danger"></i>
+                                <span>Notificaciones Push</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/socios') === 0 ? 'active' : '' ?>" href="/admin/socios">
+                                <i class="fa-solid fa-users-gear text-primary"></i>
+                                <span>Gestión Socios</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <li class="nav-header">Mi Cuenta</li>
+                <li>
+                    <a class="nav-link <?= strpos($currentUri, '/socio/dashboard') === 0 ? 'active' : '' ?>" href="/socio/dashboard">
+                        <i class="fa-solid fa-chart-line text-primary"></i>
+                        <span>Mi Dashboard</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-user-footer mt-auto">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="fw-bold font-outfit text-white text-truncate fs-7"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
+                        <small class="badge bg-secondary text-uppercase fs-8"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
+                    </div>
+                </div>
+                <div class="d-flex gap-1 mt-2">
+                    <button type="button" class="btn btn-xs btn-outline-light w-50 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+                        <i class="fa-solid fa-user-pen me-1"></i>Perfil
+                    </button>
+                    <a href="/logout" class="btn btn-xs btn-outline-danger w-50 rounded-pill text-decoration-none text-center">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i>Salir
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Editar Mis Datos Personales (Socio) -->
     <div class="modal fade" id="modalEditarMiPerfil" tabindex="-1">
@@ -163,20 +286,22 @@
     </div>
 <?php endif; ?>
 
-<main class="flex-grow-1 py-4">
-    <div class="container-fluid px-3 px-lg-4">
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
+<!-- Contenedor Principal de la App (Offset para Sidebar en Desktop) -->
+<div class="<?= isset($_SESSION['usuario']) ? 'app-main-wrapper' : 'min-vh-100 d-flex flex-column' ?>">
+    <main class="flex-grow-1 py-4">
+        <div class="container-fluid px-3 px-lg-4">
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
 
-        <?php if (isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
-                <i class="fa-solid fa-circle-exclamation me-2"></i><?= htmlspecialchars($_SESSION['error']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i><?= htmlspecialchars($_SESSION['error']) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <?php unset($_SESSION['error']); ?>
+            <?php endif; ?>

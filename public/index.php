@@ -47,7 +47,11 @@ $router->post('/admin/llamado-lista/anular-24h', [LlamadoListaController::class,
 // Rutas Admin - Préstamos
 $router->get('/admin/prestamos', [PrestamoController::class, 'index']);
 $router->post('/admin/prestamos/guardar', [PrestamoController::class, 'guardar']);
+$router->post('/admin/prestamos/actualizar', [PrestamoController::class, 'actualizar']);
 $router->post('/admin/prestamos/abono', [PrestamoController::class, 'abono']);
+$router->get('/admin/prestamos/abonos-json', [PrestamoController::class, 'obtenerAbonos']);
+$router->post('/admin/prestamos/abono/actualizar', [PrestamoController::class, 'actualizarAbono']);
+$router->post('/admin/prestamos/abono/eliminar', [PrestamoController::class, 'eliminarAbono']);
 $router->post('/admin/prestamos/actualizar-tope', [PrestamoController::class, 'actualizarTope']);
 
 // Rutas Admin - Actividades

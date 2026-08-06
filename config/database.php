@@ -19,6 +19,9 @@ class Database {
                 
                 // Habilitar llaves foráneas en SQLite
                 self::$instance->exec('PRAGMA foreign_keys = ON;');
+
+                // Aplicar siempre actualizaciones de esquema necesarias
+                self::ensureSchemaUpdates(self::$instance);
                 
                 if ($isNewDb) {
                     self::initDatabase();
@@ -28,6 +31,14 @@ class Database {
             }
         }
         return self::$instance;
+    }
+
+    public static function ensureSchemaUpdates($db) {
+        try {
+            $db->exec("ALTER TABLE prestamos ADD COLUMN nombre_referencia VARCHAR(150);");
+        } catch (Exception $e) {
+            // Columna ya existe
+        }
     }
 
     public static function initDatabase() {

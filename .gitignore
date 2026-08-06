@@ -1,4 +1,4 @@
-/natillera.sqlite
+*.sqlite
 /vendor/
 *.log
 .DS_Store

@@ -52,17 +52,15 @@ CREATE TABLE ahorros_cuotas (
 CREATE TABLE prestamos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     socio_deudor_id INTEGER NOT NULL,
-    socio_fiador_id INTEGER, -- NULL si es directo, ID socio si es para un tercero
-    tercero_nombre VARCHAR(100),
+    nombre_referencia VARCHAR(150), -- Nombre de referencia / Persona referente opcional
     monto_prestado DECIMAL(10,2) NOT NULL,
-    tasa_interes_mensual DECIMAL(5,2) DEFAULT 10.00, -- Ajustable por Sec. General
-    tipo_prestamo VARCHAR(20) DEFAULT 'DIRECTO', -- 'DIRECTO', 'TERCERO', 'AUTOPRESTAMO'
+    tasa_interes_mensual DECIMAL(5,2) DEFAULT 10.00,
+    tipo_prestamo VARCHAR(20) DEFAULT 'DIRECTO', -- 'DIRECTO', 'AUTOPRESTAMO'
     fecha_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,
     es_autoprestamo BOOLEAN DEFAULT 0,
-    anulado_sin_interes BOOLEAN DEFAULT 0, -- Si se pagó dentro de las 24 hrs
+    anulado_sin_interes BOOLEAN DEFAULT 0,
     estado VARCHAR(20) DEFAULT 'ACTIVO', -- 'ACTIVO', 'PAGADO', 'ANULADO'
-    FOREIGN KEY (socio_deudor_id) REFERENCES usuarios(id),
-    FOREIGN KEY (socio_fiador_id) REFERENCES usuarios(id)
+    FOREIGN KEY (socio_deudor_id) REFERENCES usuarios(id)
 );
 
 -- ABONOS A PRÉSTAMOS

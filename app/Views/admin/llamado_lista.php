@@ -15,6 +15,7 @@
                     <option value="<?= $r['id'] ?>" <?= ($reunionActual && $reunionActual['id'] == $r['id']) ? 'selected' : '' ?>>
                         Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?> ($<?= number_format($r['valor_cuota_base'], 0, ',', '.') ?>)
                         <?= $r['tipo_evento_extra'] !== 'NINGUNO' ? ' [' . $r['tipo_evento_extra'] . ']' : '' ?>
+                        <?= $r['estado'] === 'CERRADA' ? ' ✔' : '' ?>
                     </option>
                 <?php endforeach; ?>
             </select>

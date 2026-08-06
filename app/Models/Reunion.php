@@ -16,18 +16,33 @@ class Reunion extends Model {
     }
 
     public function getReunionActual() {
-        // Busca la primera reunión programada o en proceso
+        // Buscar la primera quincena sin llamado a lista registrado y que no esté cerrada
         $stmt = $this->db->query("
-            SELECT * FROM reuniones 
-            WHERE estado IN ('PROGRAMADA', 'EN_PROCESO') 
-            ORDER BY numero_quincena ASC LIMIT 1
+            SELECT r.* 
+            FROM reuniones r
+            WHERE r.estado != 'CERRADA'
+              AND r.id NOT IN (
+                  SELECT DISTINCT reunion_id FROM ahorros_cuotas
+              )
+            ORDER BY r.numero_quincena ASC 
+            LIMIT 1
         ");
         $reunion = $stmt->fetch();
+
         if (!$reunion) {
-            // Si todas se cerraron, retorna la última
+            $stmtPending = $this->db->query("
+                SELECT r.* FROM reuniones r
+                WHERE r.estado IN ('PROGRAMADA', 'EN_PROCESO')
+                ORDER BY r.numero_quincena ASC LIMIT 1
+            ");
+            $reunion = $stmtPending->fetch();
+        }
+
+        if (!$reunion) {
             $stmtLast = $this->db->query("SELECT * FROM reuniones ORDER BY numero_quincena DESC LIMIT 1");
             $reunion = $stmtLast->fetch();
         }
+
         return $reunion ?: null;
     }
 
@@ -143,8 +158,8 @@ class Reunion extends Model {
                 ]);
             }
 
-            // Marcar reunión como EN_PROCESO
-            $stmtState = $this->db->prepare("UPDATE reuniones SET estado = 'EN_PROCESO' WHERE id = :id");
+            // Marcar reunión como CERRADA al guardar el llamado a lista
+            $stmtState = $this->db->prepare("UPDATE reuniones SET estado = 'CERRADA' WHERE id = :id");
             $stmtState->execute([':id' => $reunionId]);
 
             $this->db->commit();
