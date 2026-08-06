@@ -60,6 +60,11 @@ $router->post('/admin/actividades/guardar', [ActividadController::class, 'guarda
 $router->get('/admin/actividades/participantes-json', [ActividadController::class, 'participantesJson']);
 $router->post('/admin/actividades/pago/actualizar', [ActividadController::class, 'actualizarPago']);
 
+// Rutas Admin - Entregas de Rondas y Rifas (Firma y Foto)
+$router->get('/admin/entregas', [EntregaController::class, 'index']);
+$router->post('/admin/entregas/guardar', [EntregaController::class, 'guardar']);
+$router->get('/admin/entregas/socios-pendientes-json', [EntregaController::class, 'sociosPendientesJson']);
+
 // Rutas Admin - Notificaciones Push
 $router->get('/admin/notificaciones', [NotificacionController::class, 'index']);
 $router->post('/admin/notificaciones/enviar', [NotificacionController::class, 'enviar']);

@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
             rows.forEach(row => {
                 const socioId = row.getAttribute('data-socio-id');
                 const pagouCuota = document.getElementById(`pago_${socioId}`).checked;
-                const ahorroExtra = document.getElementById(`ahorro_${socioId}`).value || 0;
+                const ahorroExtraRaw = document.getElementById(`ahorro_${socioId}`).value || 0;
+                const ahorroExtra = typeof unformatMoneyString === 'function' ? unformatMoneyString(ahorroExtraRaw) : ahorroExtraRaw.replace(/\./g, '');
                 const generarAutoprestamo = document.getElementById(`auto_${socioId}`).checked;
 
                 registros.push({

@@ -14,6 +14,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Web Push Client -->
 <script src="/js/push_client.js"></script>
+<!-- Formateador Monetario Global -->
+<script src="/js/money_formatter.js"></script>
 
 </body>
 </html>

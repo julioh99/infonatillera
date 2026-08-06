@@ -39,7 +39,9 @@ CREATE TABLE ahorros_cuotas (
     reunion_id INTEGER NOT NULL,
     socio_id INTEGER NOT NULL,
     cuota_pagada BOOLEAN DEFAULT 0,
-    monto_cuota DECIMAL(10,2) NOT NULL,
+    monto_cuota DECIMAL(10,2) NOT NULL, -- Siempre $40.000 COP acreditado al socio
+    monto_aporte_ronda DECIMAL(10,2) DEFAULT 0.00,
+    monto_aporte_rifa DECIMAL(10,2) DEFAULT 0.00,
     monto_ahorro_extra DECIMAL(10,2) DEFAULT 0.00,
     autoprestamo_generado BOOLEAN DEFAULT 0,
     prestamo_id_asociado INTEGER, -- Si generó autopréstamo
@@ -125,4 +127,34 @@ CREATE TABLE notificaciones (
     fecha_envio DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (socio_id) REFERENCES usuarios(id),
     FOREIGN KEY (enviado_por_usuario_id) REFERENCES usuarios(id)
+);
+
+-- TABLA DE PLANIFICACIÓN DE RONDAS Y RIFAS POR REUNIÓN
+CREATE TABLE fondo_beneficios_cronograma (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reunion_id INTEGER NOT NULL,
+    tipo_beneficio VARCHAR(10) NOT NULL, -- 'RONDA' ($300k) o 'RIFA' ($150k)
+    aporte_por_socio DECIMAL(10,2) NOT NULL, -- $10.000 (o $20.000) para Ronda; $5.000 (o $10.000) para Rifa
+    total_recaudado DECIMAL(10,2) NOT NULL, -- Ej: 50 * $10.000 = $500.000
+    monto_beneficio_unidad DECIMAL(10,2) NOT NULL, -- $300.000 para Ronda, $150.000 para Rifa
+    saldo_restante_reunion DECIMAL(10,2) NOT NULL,
+    saldo_acumulado_fondo DECIMAL(10,2) NOT NULL, -- Saldo acumulado arrastrado a la sig. reunión
+    personas_liberadas_planificadas INTEGER NOT NULL, -- Cantidad de ganadores en esta quincena (1, 2, 3 o 4)
+    FOREIGN KEY (reunion_id) REFERENCES reuniones(id)
+);
+
+-- REGISTRO Y EVIDENCIA DE ENTREGAS A BENEFICIARIOS
+CREATE TABLE entregas_beneficios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reunion_id INTEGER NOT NULL,
+    socio_id INTEGER NOT NULL,
+    tipo_beneficio VARCHAR(10) NOT NULL, -- 'RONDA' o 'RIFA'
+    monto_entregado DECIMAL(10,2) NOT NULL,
+    fecha_entrega DATETIME DEFAULT CURRENT_TIMESTAMP,
+    firma_digital_path VARCHAR(255), -- Ruta de la firma guardada en formato SVG/PNG
+    foto_evidencia_path VARCHAR(255), -- Ruta de la foto del socio recibiendo el premio
+    entregado_por_usuario_id INTEGER NOT NULL,
+    FOREIGN KEY (reunion_id) REFERENCES reuniones(id),
+    FOREIGN KEY (socio_id) REFERENCES usuarios(id),
+    FOREIGN KEY (entregado_por_usuario_id) REFERENCES usuarios(id)
 );

@@ -36,6 +36,42 @@ class Database {
     public static function ensureSchemaUpdates($db) {
         self::addColumnIfNotExists($db, 'prestamos', 'nombre_referencia', 'VARCHAR(150)');
         self::addColumnIfNotExists($db, 'actividades', 'cuota_por_socio', 'DECIMAL(10,2) DEFAULT 0.00');
+        self::addColumnIfNotExists($db, 'ahorros_cuotas', 'monto_aporte_ronda', 'DECIMAL(10,2) DEFAULT 0.00');
+        self::addColumnIfNotExists($db, 'ahorros_cuotas', 'monto_aporte_rifa', 'DECIMAL(10,2) DEFAULT 0.00');
+
+        try {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS fondo_beneficios_cronograma (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    reunion_id INTEGER NOT NULL,
+                    tipo_beneficio VARCHAR(10) NOT NULL,
+                    aporte_por_socio DECIMAL(10,2) NOT NULL,
+                    total_recaudado DECIMAL(10,2) NOT NULL,
+                    monto_beneficio_unidad DECIMAL(10,2) NOT NULL,
+                    saldo_restante_reunion DECIMAL(10,2) NOT NULL,
+                    saldo_acumulado_fondo DECIMAL(10,2) NOT NULL,
+                    personas_liberadas_planificadas INTEGER NOT NULL,
+                    FOREIGN KEY (reunion_id) REFERENCES reuniones(id)
+                );
+
+                CREATE TABLE IF NOT EXISTS entregas_beneficios (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    reunion_id INTEGER NOT NULL,
+                    socio_id INTEGER NOT NULL,
+                    tipo_beneficio VARCHAR(10) NOT NULL,
+                    monto_entregado DECIMAL(10,2) NOT NULL,
+                    fecha_entrega DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    firma_digital_path VARCHAR(255),
+                    foto_evidencia_path VARCHAR(255),
+                    entregado_por_usuario_id INTEGER NOT NULL,
+                    FOREIGN KEY (reunion_id) REFERENCES reuniones(id),
+                    FOREIGN KEY (socio_id) REFERENCES usuarios(id),
+                    FOREIGN KEY (entregado_por_usuario_id) REFERENCES usuarios(id)
+                );
+            ");
+        } catch (Exception $e) {
+            // Silencioso si ya existen
+        }
     }
 
     private static function addColumnIfNotExists($db, $table, $column, $typeDef) {

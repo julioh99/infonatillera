@@ -119,7 +119,7 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label for="edit_valor_cuota_base" class="form-label fw-semibold fs-7">Valor Cuota Base (COP)</label>
-                            <input type="number" step="5000" min="10000" name="valor_cuota_base" id="edit_valor_cuota_base" class="form-control text-success fw-bold" required>
+                            <input type="text" name="valor_cuota_base" id="edit_valor_cuota_base" class="form-control money-input text-success fw-bold" required>
                         </div>
                         <div class="col-6">
                             <label for="edit_tipo_evento_extra" class="form-label fw-semibold fs-7">Tipo de Evento</label>
@@ -134,7 +134,7 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label for="edit_monto_premio_extra" class="form-label fw-semibold fs-7">Monto Premio (COP)</label>
-                            <input type="number" step="10000" min="0" name="monto_premio_extra" id="edit_monto_premio_extra" class="form-control text-warning fw-bold">
+                            <input type="text" name="monto_premio_extra" id="edit_monto_premio_extra" class="form-control money-input text-warning fw-bold">
                         </div>
                         <div class="col-6">
                             <label for="edit_estado" class="form-label fw-semibold fs-7">Estado Reunión</label>
@@ -161,6 +161,8 @@
                     <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Guardar Cambios</button>
                 </div>
             </form>
+        </div>
+    </div>
 </div>
 
 <!-- Modal Registrar Nueva Reunión -->
@@ -187,7 +189,7 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label for="new_valor_cuota_base" class="form-label fw-semibold fs-7">Valor Cuota Base (COP)</label>
-                            <input type="number" step="5000" min="10000" name="valor_cuota_base" id="new_valor_cuota_base" class="form-control text-success fw-bold" value="55000" required>
+                            <input type="text" name="valor_cuota_base" id="new_valor_cuota_base" class="form-control money-input text-success fw-bold" value="55.000" required>
                         </div>
                         <div class="col-6">
                             <label for="new_tipo_evento_extra" class="form-label fw-semibold fs-7">Tipo de Evento</label>
@@ -201,7 +203,7 @@
 
                     <div class="mb-3">
                         <label for="new_monto_premio_extra" class="form-label fw-semibold fs-7">Monto Premio (COP)</label>
-                        <input type="number" step="10000" min="0" name="monto_premio_extra" id="new_monto_premio_extra" class="form-control text-warning fw-bold" value="0">
+                        <input type="text" name="monto_premio_extra" id="new_monto_premio_extra" class="form-control money-input text-warning fw-bold" value="0">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">

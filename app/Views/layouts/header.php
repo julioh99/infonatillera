@@ -69,6 +69,12 @@
                             <span>Préstamos</span>
                         </a>
                     </li>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/entregas') === 0 ? 'active' : '' ?>" href="/admin/entregas">
+                            <i class="fa-solid fa-gift text-warning"></i>
+                            <span>Entregas Rondas/Rifas</span>
+                        </a>
+                    </li>
                 <?php endif; ?>
 
                 <?php if (in_array($role, ['Presidente', 'Secretaria Actividades'])): ?>
@@ -179,6 +185,12 @@
                             <a class="nav-link <?= strpos($currentUri, '/admin/prestamos') === 0 ? 'active' : '' ?>" href="/admin/prestamos">
                                 <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
                                 <span>Préstamos</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/entregas') === 0 ? 'active' : '' ?>" href="/admin/entregas">
+                                <i class="fa-solid fa-gift text-warning"></i>
+                                <span>Entregas Rondas/Rifas</span>
                             </a>
                         </li>
                     <?php endif; ?>

@@ -27,9 +27,9 @@ class ReunionController extends Controller {
 
         $fecha = trim($_POST['fecha_reunion'] ?? '');
         $hora = trim($_POST['hora_reunion'] ?? '14:00:00');
-        $cuota = (float)($_POST['valor_cuota_base'] ?? 55000);
+        $cuota = (float)str_replace('.', '', $_POST['valor_cuota_base'] ?? 55000);
         $evento = trim($_POST['tipo_evento_extra'] ?? 'NINGUNO');
-        $premio = (float)($_POST['monto_premio_extra'] ?? 0);
+        $premio = (float)str_replace('.', '', $_POST['monto_premio_extra'] ?? 0);
 
         if (empty($fecha) || $cuota <= 0) {
             $_SESSION['error'] = "Ingresa una fecha y valor de cuota válidos.";
@@ -60,9 +60,9 @@ class ReunionController extends Controller {
         $id = (int)($_POST['reunion_id'] ?? 0);
         $fecha = trim($_POST['fecha_reunion'] ?? '');
         $hora = trim($_POST['hora_reunion'] ?? '14:00:00');
-        $cuota = (float)($_POST['valor_cuota_base'] ?? 55000);
+        $cuota = (float)str_replace('.', '', $_POST['valor_cuota_base'] ?? 55000);
         $evento = trim($_POST['tipo_evento_extra'] ?? 'NINGUNO');
-        $premio = (float)($_POST['monto_premio_extra'] ?? 0);
+        $premio = (float)str_replace('.', '', $_POST['monto_premio_extra'] ?? 0);
         $ganadorId = !empty($_POST['ganador_socio_id']) ? (int)$_POST['ganador_socio_id'] : null;
         $estado = trim($_POST['estado'] ?? 'PROGRAMADA');
 

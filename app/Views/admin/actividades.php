@@ -102,16 +102,16 @@
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-md-4">
                             <label for="cuota_por_socio" class="form-label fw-semibold fs-7">Cuota Base Referencial (COP)</label>
-                            <input type="number" step="1000" min="0" name="cuota_por_socio" id="cuota_por_socio" class="form-control text-primary fw-bold" placeholder="Ej: 20000" value="20000">
+                            <input type="text" name="cuota_por_socio" id="cuota_por_socio" class="form-control money-input text-primary fw-bold" placeholder="Ej: 20.000" value="20.000">
                             <small class="text-muted fs-8">Valor base para autocompletar.</small>
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="ingresos_totales" class="form-label fw-semibold fs-7">Ingresos Totales Recaudados (COP)</label>
-                            <input type="number" step="1000" min="0" name="ingresos_totales" id="ingresos_totales" class="form-control text-success fw-bold" placeholder="0" value="0" required>
+                            <input type="text" name="ingresos_totales" id="ingresos_totales" class="form-control money-input text-success fw-bold" placeholder="0" value="0" required>
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="gastos_totales" class="form-label fw-semibold fs-7">Gastos Totales (COP)</label>
-                            <input type="number" step="1000" min="0" name="gastos_totales" id="gastos_totales" class="form-control text-danger fw-bold" placeholder="0" value="0" required>
+                            <input type="text" name="gastos_totales" id="gastos_totales" class="form-control money-input text-danger fw-bold" placeholder="0" value="0" required>
                         </div>
                     </div>
 
@@ -146,7 +146,7 @@
                                             </div>
                                             <div class="input-group input-group-sm" style="width: 140px;">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" step="1000" min="0" name="cuotas_individuales[<?= $s['id'] ?>]" id="cuota_socio_<?= $s['id'] ?>" class="form-control form-control-sm text-end fw-bold input-cuota-socio" value="20000" placeholder="0">
+                                                <input type="text" name="cuotas_individuales[<?= $s['id'] ?>]" id="cuota_socio_<?= $s['id'] ?>" class="form-control form-control-sm text-end fw-bold input-cuota-socio money-input" value="20.000" placeholder="0">
                                             </div>
                                         </div>
                                     </div>

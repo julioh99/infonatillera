@@ -115,15 +115,25 @@ class Reunion extends Model {
             $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM reuniones WHERE id = :id");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
-            $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
+            if ($valorCuotaBase >= 65000) {
+                $aporteRondaBase = 20000.00;
+                $aporteRifaBase = 5000.00;
+            } else if ($valorCuotaBase >= 60000) {
+                $aporteRondaBase = 10000.00;
+                $aporteRifaBase = 10000.00;
+            } else {
+                $aporteRondaBase = 10000.00;
+                $aporteRifaBase = 5000.00;
+            }
+            $ahorroNetoConstante = 40000.00; // Ahorro neto acreditado al socio es SIEMPRE $40.000 COP
 
             // Eliminar registros anteriores de esta reunión si se está re-procesando
             $stmtDelAhorros = $this->db->prepare("DELETE FROM ahorros_cuotas WHERE reunion_id = :reunion_id");
             $stmtDelAhorros->execute([':reunion_id' => $reunionId]);
 
             $stmtInsertAhorro = $this->db->prepare("
-                INSERT INTO ahorros_cuotas (reunion_id, socio_id, cuota_pagada, monto_cuota, monto_ahorro_extra, autoprestamo_generado, prestamo_id_asociado)
-                VALUES (:reunion_id, :socio_id, :cuota_pagada, :monto_cuota, :monto_ahorro_extra, :autoprestamo_generado, :prestamo_id_asociado)
+                INSERT INTO ahorros_cuotas (reunion_id, socio_id, cuota_pagada, monto_cuota, monto_aporte_ronda, monto_aporte_rifa, monto_ahorro_extra, autoprestamo_generado, prestamo_id_asociado)
+                VALUES (:reunion_id, :socio_id, :cuota_pagada, :monto_cuota, :monto_aporte_ronda, :monto_aporte_rifa, :monto_ahorro_extra, :autoprestamo_generado, :prestamo_id_asociado)
             ");
 
             $stmtInsertPrestamo = $this->db->prepare("
@@ -151,7 +161,9 @@ class Reunion extends Model {
                     ':reunion_id' => $reunionId,
                     ':socio_id' => $socioId,
                     ':cuota_pagada' => $pagouCuota ? 1 : 0,
-                    ':monto_cuota' => $valorCuotaBase,
+                    ':monto_cuota' => $pagouCuota ? $ahorroNetoConstante : 0.00,
+                    ':monto_aporte_ronda' => $pagouCuota ? $aporteRondaBase : 0.00,
+                    ':monto_aporte_rifa' => $pagouCuota ? $aporteRifaBase : 0.00,
                     ':monto_ahorro_extra' => $ahorroExtra,
                     ':autoprestamo_generado' => $prestamoId ? 1 : 0,
                     ':prestamo_id_asociado' => $prestamoId
@@ -180,6 +192,23 @@ class Reunion extends Model {
             if ($ahorro && $ahorro['prestamo_id_asociado']) {
                 $prestamoId = (int)$ahorro['prestamo_id_asociado'];
 
+                // Consultar cuota base de la reunión para calcular desgloses
+                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM reuniones WHERE id = :id");
+                $stmtReunion->execute([':id' => $ahorro['reunion_id']]);
+                $rInfo = $stmtReunion->fetch();
+                $vBase = (float)($rInfo['valor_cuota_base'] ?? 55000);
+
+                if ($vBase >= 65000) {
+                    $apRonda = 20000.00;
+                    $apRifa = 5000.00;
+                } else if ($vBase >= 60000) {
+                    $apRonda = 10000.00;
+                    $apRifa = 10000.00;
+                } else {
+                    $apRonda = 10000.00;
+                    $apRifa = 5000.00;
+                }
+
                 // Marcar préstamo como anulado sin interés y pagado
                 $stmtP = $this->db->prepare("
                     UPDATE prestamos 
@@ -188,13 +217,21 @@ class Reunion extends Model {
                 ");
                 $stmtP->execute([':p_id' => $prestamoId]);
 
-                // Actualizar ahorro a cuota pagada
+                // Actualizar ahorro a cuota pagada ($40.000 COP netos)
                 $stmtA = $this->db->prepare("
                     UPDATE ahorros_cuotas 
-                    SET cuota_pagada = 1, autoprestamo_generado = 0 
+                    SET cuota_pagada = 1, 
+                        monto_cuota = 40000.00,
+                        monto_aporte_ronda = :ap_ronda,
+                        monto_aporte_rifa = :ap_rifa,
+                        autoprestamo_generado = 0 
                     WHERE id = :a_id
                 ");
-                $stmtA->execute([':a_id' => $ahorroId]);
+                $stmtA->execute([
+                    ':a_id' => $ahorroId,
+                    ':ap_ronda' => $apRonda,
+                    ':ap_rifa' => $apRifa
+                ]);
             }
 
             $this->db->commit();

@@ -28,7 +28,7 @@ class PrestamoController extends Controller {
 
         $socioDeudorId = (int)($_POST['socio_deudor_id'] ?? 0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
-        $monto = (float)($_POST['monto_prestado'] ?? 0);
+        $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.00);
 
         if ($socioDeudorId <= 0 || $monto <= 0) {
@@ -70,7 +70,7 @@ class PrestamoController extends Controller {
 
         $id = (int)($_POST['prestamo_id'] ?? 0);
         $socioDeudorId = (int)($_POST['socio_deudor_id'] ?? 0);
-        $monto = (float)($_POST['monto_prestado'] ?? 0);
+        $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
         $estado = trim($_POST['estado'] ?? 'ACTIVO');
@@ -102,8 +102,8 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $prestamoId = (int)($_POST['prestamo_id'] ?? 0);
-        $montoCapital = (float)($_POST['monto_capital_pagado'] ?? 0);
-        $montoInteres = (float)($_POST['monto_interes_pagado'] ?? 0);
+        $montoCapital = (float)str_replace('.', '', $_POST['monto_capital_pagado'] ?? 0);
+        $montoInteres = (float)str_replace('.', '', $_POST['monto_interes_pagado'] ?? 0);
 
         if ($prestamoId <= 0 || ($montoCapital <= 0 && $montoInteres <= 0)) {
             $_SESSION['error'] = "Ingresa al menos un valor a abonar en capital o interés.";
@@ -147,8 +147,8 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria General']);
 
         $abonoId = (int)($_POST['abono_id'] ?? 0);
-        $montoCapital = (float)($_POST['monto_capital_pagado'] ?? 0);
-        $montoInteres = (float)($_POST['monto_interes_pagado'] ?? 0);
+        $montoCapital = (float)str_replace('.', '', $_POST['monto_capital_pagado'] ?? 0);
+        $montoInteres = (float)str_replace('.', '', $_POST['monto_interes_pagado'] ?? 0);
         $fechaAbono = trim($_POST['fecha_abono'] ?? '');
 
         if ($abonoId <= 0) {
@@ -194,7 +194,7 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria General']);
 
         $socioId = (int)($_POST['socio_id'] ?? 0);
-        $nuevoTope = (float)($_POST['nuevo_tope'] ?? 2000000.00);
+        $nuevoTope = (float)str_replace('.', '', $_POST['nuevo_tope'] ?? 2000000.00);
 
         if ($socioId <= 0 || $nuevoTope <= 0) {
             $_SESSION['error'] = "Datos de tope de crédito no válidos.";

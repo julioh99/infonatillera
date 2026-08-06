@@ -145,9 +145,9 @@
                             <td class="text-center">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="1000" min="0" class="form-control input-ahorro-extra fw-semibold text-end" 
+                                    <input type="text" class="form-control input-ahorro-extra money-input fw-semibold text-end" 
                                            id="ahorro_<?= $socio['id'] ?>" 
-                                           value="<?= $ahorroExtra > 0 ? $ahorroExtra : '' ?>" 
+                                           value="<?= $ahorroExtra > 0 ? number_format($ahorroExtra, 0, ',', '.') : '' ?>" 
                                            placeholder="0">
                                 </div>
                             </td>

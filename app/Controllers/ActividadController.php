@@ -28,9 +28,9 @@ class ActividadController extends Controller {
         $nombre = trim($_POST['nombre_actividad'] ?? '');
         $descripcion = trim($_POST['descripcion'] ?? '');
         $fecha = trim($_POST['fecha_actividad'] ?? date('Y-m-d'));
-        $ingresos = (float)($_POST['ingresos_totales'] ?? 0);
-        $gastos = (float)($_POST['gastos_totales'] ?? 0);
-        $cuotaBase = (float)($_POST['cuota_por_socio'] ?? 0);
+        $ingresos = (float)str_replace('.', '', $_POST['ingresos_totales'] ?? 0);
+        $gastos = (float)str_replace('.', '', $_POST['gastos_totales'] ?? 0);
+        $cuotaBase = (float)str_replace('.', '', $_POST['cuota_por_socio'] ?? 0);
 
         $checkedParticipantes = isset($_POST['participantes']) && is_array($_POST['participantes']) ? $_POST['participantes'] : [];
         $cuotasIndividuales = isset($_POST['cuotas_individuales']) && is_array($_POST['cuotas_individuales']) ? $_POST['cuotas_individuales'] : [];
@@ -43,7 +43,8 @@ class ActividadController extends Controller {
         $participantesCuotas = [];
         foreach ($checkedParticipantes as $sId) {
             $sId = (int)$sId;
-            $montoIndiv = isset($cuotasIndividuales[$sId]) ? (float)$cuotasIndividuales[$sId] : $cuotaBase;
+            $rawIndiv = isset($cuotasIndividuales[$sId]) ? $cuotasIndividuales[$sId] : $cuotaBase;
+            $montoIndiv = (float)str_replace('.', '', $rawIndiv);
             $participantesCuotas[$sId] = $montoIndiv;
         }
 
@@ -92,7 +93,7 @@ class ActividadController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria Actividades']);
 
         $participanteId = (int)($_POST['participante_id'] ?? 0);
-        $montoPagado = (float)($_POST['monto_pagado'] ?? 0);
+        $montoPagado = (float)str_replace('.', '', $_POST['monto_pagado'] ?? 0);
 
         if ($participanteId <= 0) {
             $_SESSION['error'] = "Participante inválido.";

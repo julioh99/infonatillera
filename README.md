@@ -95,6 +95,7 @@ Consulta las Guías Detalladas de cada Módulo en la carpeta [`docs/`](./docs/RE
 6. 🔔 [Notificaciones Push](./docs/06_notificaciones_push.md)
 7. 👥 [Gestión de Socios y Directorio](./docs/07_gestion_socios.md)
 8. 📊 [Dashboard del Socio](./docs/08_dashboard_socio.md)
+9. 🎁 [Entregas de Rondas, Rifas y Firma Digital](./docs/09_entregas_rondas_rifas.md)
 
 ---
 
