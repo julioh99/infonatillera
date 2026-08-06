@@ -1,0 +1,5 @@
+/natillera.sqlite
+/vendor/
+*.log
+.DS_Store
+Thumbs.db
