@@ -34,16 +34,17 @@ class Actividad extends Model {
         return $stmt->fetchAll();
     }
 
-    public function crearActividad(array $datos, array $socioIds): bool {
+    public function crearActividad(array $datos, array $participantesCuotas): bool {
         $this->db->beginTransaction();
         try {
             $ingresos = (float)($datos['ingresos_totales'] ?? 0);
             $gastos = (float)($datos['gastos_totales'] ?? 0);
+            $cuotaPorSocio = (float)($datos['cuota_por_socio'] ?? 0);
             $gananciaNeta = $ingresos - $gastos;
 
             $stmt = $this->db->prepare("
-                INSERT INTO actividades (nombre_actividad, descripcion, fecha_actividad, ingresos_totales, gastos_totales, ganancia_neta, creado_por_usuario_id)
-                VALUES (:nombre, :descripcion, :fecha, :ingresos, :gastos, :ganancia, :creado_por)
+                INSERT INTO actividades (nombre_actividad, descripcion, fecha_actividad, ingresos_totales, gastos_totales, ganancia_neta, cuota_por_socio, creado_por_usuario_id)
+                VALUES (:nombre, :descripcion, :fecha, :ingresos, :gastos, :ganancia, :cuota_socio, :creado_por)
             ");
             $stmt->execute([
                 ':nombre' => $datos['nombre_actividad'],
@@ -52,23 +53,30 @@ class Actividad extends Model {
                 ':ingresos' => $ingresos,
                 ':gastos' => $gastos,
                 ':ganancia' => $gananciaNeta,
+                ':cuota_socio' => $cuotaPorSocio,
                 ':creado_por' => $datos['creado_por_usuario_id']
             ]);
 
             $actividadId = (int)$this->db->lastInsertId();
-            $numParticipantes = count($socioIds);
+            $numParticipantes = count($participantesCuotas);
 
             if ($numParticipantes > 0) {
                 $gananciaPorSocio = $gananciaNeta > 0 ? round($gananciaNeta / $numParticipantes, 2) : 0.00;
+
                 $stmtPart = $this->db->prepare("
-                    INSERT INTO actividad_participantes (actividad_id, socio_id, cuota_asignada, ganancia_asignada, estado_pago)
-                    VALUES (:actividad_id, :socio_id, 0.00, :ganancia, 'PAGADO')
+                    INSERT INTO actividad_participantes (actividad_id, socio_id, cuota_asignada, monto_pagado, ganancia_asignada, estado_pago)
+                    VALUES (:actividad_id, :socio_id, :cuota_asignada, 0.00, :ganancia, :estado_pago)
                 ");
-                foreach ($socioIds as $sId) {
+                foreach ($participantesCuotas as $sId => $cuotaIndiv) {
+                    $cMonto = (float)$cuotaIndiv;
+                    $estadoInicial = $cMonto > 0 ? 'PENDIENTE' : 'PAGADO';
+
                     $stmtPart->execute([
                         ':actividad_id' => $actividadId,
                         ':socio_id' => (int)$sId,
-                        ':ganancia' => $gananciaPorSocio
+                        ':cuota_asignada' => $cMonto,
+                        ':ganancia' => $gananciaPorSocio,
+                        ':estado_pago' => $estadoInicial
                     ]);
                 }
             }
@@ -79,5 +87,26 @@ class Actividad extends Model {
             $this->db->rollBack();
             return false;
         }
+    }
+
+    public function actualizarPagoParticipante(int $participanteId, float $montoPagado): bool {
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada FROM actividad_participantes WHERE id = :id");
+        $stmtCheck->execute([':id' => $participanteId]);
+        $row = $stmtCheck->fetch();
+        if (!$row) return false;
+
+        $cuotaAsignada = (float)$row['cuota_asignada'];
+        $estado = ($montoPagado >= $cuotaAsignada) ? 'PAGADO' : 'PENDIENTE';
+
+        $stmt = $this->db->prepare("
+            UPDATE actividad_participantes 
+            SET monto_pagado = :monto_pagado, estado_pago = :estado
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':id' => $participanteId,
+            ':monto_pagado' => $montoPagado,
+            ':estado' => $estado
+        ]);
     }
 }

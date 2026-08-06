@@ -4,7 +4,7 @@
             <i class="fa-solid fa-utensils text-info"></i>
             Actividades Especiales (Tamales / Eventos)
         </h2>
-        <p class="text-muted m-0 fs-7">Gestión contable aislada, registro de ingresos, gastos y utilidad neta.</p>
+        <p class="text-muted m-0 fs-7">Gestión contable, asignación de cuotas individuales por socio y recaudo.</p>
     </div>
     <div class="col-12 col-md-6 text-md-end">
         <button type="button" class="btn btn-info text-white rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaActividad">
@@ -20,7 +20,7 @@
             <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
                 <i class="fa-solid fa-cookie-bite fs-1 text-secondary mb-3"></i>
                 <h5 class="font-outfit">No hay actividades registradas</h5>
-                <p class="m-0 fs-7">Crea eventos comunitarios para registrar fondos extras repartidos entre los participantes.</p>
+                <p class="m-0 fs-7">Crea eventos comunitarios para registrar cuotas individuales y fondos repartibles.</p>
             </div>
         </div>
     <?php else: ?>
@@ -28,13 +28,17 @@
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                     <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title font-outfit fw-bold m-0"><?= htmlspecialchars($act['nombre_actividad']) ?></h5>
+                        <h5 class="card-title font-outfit fw-bold m-0 text-truncate" style="max-width: 200px;"><?= htmlspecialchars($act['nombre_actividad']) ?></h5>
                         <span class="badge bg-primary fs-7"><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body p-4 d-flex flex-column">
                         <p class="text-muted fs-7 mb-3"><?= htmlspecialchars($act['descripcion'] ?: 'Sin descripción adicional.') ?></p>
                         
                         <div class="border rounded-3 p-3 bg-light mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fs-7 text-muted">Cuota Referencial Socio:</span>
+                                <strong class="text-primary">$<?= number_format($act['cuota_por_socio'] ?? 0, 0, ',', '.') ?></strong>
+                            </div>
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="fs-7 text-muted">Ingresos Totales:</span>
                                 <strong class="text-success">$<?= number_format($act['ingresos_totales'], 0, ',', '.') ?></strong>
@@ -50,9 +54,17 @@
                             </div>
                         </div>
 
-                        <div class="d-flex align-items-center justify-content-between text-muted fs-7">
-                            <span><i class="fa-solid fa-users text-info me-1"></i> Participantes: <strong><?= $act['total_participantes'] ?> socios</strong></span>
+                        <div class="d-flex align-items-center justify-content-between text-muted fs-7 mb-3">
+                            <span><i class="fa-solid fa-users text-info me-1"></i> <strong><?= $act['total_participantes'] ?> socios</strong></span>
                             <span>Creado por: <?= htmlspecialchars($act['creador_nombre']) ?></span>
+                        </div>
+
+                        <div class="mt-auto">
+                            <button type="button" class="btn btn-sm btn-outline-info rounded-pill w-100 fw-bold btnVerParticipantes"
+                                    data-id="<?= $act['id'] ?>"
+                                    data-bs-toggle="modal" data-bs-target="#modalVerParticipantesActividad">
+                                <i class="fa-solid fa-list-check me-1"></i>Ver Participantes y Pagos
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -88,33 +100,55 @@
                     </div>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-6">
-                            <label for="ingresos_totales" class="form-label fw-semibold fs-7">Ingresos Totales Recaudados (COP)</label>
-                            <input type="number" step="1000" min="0" name="ingresos_totales" id="ingresos_totales" class="form-control text-success fw-bold" placeholder="0" required>
+                        <div class="col-12 col-md-4">
+                            <label for="cuota_por_socio" class="form-label fw-semibold fs-7">Cuota Base Referencial (COP)</label>
+                            <input type="number" step="1000" min="0" name="cuota_por_socio" id="cuota_por_socio" class="form-control text-primary fw-bold" placeholder="Ej: 20000" value="20000">
+                            <small class="text-muted fs-8">Valor base para autocompletar.</small>
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-md-4">
+                            <label for="ingresos_totales" class="form-label fw-semibold fs-7">Ingresos Totales Recaudados (COP)</label>
+                            <input type="number" step="1000" min="0" name="ingresos_totales" id="ingresos_totales" class="form-control text-success fw-bold" placeholder="0" value="0" required>
+                        </div>
+                        <div class="col-12 col-md-4">
                             <label for="gastos_totales" class="form-label fw-semibold fs-7">Gastos Totales (COP)</label>
-                            <input type="number" step="1000" min="0" name="gastos_totales" id="gastos_totales" class="form-control text-danger fw-bold" placeholder="0" required>
+                            <input type="number" step="1000" min="0" name="gastos_totales" id="gastos_totales" class="form-control text-danger fw-bold" placeholder="0" value="0" required>
                         </div>
                     </div>
 
-                    <div class="border rounded-3 p-3 bg-light">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label fw-semibold fs-7 mb-0">Socios Participantes (Para reparto equitativo de ganancias):</label>
+                    <!-- Asignación de Cuotas Individuales por Socio -->
+                    <div class="border rounded-3 p-3 bg-light mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
-                                <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="marcarTodosSociosAct(true)">Todos</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="marcarTodosSociosAct(false)">Ninguno</button>
+                                <label class="form-label fw-bold font-outfit fs-7 mb-0 text-dark">
+                                    <i class="fa-solid fa-users me-1 text-info"></i>Socios Participantes y Cuotas Individuales:
+                                </label>
+                                <span class="d-block text-muted fs-8">Asigna el valor individual a pagar por cada socio seleccionado.</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 fw-semibold" onclick="aplicarCuotaBaseASocios()">
+                                    <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Aplicar Cuota Base
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="marcarTodosSociosAct(true)">Todos</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" onclick="marcarTodosSociosAct(false)">Ninguno</button>
                             </div>
                         </div>
 
-                        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 overflow-auto" style="max-height: 200px;">
+                        <div class="row g-2 overflow-auto" style="max-height: 280px;">
                             <?php foreach ($socios as $s): ?>
-                                <div class="col">
-                                    <div class="form-check">
-                                        <input class="form-check-input chk-socio-act" type="checkbox" name="participantes[]" value="<?= $s['id'] ?>" id="part_<?= $s['id'] ?>" checked>
-                                        <label class="form-check-label fs-7" for="part_<?= $s['id'] ?>">
-                                            <?= htmlspecialchars($s['nombre_completo']) ?>
-                                        </label>
+                                <div class="col-12 col-md-6">
+                                    <div class="card p-2 border shadow-none bg-white">
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="form-check m-0">
+                                                <input class="form-check-input chk-socio-act" type="checkbox" name="participantes[]" value="<?= $s['id'] ?>" id="part_<?= $s['id'] ?>" onchange="toggleSocioCuotaInput(this, <?= $s['id'] ?>)" checked>
+                                                <label class="form-check-label fs-7 fw-semibold text-dark text-truncate" for="part_<?= $s['id'] ?>" style="max-width: 170px;" title="<?= htmlspecialchars($s['nombre_completo']) ?>">
+                                                    <?= htmlspecialchars($s['nombre_completo']) ?>
+                                                </label>
+                                            </div>
+                                            <div class="input-group input-group-sm" style="width: 140px;">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="1000" min="0" name="cuotas_individuales[<?= $s['id'] ?>]" id="cuota_socio_<?= $s['id'] ?>" class="form-control form-control-sm text-end fw-bold input-cuota-socio" value="20000" placeholder="0">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -123,15 +157,143 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-info text-white rounded-pill fw-bold px-4">Liquidar Actividad</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill fw-bold px-4">Crear Actividad</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<!-- Modal Ver / Actualizar Participantes y Saldos de la Actividad -->
+<div class="modal fade" id="modalVerParticipantesActividad" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-list-check me-2 text-warning"></i>Participantes y Recaudo de la Actividad</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-dark">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <div>
+                        <h6 class="m-0 fw-bold font-outfit text-primary" id="act_modal_nombre">---</h6>
+                        <small class="text-muted" id="act_modal_fecha">---</small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
+                        <thead class="table-dark font-outfit">
+                            <tr>
+                                <th class="ps-3">Socio</th>
+                                <th>Cuota Asignada</th>
+                                <th>Monto Pagado</th>
+                                <th>Saldo Pendiente</th>
+                                <th>Estado</th>
+                                <th class="text-end pe-3">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyParticipantesAct">
+                            <tr>
+                                <td colspan="6" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-function marcarTodosSociosAct(status) {
-    document.querySelectorAll('.chk-socio-act').forEach(c => c.checked = status);
+function toggleSocioCuotaInput(chk, socioId) {
+    const input = document.getElementById('cuota_socio_' + socioId);
+    if (input) {
+        input.disabled = !chk.checked;
+        if (!chk.checked) {
+            input.dataset.oldVal = input.value;
+            input.value = 0;
+        } else if (input.dataset.oldVal) {
+            input.value = input.dataset.oldVal;
+        }
+    }
 }
+
+function marcarTodosSociosAct(status) {
+    document.querySelectorAll('.chk-socio-act').forEach(c => {
+        c.checked = status;
+        const sId = c.value;
+        toggleSocioCuotaInput(c, sId);
+    });
+}
+
+function aplicarCuotaBaseASocios() {
+    const baseVal = document.getElementById('cuota_por_socio').value || 0;
+    document.querySelectorAll('.input-cuota-socio').forEach(inp => {
+        if (!inp.disabled) {
+            inp.value = baseVal;
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Cargar Participantes de Actividad via AJAX
+    const btnsVerParticipantes = document.querySelectorAll('.btnVerParticipantes');
+    btnsVerParticipantes.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const actId = btn.getAttribute('data-id');
+            const tbody = document.getElementById('tbodyParticipantesAct');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td></tr>';
+
+            fetch(`/admin/actividades/participantes-json?actividad_id=${actId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.actividad) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error al cargar información.</td></tr>';
+                        return;
+                    }
+
+                    document.getElementById('act_modal_nombre').innerText = data.actividad.nombre_actividad;
+                    document.getElementById('act_modal_fecha').innerText = `Fecha: ${data.actividad.fecha_actividad}`;
+
+                    if (!data.participantes || data.participantes.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No se registraron participantes para esta actividad.</td></tr>';
+                        return;
+                    }
+
+                    let html = '';
+                    data.participantes.forEach(p => {
+                        const cuota = parseFloat(p.cuota_asignada || 0);
+                        const pagado = parseFloat(p.monto_pagado || 0);
+                        const saldo = cuota - pagado;
+                        const isPagado = (p.estado_pago === 'PAGADO' || saldo <= 0);
+
+                        html += `
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">${p.nombre_completo}</td>
+                                <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
+                                <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
+                                <td>${saldo > 0 ? `<span class="badge bg-danger">$${new Intl.NumberFormat('es-CO').format(saldo)}</span>` : '<span class="text-muted">$0</span>'}</td>
+                                <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
+                                <td class="text-end pe-3">
+                                    <form action="/admin/actividades/pago/actualizar" method="POST" class="d-inline-flex gap-1">
+                                        <input type="hidden" name="participante_id" value="${p.id}">
+                                        <input type="number" step="1000" min="0" name="monto_pagado" value="${pagado}" class="form-control form-control-sm text-end" style="width: 100px;">
+                                        <button type="submit" class="btn btn-xs btn-primary fw-bold" title="Guardar Pago"><i class="fa-solid fa-floppy-disk"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = html;
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
+                });
+        });
+    });
+});
 </script>

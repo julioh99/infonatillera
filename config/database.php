@@ -34,10 +34,19 @@ class Database {
     }
 
     public static function ensureSchemaUpdates($db) {
+        self::addColumnIfNotExists($db, 'prestamos', 'nombre_referencia', 'VARCHAR(150)');
+        self::addColumnIfNotExists($db, 'actividades', 'cuota_por_socio', 'DECIMAL(10,2) DEFAULT 0.00');
+    }
+
+    private static function addColumnIfNotExists($db, $table, $column, $typeDef) {
         try {
-            $db->exec("ALTER TABLE prestamos ADD COLUMN nombre_referencia VARCHAR(150);");
+            $stmt = $db->query("PRAGMA table_info({$table})");
+            $columns = $stmt->fetchAll(PDO::FETCH_COLUMN, 1);
+            if (!in_array($column, $columns)) {
+                $db->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$typeDef}");
+            }
         } catch (Exception $e) {
-            // Columna ya existe
+            // Silencioso si la columna ya existe
         }
     }
 

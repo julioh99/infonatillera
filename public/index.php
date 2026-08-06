@@ -57,6 +57,8 @@ $router->post('/admin/prestamos/actualizar-tope', [PrestamoController::class, 'a
 // Rutas Admin - Actividades
 $router->get('/admin/actividades', [ActividadController::class, 'index']);
 $router->post('/admin/actividades/guardar', [ActividadController::class, 'guardar']);
+$router->get('/admin/actividades/participantes-json', [ActividadController::class, 'participantesJson']);
+$router->post('/admin/actividades/pago/actualizar', [ActividadController::class, 'actualizarPago']);
 
 // Rutas Admin - Notificaciones Push
 $router->get('/admin/notificaciones', [NotificacionController::class, 'index']);

@@ -84,6 +84,7 @@ CREATE TABLE actividades (
     ingresos_totales DECIMAL(10,2) DEFAULT 0.00,
     gastos_totales DECIMAL(10,2) DEFAULT 0.00,
     ganancia_neta DECIMAL(10,2) DEFAULT 0.00,
+    cuota_por_socio DECIMAL(10,2) DEFAULT 0.00, -- Cuota a pagar asignada a cada socio
     estado VARCHAR(20) DEFAULT 'EN_PROCESO', -- 'EN_PROCESO', 'LIQUIDADA'
     creado_por_usuario_id INTEGER NOT NULL,
     FOREIGN KEY (creado_por_usuario_id) REFERENCES usuarios(id)

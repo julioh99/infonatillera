@@ -30,11 +30,21 @@ class ActividadController extends Controller {
         $fecha = trim($_POST['fecha_actividad'] ?? date('Y-m-d'));
         $ingresos = (float)($_POST['ingresos_totales'] ?? 0);
         $gastos = (float)($_POST['gastos_totales'] ?? 0);
-        $participantes = isset($_POST['participantes']) && is_array($_POST['participantes']) ? $_POST['participantes'] : [];
+        $cuotaBase = (float)($_POST['cuota_por_socio'] ?? 0);
+
+        $checkedParticipantes = isset($_POST['participantes']) && is_array($_POST['participantes']) ? $_POST['participantes'] : [];
+        $cuotasIndividuales = isset($_POST['cuotas_individuales']) && is_array($_POST['cuotas_individuales']) ? $_POST['cuotas_individuales'] : [];
 
         if (empty($nombre) || empty($fecha)) {
             $_SESSION['error'] = "Ingresa el nombre y fecha de la actividad.";
             $this->redirect('/admin/actividades');
+        }
+
+        $participantesCuotas = [];
+        foreach ($checkedParticipantes as $sId) {
+            $sId = (int)$sId;
+            $montoIndiv = isset($cuotasIndividuales[$sId]) ? (float)$cuotasIndividuales[$sId] : $cuotaBase;
+            $participantesCuotas[$sId] = $montoIndiv;
         }
 
         $actividadModel = new Actividad();
@@ -44,13 +54,58 @@ class ActividadController extends Controller {
             'fecha_actividad' => $fecha,
             'ingresos_totales' => $ingresos,
             'gastos_totales' => $gastos,
+            'cuota_por_socio' => $cuotaBase,
             'creado_por_usuario_id' => $_SESSION['usuario']['id']
-        ], $participantes);
+        ], $participantesCuotas);
 
         if ($ok) {
-            $_SESSION['success'] = "Actividad registrada y utilidades liquidadas entre los socios participantes.";
+            $_SESSION['success'] = "Actividad registrada con cuotas individuales asignadas a los socios.";
         } else {
             $_SESSION['error'] = "Ocurrió un error al guardar la actividad.";
+        }
+
+        $this->redirect('/admin/actividades');
+    }
+
+    public function participantesJson(): void {
+        $this->requireRole(['Presidente', 'Secretaria Actividades']);
+        $actividadId = (int)($_GET['actividad_id'] ?? 0);
+
+        header('Content-Type: application/json');
+        if ($actividadId <= 0) {
+            echo json_encode(['success' => false, 'participantes' => []]);
+            return;
+        }
+
+        $actividadModel = new Actividad();
+        $actividad = $actividadModel->getActividadById($actividadId);
+        $participantes = $actividadModel->getParticipantes($actividadId);
+
+        echo json_encode([
+            'success' => true,
+            'actividad' => $actividad,
+            'participantes' => $participantes
+        ]);
+    }
+
+    public function actualizarPago(): void {
+        $this->requireRole(['Presidente', 'Secretaria Actividades']);
+
+        $participanteId = (int)($_POST['participante_id'] ?? 0);
+        $montoPagado = (float)($_POST['monto_pagado'] ?? 0);
+
+        if ($participanteId <= 0) {
+            $_SESSION['error'] = "Participante inválido.";
+            $this->redirect('/admin/actividades');
+        }
+
+        $actividadModel = new Actividad();
+        $ok = $actividadModel->actualizarPagoParticipante($participanteId, $montoPagado);
+
+        if ($ok) {
+            $_SESSION['success'] = "Pago de la actividad actualizado correctamente.";
+        } else {
+            $_SESSION['error'] = "No se pudo actualizar el pago.";
         }
 
         $this->redirect('/admin/actividades');

@@ -146,28 +146,78 @@
         </div>
     </div>
 
-    <!-- Mis Préstamos -->
+    <!-- Mis Préstamos y Seguimiento de Cuotas -->
     <div class="col-12 col-lg-5">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-            <div class="card-header bg-dark text-white p-3">
+            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
                 <h5 class="font-outfit fw-bold m-0"><i class="fa-solid fa-file-invoice-dollar me-2 text-info"></i>Mis Préstamos</h5>
+                <span class="badge bg-secondary"><?= count($misPrestamos) ?> Total</span>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($misPrestamos)): ?>
                     <div class="p-4 text-center text-muted">No tienes créditos registrados.</div>
                 <?php else: ?>
                     <div class="list-group list-group-flush">
-                        <?php foreach ($misPrestamos as $mp): 
+                        <?php foreach ($misPrestamos as $index => $mp): 
                             $saldoP = (float)$mp['monto_prestado'] - (float)$mp['capital_pagado'];
+                            $collapseId = "collapseCuotasPrestamo_" . $mp['id'];
+                            $refText = !empty($mp['nombre_referencia']) ? $mp['nombre_referencia'] : (!empty($mp['tercero_nombre']) ? $mp['tercero_nombre'] : '');
                         ?>
-                            <div class="list-group-item p-3">
+                            <div class="list-group-item p-3 border-bottom">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <strong class="font-outfit fs-6">$<?= number_format($mp['monto_prestado'], 0, ',', '.') ?> COP</strong>
+                                    <div>
+                                        <strong class="font-outfit fs-6 text-dark">$<?= number_format($mp['monto_prestado'], 0, ',', '.') ?> COP</strong>
+                                        <?php if (!empty($refText)): ?>
+                                            <span class="badge bg-light text-dark border ms-1 fw-normal"><i class="fa-solid fa-tag text-primary me-1"></i><?= htmlspecialchars($refText) ?></span>
+                                        <?php endif; ?>
+                                    </div>
                                     <span class="badge <?= $mp['estado'] === 'PAGADO' ? 'bg-success' : 'bg-danger' ?>"><?= $mp['estado'] ?></span>
                                 </div>
-                                <div class="d-flex justify-content-between text-muted fs-7">
-                                    <span>Tasa: <?= $mp['tasa_interes_mensual'] ?>%</span>
+                                <div class="d-flex justify-content-between align-items-center text-muted fs-7 mb-2">
+                                    <span>Tasa: <strong class="text-info"><?= number_format($mp['tasa_interes_mensual'], 1) ?>%</strong></span>
                                     <span>Saldo Capital: <strong class="text-dark">$<?= number_format($saldoP, 0, ',', '.') ?></strong></span>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted fs-8">Pagado Cap: $<?= number_format($mp['capital_pagado'], 0, ',', '.') ?> | Int: $<?= number_format($mp['interes_pagado'], 0, ',', '.') ?></small>
+                                    <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-3" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>">
+                                        <i class="fa-solid fa-list-check me-1"></i>Ver Cuotas (<?= count($mp['cuotas']) ?>)
+                                    </button>
+                                </div>
+
+                                <!-- Detalle Colapsable de Cuotas de este Préstamo -->
+                                <div class="collapse mt-3" id="<?= $collapseId ?>">
+                                    <div class="p-3 bg-light rounded-3 border">
+                                        <h6 class="font-outfit fw-bold text-primary fs-7 mb-2">
+                                            <i class="fa-solid fa-receipt me-1"></i>Historial de Cuotas / Pagos Realizados:
+                                        </h6>
+                                        <?php if (empty($mp['cuotas'])): ?>
+                                            <p class="text-muted fs-8 mb-0">Aún no registras cuotas o abonos para este crédito.</p>
+                                        <?php else: ?>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle bg-white fs-8 mb-0">
+                                                    <thead class="table-dark font-outfit">
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Capital</th>
+                                                            <th>Interés</th>
+                                                            <th>Recibido Por</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php foreach ($mp['cuotas'] as $q): ?>
+                                                            <tr>
+                                                                <td><?= date('d/m/Y H:i', strtotime($q['fecha_abono'])) ?></td>
+                                                                <td class="text-success fw-bold">$<?= number_format($q['monto_capital_pagado'], 0, ',', '.') ?></td>
+                                                                <td class="text-warning fw-bold">$<?= number_format($q['monto_interes_pagado'], 0, ',', '.') ?></td>
+                                                                <td class="fw-semibold text-dark"><i class="fa-solid fa-user-check text-primary me-1"></i><?= htmlspecialchars($q['registrado_por_nombre'] ?? 'Directiva') ?></td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -175,6 +225,82 @@
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Sección 2: Mis Actividades Comunitarias y Deudas (Tamales) -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+    <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+        <h5 class="font-outfit fw-bold m-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-utensils text-info"></i>
+            Mis Actividades Comunitarias y Deudas
+        </h5>
+        <div>
+            <?php if ($totalDeudaActividades > 0): ?>
+                <span class="badge bg-danger rounded-pill px-3 py-2 fs-7">
+                    <i class="fa-solid fa-exclamation-triangle me-1"></i>Deuda Pendiente: $<?= number_format($totalDeudaActividades, 0, ',', '.') ?> COP
+                </span>
+            <?php else: ?>
+                <span class="badge bg-success rounded-pill px-3 py-2 fs-7">
+                    <i class="fa-solid fa-circle-check me-1"></i>Sin Deudas de Actividades
+                </span>
+            <?php endif; ?>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light font-outfit fs-7 text-uppercase">
+                <tr>
+                    <th class="ps-4">Actividad / Descripción</th>
+                    <th>Fecha Evento</th>
+                    <th>Cuota Asignada</th>
+                    <th>Monto Pagado</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Ganancia Asignada</th>
+                    <th class="text-end pe-4">Estado Pago</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($misActividades)): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No tienes actividades comunitarias asignadas o registradas aún.</td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($misActividades as $act): 
+                        $cuota = (float)$act['cuota_asignada'];
+                        $pagado = (float)$act['monto_pagado'];
+                        $saldoAct = $cuota - $pagado;
+                        $ganancia = (float)$act['ganancia_asignada'];
+                        $isPagado = ($act['estado_pago'] === 'PAGADO' || $saldoAct <= 0);
+                    ?>
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold font-outfit text-dark"><?= htmlspecialchars($act['nombre_actividad']) ?></div>
+                                <small class="text-muted"><?= htmlspecialchars($act['descripcion'] ?: 'Venta extraordinaria comunitaria') ?></small>
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-dark border"><i class="fa-solid fa-calendar-day me-1"></i><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span></td>
+                            <td class="fw-bold text-dark font-outfit">$<?= number_format($cuota, 0, ',', '.') ?></td>
+                            <td class="text-success fw-bold">$<?= number_format($pagado, 0, ',', '.') ?></td>
+                            <td>
+                                <?php if ($saldoAct > 0): ?>
+                                    <span class="badge bg-danger fs-7">$<?= number_format($saldoAct, 0, ',', '.') ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted fs-7">$0</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="text-info fw-semibold">$<?= number_format($ganancia, 0, ',', '.') ?></td>
+                            <td class="text-end pe-4">
+                                <?php if ($isPagado): ?>
+                                    <span class="badge bg-success rounded-pill px-3 py-1"><i class="fa-solid fa-check me-1"></i>Al Día</span>
+                                <?php else: ?>
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 

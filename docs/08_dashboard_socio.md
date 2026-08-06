@@ -15,13 +15,17 @@ El Dashboard del Socio proporciona transparencia financiera total, permitiendo a
 
 ---
 
-## ⚙️ Métricas Visualizadas
+## ⚙️ Métricas y Secciones Visualizadas
 
-1. **Total Ahorrado en Cuotas:** Suma de todas las cuotas fijas pagadas hasta la fecha.
-2. **Total Ahorro Extra:** Acumulado de ahorros voluntarios aportados en cada quincena.
-3. **Ganancia por Intereses Proyectada:** Cálculo transparente del porcentaje de utilidades generadas por el cobro de intereses a préstamos.
-4. **Resumen de Préstamos Activos:** Estado de deudas pendientes, intereses acumulados y saldo a pagar.
-5. **Historial de Asistencia:** Tabla interactiva con el detalle de las cuotas quincenales pagadas.
+1. **Total Ahorrado en Cuotas y Extras:** Suma de todas las cuotas fijas pagadas y ahorros opcionales aportados.
+2. **Progreso de Meta de Intereses ($400.000 COP):** Indicador gráfico del nivel de cumplimiento del compromiso anual de intereses.
+3. **Mis Préstamos y Seguimiento de Cuotas:**
+   - Visualización de créditos vigentes y pagados con su tasa de interés, saldo de capital y referente/alias.
+   - Botón **"Ver Cuotas"** para desplegar el desglose detallado de cada cuota abonada: fecha, abono a capital, abono a interés y la persona de la directiva que recibió/registró dicho pago.
+4. **Mis Actividades Comunitarias y Deudas:**
+   - Panel dedicado a eventos comunitarios (venta de tamales, actividades extraordinarias).
+   - Muestra la cuota asignada por actividad, el monto pagado, el saldo pendiente individual y el estado (`PAGADO` o `PENDIENTE`).
+5. **Historial de Asistencia Quincenal:** Tabla con el detalle de cuotas aportadas reunión por reunión.
 
 ---
 [⬅️ Anterior: Gestión de Socios](./07_gestion_socios.md) | [📋 Índice](./README.md)

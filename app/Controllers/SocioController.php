@@ -29,7 +29,7 @@ class SocioController extends Controller {
         $stmtHistory->execute([':id' => $user['id']]);
         $historialCuotas = $stmtHistory->fetchAll();
 
-        // Préstamos del socio
+        // Préstamos del socio con sus cuotas/abonos e información de quién registró
         $stmtLoans = Database::getConnection()->prepare("
             SELECT p.*, IFNULL(SUM(ap.monto_capital_pagado), 0) as capital_pagado, IFNULL(SUM(ap.monto_interes_pagado), 0) as interes_pagado
             FROM prestamos p
@@ -41,12 +41,46 @@ class SocioController extends Controller {
         $stmtLoans->execute([':id' => $user['id']]);
         $misPrestamos = $stmtLoans->fetchAll();
 
+        $stmtAbonos = Database::getConnection()->prepare("
+            SELECT ap.*, u.nombre_completo as registrado_por_nombre
+            FROM abonos_prestamos ap
+            LEFT JOIN usuarios u ON ap.registrado_por_usuario_id = u.id
+            WHERE ap.prestamo_id = :prestamo_id
+            ORDER BY ap.fecha_abono DESC
+        ");
+        foreach ($misPrestamos as &$mp) {
+            $stmtAbonos->execute([':prestamo_id' => $mp['id']]);
+            $mp['cuotas'] = $stmtAbonos->fetchAll();
+        }
+        unset($mp);
+
+        // Actividades comunitarias y deudas del socio
+        $stmtActividades = Database::getConnection()->prepare("
+            SELECT ap.*, a.nombre_actividad, a.descripcion, a.fecha_actividad
+            FROM actividad_participantes ap
+            JOIN actividades a ON ap.actividad_id = a.id
+            WHERE ap.socio_id = :id
+            ORDER BY a.fecha_actividad DESC
+        ");
+        $stmtActividades->execute([':id' => $user['id']]);
+        $misActividades = $stmtActividades->fetchAll();
+
+        $totalDeudaActividades = 0.0;
+        foreach ($misActividades as $act) {
+            $saldoAct = (float)$act['cuota_asignada'] - (float)$act['monto_pagado'];
+            if ($saldoAct > 0) {
+                $totalDeudaActividades += $saldoAct;
+            }
+        }
+
         $this->render('socio/dashboard', [
             'user' => $user,
             'resumen' => $resumen,
             'reuniones' => $reuniones,
             'historialCuotas' => $historialCuotas,
-            'misPrestamos' => $misPrestamos
+            'misPrestamos' => $misPrestamos,
+            'misActividades' => $misActividades,
+            'totalDeudaActividades' => $totalDeudaActividades
         ]);
     }
 
