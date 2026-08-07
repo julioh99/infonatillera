@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../core/Model.php';
 class FondoBeneficio extends Model {
 
     public function generarCronogramaCompleto(): void {
-        $stmtCheck = $this->db->query("SELECT COUNT(*) as cant FROM fondo_beneficios_cronograma");
+        $stmtCheck = $this->db->query("SELECT COUNT(*) as cant FROM natillera_fondo_beneficios_cronograma");
         $cant = (int)($stmtCheck->fetch()['cant'] ?? 0);
 
         if ($cant > 0) {
@@ -14,7 +14,7 @@ class FondoBeneficio extends Model {
             return;
         }
 
-        $stmtReuniones = $this->db->query("SELECT * FROM reuniones ORDER BY numero_quincena ASC");
+        $stmtReuniones = $this->db->query("SELECT * FROM natillera_reuniones ORDER BY numero_quincena ASC");
         $reuniones = $stmtReuniones->fetchAll();
 
         if (empty($reuniones)) {
@@ -24,7 +24,7 @@ class FondoBeneficio extends Model {
         $this->db->beginTransaction();
         try {
             $stmtInsert = $this->db->prepare("
-                INSERT INTO fondo_beneficios_cronograma 
+                INSERT INTO natillera_fondo_beneficios_cronograma 
                 (reunion_id, tipo_beneficio, aporte_por_socio, total_recaudado, monto_beneficio_unidad, saldo_restante_reunion, saldo_acumulado_fondo, personas_liberadas_planificadas)
                 VALUES (:reunion_id, :tipo, :aporte_socio, :total_recaudado, :unidad, :saldo_restante, :saldo_acumulado, :personas)
             ");
@@ -88,9 +88,9 @@ class FondoBeneficio extends Model {
 
         $sql = "
             SELECT fbc.*, r.numero_quincena, r.fecha_reunion, r.valor_cuota_base, r.estado as reunion_estado,
-                   (SELECT COUNT(*) FROM entregas_beneficios WHERE reunion_id = fbc.reunion_id AND tipo_beneficio = fbc.tipo_beneficio) as entregas_reales_count
-            FROM fondo_beneficios_cronograma fbc
-            JOIN reuniones r ON fbc.reunion_id = r.id
+                   (SELECT COUNT(*) FROM natillera_entregas_beneficios WHERE reunion_id = fbc.reunion_id AND tipo_beneficio = fbc.tipo_beneficio) as entregas_reales_count
+            FROM natillera_fondo_beneficios_cronograma fbc
+            JOIN natillera_reuniones r ON fbc.reunion_id = r.id
         ";
         if ($tipoFilter) {
             $sql .= " WHERE fbc.tipo_beneficio = :tipo ";
@@ -114,7 +114,7 @@ class FondoBeneficio extends Model {
         $stmtRonda = $this->db->query("
             SELECT IFNULL(SUM(total_recaudado), 0) as total_recaudado,
                    IFNULL(SUM(personas_liberadas_planificadas), 0) as total_liberados_planificados
-            FROM fondo_beneficios_cronograma WHERE tipo_beneficio = 'RONDA'
+            FROM natillera_fondo_beneficios_cronograma WHERE tipo_beneficio = 'RONDA'
         ");
         $rondaInfo = $stmtRonda->fetch();
 
@@ -122,26 +122,26 @@ class FondoBeneficio extends Model {
         $stmtRifa = $this->db->query("
             SELECT IFNULL(SUM(total_recaudado), 0) as total_recaudado,
                    IFNULL(SUM(personas_liberadas_planificadas), 0) as total_liberados_planificados
-            FROM fondo_beneficios_cronograma WHERE tipo_beneficio = 'RIFA'
+            FROM natillera_fondo_beneficios_cronograma WHERE tipo_beneficio = 'RIFA'
         ");
         $rifaInfo = $stmtRifa->fetch();
 
         // Entregas reales acumuladas
         $stmtEntregasRonda = $this->db->query("
             SELECT IFNULL(COUNT(*), 0) as ent_count, IFNULL(SUM(monto_entregado), 0) as ent_monto
-            FROM entregas_beneficios WHERE tipo_beneficio = 'RONDA'
+            FROM natillera_entregas_beneficios WHERE tipo_beneficio = 'RONDA'
         ");
         $entRonda = $stmtEntregasRonda->fetch();
 
         $stmtEntregasRifa = $this->db->query("
             SELECT IFNULL(COUNT(*), 0) as ent_count, IFNULL(SUM(monto_entregado), 0) as ent_monto
-            FROM entregas_beneficios WHERE tipo_beneficio = 'RIFA'
+            FROM natillera_entregas_beneficios WHERE tipo_beneficio = 'RIFA'
         ");
         $entRifa = $stmtEntregasRifa->fetch();
 
         $stmtEntregasPrestamo = $this->db->query("
             SELECT IFNULL(COUNT(*), 0) as ent_count, IFNULL(SUM(monto_entregado), 0) as ent_monto
-            FROM entregas_beneficios WHERE tipo_beneficio = 'PRESTAMO'
+            FROM natillera_entregas_beneficios WHERE tipo_beneficio = 'PRESTAMO'
         ");
         $entPrestamo = $stmtEntregasPrestamo->fetch();
 

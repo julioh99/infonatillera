@@ -7,8 +7,8 @@ class Usuario extends Model {
 
     public function login($cedula, $password) {
         $stmt = $this->db->prepare("SELECT u.*, r.nombre as rol_nombre 
-            FROM usuarios u 
-            JOIN roles r ON u.rol_id = r.id 
+            FROM natillera_usuarios u 
+            JOIN natillera_roles r ON u.rol_id = r.id 
             WHERE u.cedula = :cedula AND u.estado = 1
         ");
         $stmt->execute([':cedula' => $cedula]);
@@ -25,8 +25,8 @@ class Usuario extends Model {
     public function getAllSocios() {
         $stmt = $this->db->query("
             SELECT u.id, u.cedula, u.nombre_completo, u.telefono, u.fecha_nacimiento, u.rol_id, u.tope_prestamo_personalizado, u.interes_minimo_meta, u.estado, r.nombre as rol_nombre
-            FROM usuarios u
-            JOIN roles r ON u.rol_id = r.id
+            FROM natillera_usuarios u
+            JOIN natillera_roles r ON u.rol_id = r.id
             ORDER BY u.nombre_completo ASC
         ");
         return $stmt->fetchAll();
@@ -35,8 +35,8 @@ class Usuario extends Model {
     public function getSocioById($id) {
         $stmt = $this->db->prepare("
             SELECT u.id, u.cedula, u.nombre_completo, u.telefono, u.fecha_nacimiento, u.rol_id, u.tope_prestamo_personalizado, u.interes_minimo_meta, u.estado, r.nombre as rol_nombre
-            FROM usuarios u
-            JOIN roles r ON u.rol_id = r.id
+            FROM natillera_usuarios u
+            JOIN natillera_roles r ON u.rol_id = r.id
             WHERE u.id = :id
         ");
         $stmt->execute([':id' => $id]);
@@ -46,7 +46,7 @@ class Usuario extends Model {
 
     public function crearSocio(array $datos): bool {
         $stmt = $this->db->prepare("
-            INSERT INTO usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta, estado)
+            INSERT INTO natillera_usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta, estado)
             VALUES (:cedula, :nombre_completo, :telefono, :fecha_nacimiento, :password_hash, :rol_id, :tope, 400000.00, 1)
         ");
         return $stmt->execute([
@@ -82,7 +82,7 @@ class Usuario extends Model {
             $params[':password_hash'] = password_hash($datos['password'], PASSWORD_DEFAULT);
         }
 
-        $sql = "UPDATE usuarios SET " . implode(', ', $fields) . " WHERE id = :id";
+        $sql = "UPDATE natillera_usuarios SET " . implode(', ', $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
@@ -105,7 +105,7 @@ class Usuario extends Model {
             $params[':password_hash'] = password_hash($datos['password'], PASSWORD_DEFAULT);
         }
 
-        $sql = "UPDATE usuarios SET " . implode(', ', $fields) . " WHERE id = :id";
+        $sql = "UPDATE natillera_usuarios SET " . implode(', ', $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
@@ -114,10 +114,10 @@ class Usuario extends Model {
         // Retorna los socios agrupados por mes/día de nacimiento próximos en los siguientes 60 días
         $stmt = $this->db->query("
             SELECT id, nombre_completo, cedula, telefono, fecha_nacimiento,
-                   strftime('%m-%d', fecha_nacimiento) as dia_cumple
-            FROM usuarios
+                   DATE_FORMAT(fecha_nacimiento, '%m-%d') as dia_cumple
+            FROM natillera_usuarios
             WHERE fecha_nacimiento IS NOT NULL AND estado = 1
-            ORDER BY strftime('%m-%d', fecha_nacimiento) ASC
+            ORDER BY DATE_FORMAT(fecha_nacimiento, '%m-%d') ASC
         ");
         return $stmt->fetchAll();
     }
@@ -128,7 +128,7 @@ class Usuario extends Model {
             SELECT 
                 SUM(CASE WHEN cuota_pagada = 1 THEN monto_cuota ELSE 0 END) as total_cuotas,
                 SUM(monto_ahorro_extra) as total_ahorro_extra
-            FROM ahorros_cuotas
+            FROM natillera_ahorros_cuotas
             WHERE socio_id = :id
         ");
         $stmtAhorro->execute([':id' => $socioId]);
@@ -141,8 +141,8 @@ class Usuario extends Model {
         // Total intereses pagados por el socio en préstamos (para la meta de $400.000)
         $stmtInteres = $this->db->prepare("
             SELECT SUM(ap.monto_interes_pagado) as total_interes
-            FROM abonos_prestamos ap
-            JOIN prestamos p ON ap.prestamo_id = p.id
+            FROM natillera_abonos_prestamos ap
+            JOIN natillera_prestamos p ON ap.prestamo_id = p.id
             WHERE p.socio_deudor_id = :id AND p.anulado_sin_interes = 0
         ");
         $stmtInteres->execute([':id' => $socioId]);
@@ -152,10 +152,10 @@ class Usuario extends Model {
         // Deuda activa en préstamos
         $stmtDeuda = $this->db->prepare("
             SELECT 
-                p.id, p.monto_prestado, p.tasa_interes_mensual, p.es_autoprestamo, p.tercero_nombre,
+                p.id, p.monto_prestado, p.tasa_interes_mensual, p.es_autoprestamo, p.nombre_referencia,
                 IFNULL(SUM(ap.monto_capital_pagado), 0) as capital_pagado
-            FROM prestamos p
-            LEFT JOIN abonos_prestamos ap ON p.id = ap.prestamo_id
+            FROM natillera_prestamos p
+            LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id
             WHERE p.socio_deudor_id = :id AND p.estado = 'ACTIVO'
             GROUP BY p.id
         ");
@@ -170,7 +170,7 @@ class Usuario extends Model {
         // Deudas en actividades
         $stmtAct = $this->db->prepare("
             SELECT IFNULL(SUM(cuota_asignada - monto_pagado), 0) as deuda_actividades
-            FROM actividad_participantes
+            FROM natillera_actividad_participantes
             WHERE socio_id = :id AND estado_pago = 'PENDIENTE'
         ");
         $stmtAct->execute([':id' => $socioId]);
@@ -189,7 +189,7 @@ class Usuario extends Model {
     }
 
     public function updateTopePrestamo(int $socioId, float $nuevoTope): bool {
-        $stmt = $this->db->prepare("UPDATE usuarios SET tope_prestamo_personalizado = :tope WHERE id = :id");
+        $stmt = $this->db->prepare("UPDATE natillera_usuarios SET tope_prestamo_personalizado = :tope WHERE id = :id");
         return $stmt->execute([':tope' => $nuevoTope, ':id' => $socioId]);
     }
 }

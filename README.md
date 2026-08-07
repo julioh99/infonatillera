@@ -21,7 +21,8 @@
 ## 🛠️ Tecnologías Utilizadas
 
 - **Lenguaje Principal:** PHP 7.2.34 / PHP 8.x (Arquitectura MVC sin dependencias externas pesadas).
-- **Base de Datos:** SQLite 3 (`natillera.sqlite`) con auto-creación de tablas, roles y datos de inicio en código.
+- **Base de Datos:** MySQL / MariaDB (Driver PDO `mysql`) con prefijo obligatorio `natillera_` en todas las tablas.
+- **Configuración:** Carga de variables de entorno mediante archivo `.env`.
 - **Estilos:** HTML5, CSS3, Bootstrap 5.3, FontAwesome 6, Google Fonts (*Outfit* & *Inter*).
 - **Notificaciones:** Web Push API con Service Worker JavaScript.
 - **Servidor Web Compatibilidad:** Apache / Laragon (VirtualHost `http://infonatillera.test/`) y servidor incorporado de PHP (`php -S localhost:8001`).
@@ -32,24 +33,27 @@
 
 ```text
 infonatillera/
+├── .env                 # Credenciales de base de datos MySQL (DB_HOST, DB_DATABASE, etc.)
+├── .env.example         # Plantilla de variables de entorno
 ├── app/
 │   ├── Controllers/     # Controladores (AuthController, LlamadoLista, Prestamo, etc.)
 │   ├── Models/          # Modelos de BD (Usuario, Reunion, Prestamo, Actividad, etc.)
 │   └── Views/           # Vistas PHP / HTML (Admin, Socio, Layouts)
 ├── config/
-│   └── database.php     # Conexión PDO SQLite y Auto-Inicialización / Migraciones
+│   └── database.php     # Conexión PDO MySQL y lectura de variables .env
 ├── core/
 │   ├── Controller.php   # Clase Base de Controladores
 │   ├── Model.php        # Clase Base de Modelos
 │   └── Router.php       # Enrutador Front Controller (Normalización Laragon)
 ├── docs/                # Documentación detallada por cada módulo
+├── scripts/
+│   └── migrate_sqlite_to_mysql.php # Script de migración desde SQLite hacia MySQL
 ├── public/
 │   ├── css/             # Hojas de estilo personalizadas (app.css / Sidebar)
 │   ├── js/              # Cliente de Notificaciones Push
 │   ├── index.php        # Punto de entrada de la aplicación
 │   └── sw.js            # Service Worker para Push Notifications
-├── db.sql               # Esquema DDL SQL base
-└── natillera.sqlite     # Archivo de base de datos SQLite
+└── db.sql               # Esquema DDL SQL base con prefijos natillera_*
 ```
 
 ---
@@ -57,7 +61,8 @@ infonatillera/
 ## ⚙️ Instalación y Configuración
 
 ### 1. Requisitos Previos
-- PHP 7.2 o superior con extensión `pdo_sqlite` habilitada.
+- PHP 7.2 o superior con extensión `pdo_mysql` habilitada.
+- Servidor de Base de Datos MySQL 5.7+ o MariaDB.
 - Servidor local como **Laragon**, **XAMPP** o CLI de PHP.
 
 ### 2. Puesta en Marcha con Laragon

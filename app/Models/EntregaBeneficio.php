@@ -9,7 +9,7 @@ class EntregaBeneficio extends Model {
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO entregas_beneficios 
+                INSERT INTO natillera_entregas_beneficios 
                 (reunion_id, socio_id, tipo_beneficio, monto_entregado, firma_digital_path, foto_evidencia_path, entregado_por_usuario_id)
                 VALUES (:reunion_id, :socio_id, :tipo_beneficio, :monto, :firma, :foto, :entregado_por)
             ");
@@ -26,7 +26,7 @@ class EntregaBeneficio extends Model {
             // Actualizar socio ganador en la reunión si aplica (únicamente para premios de Ronda o Rifa)
             if (in_array($datos['tipo_beneficio'], ['RONDA', 'RIFA'])) {
                 $stmtUpd = $this->db->prepare("
-                    UPDATE reuniones 
+                    UPDATE natillera_reuniones 
                     SET ganador_socio_id = :socio_id 
                     WHERE id = :reunion_id AND (ganador_socio_id IS NULL OR ganador_socio_id = 0)
                 ");
@@ -49,10 +49,10 @@ class EntregaBeneficio extends Model {
             SELECT eb.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula,
                    r.numero_quincena, r.fecha_reunion,
                    u2.nombre_completo as entregado_por_nombre
-            FROM entregas_beneficios eb
-            JOIN usuarios u ON eb.socio_id = u.id
-            JOIN reuniones r ON eb.reunion_id = r.id
-            JOIN usuarios u2 ON eb.entregado_por_usuario_id = u2.id
+            FROM natillera_entregas_beneficios eb
+            JOIN natillera_usuarios u ON eb.socio_id = u.id
+            JOIN natillera_reuniones r ON eb.reunion_id = r.id
+            JOIN natillera_usuarios u2 ON eb.entregado_por_usuario_id = u2.id
             ORDER BY eb.fecha_entrega DESC
         ");
         return $stmt->fetchAll();
@@ -62,7 +62,7 @@ class EntregaBeneficio extends Model {
         if ($tipoBeneficio === 'PRESTAMO') {
             $stmt = $this->db->query("
                 SELECT u.id, u.nombre_completo, u.cedula
-                FROM usuarios u
+                FROM natillera_usuarios u
                 WHERE u.estado = 1
                 ORDER BY u.nombre_completo ASC
             ");
@@ -71,9 +71,9 @@ class EntregaBeneficio extends Model {
 
         $stmt = $this->db->prepare("
             SELECT u.id, u.nombre_completo, u.cedula
-            FROM usuarios u
+            FROM natillera_usuarios u
             WHERE u.estado = 1 AND u.id NOT IN (
-                SELECT socio_id FROM entregas_beneficios WHERE tipo_beneficio = :tipo
+                SELECT socio_id FROM natillera_entregas_beneficios WHERE tipo_beneficio = :tipo
             )
             ORDER BY u.nombre_completo ASC
         ");

@@ -21,8 +21,8 @@ class SocioController extends Controller {
         // Obtener historial de cuotas pagadas por el socio
         $stmtHistory = Database::getConnection()->prepare("
             SELECT ac.*, r.numero_quincena, r.fecha_reunion, r.valor_cuota_base, r.tipo_evento_extra
-            FROM ahorros_cuotas ac
-            JOIN reuniones r ON ac.reunion_id = r.id
+            FROM natillera_ahorros_cuotas ac
+            JOIN natillera_reuniones r ON ac.reunion_id = r.id
             WHERE ac.socio_id = :id
             ORDER BY r.numero_quincena ASC
         ");
@@ -32,8 +32,8 @@ class SocioController extends Controller {
         // Préstamos del socio con sus cuotas/abonos e información de quién registró
         $stmtLoans = Database::getConnection()->prepare("
             SELECT p.*, IFNULL(SUM(ap.monto_capital_pagado), 0) as capital_pagado, IFNULL(SUM(ap.monto_interes_pagado), 0) as interes_pagado
-            FROM prestamos p
-            LEFT JOIN abonos_prestamos ap ON p.id = ap.prestamo_id
+            FROM natillera_prestamos p
+            LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id
             WHERE p.socio_deudor_id = :id
             GROUP BY p.id
             ORDER BY p.fecha_inicio DESC
@@ -43,8 +43,8 @@ class SocioController extends Controller {
 
         $stmtAbonos = Database::getConnection()->prepare("
             SELECT ap.*, u.nombre_completo as registrado_por_nombre
-            FROM abonos_prestamos ap
-            LEFT JOIN usuarios u ON ap.registrado_por_usuario_id = u.id
+            FROM natillera_abonos_prestamos ap
+            LEFT JOIN natillera_usuarios u ON ap.registrado_por_usuario_id = u.id
             WHERE ap.prestamo_id = :prestamo_id
             ORDER BY ap.fecha_abono DESC
         ");
@@ -57,8 +57,8 @@ class SocioController extends Controller {
         // Actividades comunitarias y deudas del socio
         $stmtActividades = Database::getConnection()->prepare("
             SELECT ap.*, a.nombre_actividad, a.descripcion, a.fecha_actividad
-            FROM actividad_participantes ap
-            JOIN actividades a ON ap.actividad_id = a.id
+            FROM natillera_actividad_participantes ap
+            JOIN natillera_actividades a ON ap.actividad_id = a.id
             WHERE ap.socio_id = :id
             ORDER BY a.fecha_actividad DESC
         ");
@@ -94,8 +94,8 @@ class SocioController extends Controller {
         // Total intereses generados en todo el sistema por préstamos
         $stmtTotalIntereses = $db->query("
             SELECT IFNULL(SUM(monto_interes_pagado), 0) as total_utilidades
-            FROM abonos_prestamos ap
-            JOIN prestamos p ON ap.prestamo_id = p.id
+            FROM natillera_abonos_prestamos ap
+            JOIN natillera_prestamos p ON ap.prestamo_id = p.id
             WHERE p.anulado_sin_interes = 0
         ");
         $totalUtilidades = (float)($stmtTotalIntereses->fetch()['total_utilidades'] ?? 0);
@@ -103,7 +103,7 @@ class SocioController extends Controller {
         // Suma total ahorrada por TODOS los socios (cuotas + ahorros extras)
         $stmtTotalAhorroGeneral = $db->query("
             SELECT IFNULL(SUM(CASE WHEN cuota_pagada = 1 THEN monto_cuota ELSE 0 END + monto_ahorro_extra), 0) as gran_total_ahorro
-            FROM ahorros_cuotas
+            FROM natillera_ahorros_cuotas
         ");
         $granTotalAhorro = (float)($stmtTotalAhorroGeneral->fetch()['gran_total_ahorro'] ?? 0);
 
@@ -111,8 +111,8 @@ class SocioController extends Controller {
         $stmtSociosAhorro = $db->query("
             SELECT u.id, u.nombre_completo, u.cedula,
                    IFNULL(SUM(CASE WHEN ac.cuota_pagada = 1 THEN ac.monto_cuota ELSE 0 END + ac.monto_ahorro_extra), 0) as ahorro_socio
-            FROM usuarios u
-            LEFT JOIN ahorros_cuotas ac ON u.id = ac.socio_id
+            FROM natillera_usuarios u
+            LEFT JOIN natillera_ahorros_cuotas ac ON u.id = ac.socio_id
             GROUP BY u.id
             ORDER BY u.nombre_completo ASC
         ");

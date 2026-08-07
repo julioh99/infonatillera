@@ -13,9 +13,9 @@ class Prestamo extends Model {
                 u_deudor.cedula as deudor_cedula,
                 IFNULL(SUM(ap.monto_capital_pagado), 0) as total_capital_pagado,
                 IFNULL(SUM(ap.monto_interes_pagado), 0) as total_interes_pagado
-            FROM prestamos p
-            JOIN usuarios u_deudor ON p.socio_deudor_id = u_deudor.id
-            LEFT JOIN abonos_prestamos ap ON p.id = ap.prestamo_id
+            FROM natillera_prestamos p
+            JOIN natillera_usuarios u_deudor ON p.socio_deudor_id = u_deudor.id
+            LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id
             GROUP BY p.id
             ORDER BY p.fecha_inicio DESC
         ");
@@ -25,8 +25,8 @@ class Prestamo extends Model {
     public function getPrestamoById(int $id) {
         $stmt = $this->db->prepare("
             SELECT p.*, u.nombre_completo as deudor_nombre, u.cedula as deudor_cedula
-            FROM prestamos p
-            JOIN usuarios u ON p.socio_deudor_id = u.id
+            FROM natillera_prestamos p
+            JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
             WHERE p.id = :id
         ");
         $stmt->execute([':id' => $id]);
@@ -35,7 +35,7 @@ class Prestamo extends Model {
 
     public function crearPrestamo(array $datos): bool {
         $stmt = $this->db->prepare("
-            INSERT INTO prestamos (
+            INSERT INTO natillera_prestamos (
                 socio_deudor_id, nombre_referencia, monto_prestado, 
                 tasa_interes_mensual, tipo_prestamo, es_autoprestamo, estado
             ) VALUES (
@@ -56,7 +56,7 @@ class Prestamo extends Model {
 
     public function actualizarPrestamo(int $id, array $datos): bool {
         $stmt = $this->db->prepare("
-            UPDATE prestamos SET
+            UPDATE natillera_prestamos SET
                 socio_deudor_id = :socio_deudor_id,
                 monto_prestado = :monto_prestado,
                 tasa_interes_mensual = :tasa_interes_mensual,
@@ -84,8 +84,8 @@ class Prestamo extends Model {
     public function getAbonosPorPrestamo(int $prestamoId): array {
         $stmt = $this->db->prepare("
             SELECT ap.*, u.nombre_completo as registrado_por_nombre
-            FROM abonos_prestamos ap
-            LEFT JOIN usuarios u ON ap.registrado_por_usuario_id = u.id
+            FROM natillera_abonos_prestamos ap
+            LEFT JOIN natillera_usuarios u ON ap.registrado_por_usuario_id = u.id
             WHERE ap.prestamo_id = :prestamo_id
             ORDER BY ap.fecha_abono DESC
         ");
@@ -97,7 +97,7 @@ class Prestamo extends Model {
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO abonos_prestamos (prestamo_id, monto_capital_pagado, monto_interes_pagado, registrado_por_usuario_id)
+                INSERT INTO natillera_abonos_prestamos (prestamo_id, monto_capital_pagado, monto_interes_pagado, registrado_por_usuario_id)
                 VALUES (:prestamo_id, :monto_capital, :monto_interes, :registrado_por)
             ");
             $stmt->execute([
@@ -117,7 +117,7 @@ class Prestamo extends Model {
     }
 
     public function actualizarAbono(int $abonoId, float $montoCapital, float $montoInteres, ?string $fechaAbono = null): bool {
-        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM abonos_prestamos WHERE id = :id");
+        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM natillera_abonos_prestamos WHERE id = :id");
         $stmtAbono->execute([':id' => $abonoId]);
         $abono = $stmtAbono->fetch();
         if (!$abono) return false;
@@ -136,7 +136,7 @@ class Prestamo extends Model {
             $params[':fecha'] = $fechaAbono;
         }
 
-        $sql = "UPDATE abonos_prestamos SET " . implode(', ', $fields) . " WHERE id = :id";
+        $sql = "UPDATE natillera_abonos_prestamos SET " . implode(', ', $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $ok = $stmt->execute($params);
 
@@ -148,14 +148,14 @@ class Prestamo extends Model {
     }
 
     public function eliminarAbono(int $abonoId): bool {
-        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM abonos_prestamos WHERE id = :id");
+        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM natillera_abonos_prestamos WHERE id = :id");
         $stmtAbono->execute([':id' => $abonoId]);
         $abono = $stmtAbono->fetch();
         if (!$abono) return false;
 
         $prestamoId = (int)$abono['prestamo_id'];
 
-        $stmtDel = $this->db->prepare("DELETE FROM abonos_prestamos WHERE id = :id");
+        $stmtDel = $this->db->prepare("DELETE FROM natillera_abonos_prestamos WHERE id = :id");
         $ok = $stmtDel->execute([':id' => $abonoId]);
 
         if ($ok) {
@@ -168,8 +168,8 @@ class Prestamo extends Model {
     public function recalcularEstadoPrestamo(int $prestamoId): void {
         $stmtCheck = $this->db->prepare("
             SELECT p.monto_prestado, p.anulado_sin_interes, IFNULL(SUM(ap.monto_capital_pagado), 0) as total_capital
-            FROM prestamos p
-            LEFT JOIN abonos_prestamos ap ON p.id = ap.prestamo_id
+            FROM natillera_prestamos p
+            LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id
             WHERE p.id = :id
             GROUP BY p.id
         ");
@@ -181,7 +181,7 @@ class Prestamo extends Model {
             $totalCapital = (float)$row['total_capital'];
             $nuevoEstado = ($totalCapital >= $montoPrestado) ? 'PAGADO' : 'ACTIVO';
 
-            $stmtUpdate = $this->db->prepare("UPDATE prestamos SET estado = :estado WHERE id = :id");
+            $stmtUpdate = $this->db->prepare("UPDATE natillera_prestamos SET estado = :estado WHERE id = :id");
             $stmtUpdate->execute([':estado' => $nuevoEstado, ':id' => $prestamoId]);
         }
     }

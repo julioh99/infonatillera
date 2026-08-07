@@ -8,16 +8,16 @@ class Actividad extends Model {
     public function getTodasActividades(): array {
         $stmt = $this->db->query("
             SELECT a.*, u.nombre_completo as creador_nombre,
-                   (SELECT COUNT(*) FROM actividad_participantes WHERE actividad_id = a.id) as total_participantes
-            FROM actividades a
-            JOIN usuarios u ON a.creado_por_usuario_id = u.id
+                   (SELECT COUNT(*) FROM natillera_actividad_participantes WHERE actividad_id = a.id) as total_participantes
+            FROM natillera_actividades a
+            JOIN natillera_usuarios u ON a.creado_por_usuario_id = u.id
             ORDER BY a.fecha_actividad DESC
         ");
         return $stmt->fetchAll();
     }
 
     public function getActividadById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM actividades WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT * FROM natillera_actividades WHERE id = :id");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch() ?: null;
     }
@@ -25,8 +25,8 @@ class Actividad extends Model {
     public function getParticipantes(int $actividadId): array {
         $stmt = $this->db->prepare("
             SELECT ap.*, u.nombre_completo, u.cedula
-            FROM actividad_participantes ap
-            JOIN usuarios u ON ap.socio_id = u.id
+            FROM natillera_actividad_participantes ap
+            JOIN natillera_usuarios u ON ap.socio_id = u.id
             WHERE ap.actividad_id = :actividad_id
             ORDER BY u.nombre_completo ASC
         ");
@@ -44,8 +44,8 @@ class Actividad extends Model {
     public function getAbonosPorParticipante(int $participanteId): array {
         $stmt = $this->db->prepare("
             SELECT aa.*, u.nombre_completo as registrado_por_nombre
-            FROM abonos_actividades aa
-            JOIN usuarios u ON aa.registrado_por_usuario_id = u.id
+            FROM natillera_abonos_actividades aa
+            JOIN natillera_usuarios u ON aa.registrado_por_usuario_id = u.id
             WHERE aa.actividad_participante_id = :id
             ORDER BY aa.fecha_abono ASC, aa.id ASC
         ");
@@ -54,11 +54,11 @@ class Actividad extends Model {
     }
 
     public function recalcularMontoPagado(int $participanteId): bool {
-        $stmtSum = $this->db->prepare("SELECT IFNULL(SUM(monto_abono), 0) as total FROM abonos_actividades WHERE actividad_participante_id = :id");
+        $stmtSum = $this->db->prepare("SELECT IFNULL(SUM(monto_abono), 0) as total FROM natillera_abonos_actividades WHERE actividad_participante_id = :id");
         $stmtSum->execute([':id' => $participanteId]);
         $totalPagado = (float)$stmtSum->fetch()['total'];
 
-        $stmtCheck = $this->db->prepare("SELECT cuota_asignada FROM actividad_participantes WHERE id = :id");
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada FROM natillera_actividad_participantes WHERE id = :id");
         $stmtCheck->execute([':id' => $participanteId]);
         $row = $stmtCheck->fetch();
         if (!$row) return false;
@@ -67,7 +67,7 @@ class Actividad extends Model {
         $estado = ($totalPagado >= $cuotaAsignada && $cuotaAsignada > 0) ? 'PAGADO' : (($cuotaAsignada <= 0 && $totalPagado >= 0) ? 'PAGADO' : 'PENDIENTE');
 
         $stmtUpd = $this->db->prepare("
-            UPDATE actividad_participantes 
+            UPDATE natillera_actividad_participantes 
             SET monto_pagado = :monto_pagado, estado_pago = :estado
             WHERE id = :id
         ");
@@ -84,7 +84,7 @@ class Actividad extends Model {
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO abonos_actividades (actividad_participante_id, monto_abono, observacion, registrado_por_usuario_id)
+                INSERT INTO natillera_abonos_actividades (actividad_participante_id, monto_abono, observacion, registrado_por_usuario_id)
                 VALUES (:participante_id, :monto, :obs, :registrado_por)
             ");
             $stmt->execute([
@@ -105,7 +105,7 @@ class Actividad extends Model {
     }
 
     public function eliminarAbono(int $abonoId): bool {
-        $stmt = $this->db->prepare("SELECT actividad_participante_id FROM abonos_actividades WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT actividad_participante_id FROM natillera_abonos_actividades WHERE id = :id");
         $stmt->execute([':id' => $abonoId]);
         $row = $stmt->fetch();
         if (!$row) return false;
@@ -114,7 +114,7 @@ class Actividad extends Model {
 
         $this->db->beginTransaction();
         try {
-            $stmtDel = $this->db->prepare("DELETE FROM abonos_actividades WHERE id = :id");
+            $stmtDel = $this->db->prepare("DELETE FROM natillera_abonos_actividades WHERE id = :id");
             $stmtDel->execute([':id' => $abonoId]);
 
             $this->recalcularMontoPagado($participanteId);
@@ -136,7 +136,7 @@ class Actividad extends Model {
             $gananciaNeta = $ingresos - $gastos;
 
             $stmt = $this->db->prepare("
-                INSERT INTO actividades (nombre_actividad, descripcion, fecha_actividad, ingresos_totales, gastos_totales, ganancia_neta, cuota_por_socio, creado_por_usuario_id)
+                INSERT INTO natillera_actividades (nombre_actividad, descripcion, fecha_actividad, ingresos_totales, gastos_totales, ganancia_neta, cuota_por_socio, creado_por_usuario_id)
                 VALUES (:nombre, :descripcion, :fecha, :ingresos, :gastos, :ganancia, :cuota_socio, :creado_por)
             ");
             $stmt->execute([
@@ -157,7 +157,7 @@ class Actividad extends Model {
                 $gananciaPorSocio = $gananciaNeta > 0 ? round($gananciaNeta / $numParticipantes, 2) : 0.00;
 
                 $stmtPart = $this->db->prepare("
-                    INSERT INTO actividad_participantes (actividad_id, socio_id, cuota_asignada, monto_pagado, ganancia_asignada, estado_pago)
+                    INSERT INTO natillera_actividad_participantes (actividad_id, socio_id, cuota_asignada, monto_pagado, ganancia_asignada, estado_pago)
                     VALUES (:actividad_id, :socio_id, :cuota_asignada, 0.00, :ganancia, :estado_pago)
                 ");
                 foreach ($participantesCuotas as $sId => $cuotaIndiv) {
@@ -183,7 +183,7 @@ class Actividad extends Model {
     }
 
     public function actualizarPagoParticipante(int $participanteId, float $montoPagado, int $registradoPorId = 1, string $observacion = 'Abono directo'): bool {
-        $stmtCheck = $this->db->prepare("SELECT cuota_asignada, monto_pagado FROM actividad_participantes WHERE id = :id");
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada, monto_pagado FROM natillera_actividad_participantes WHERE id = :id");
         $stmtCheck->execute([':id' => $participanteId]);
         $row = $stmtCheck->fetch();
         if (!$row) return false;
@@ -200,7 +200,7 @@ class Actividad extends Model {
         $estado = ($montoPagado >= $cuotaAsignada && $cuotaAsignada > 0) ? 'PAGADO' : 'PENDIENTE';
 
         $stmt = $this->db->prepare("
-            UPDATE actividad_participantes 
+            UPDATE natillera_actividad_participantes 
             SET monto_pagado = :monto_pagado, estado_pago = :estado
             WHERE id = :id
         ");

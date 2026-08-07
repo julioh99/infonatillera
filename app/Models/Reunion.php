@@ -8,8 +8,8 @@ class Reunion extends Model {
     public function getReuniones(): array {
         $stmt = $this->db->query("
             SELECT r.*, u.nombre_completo as ganador_nombre
-            FROM reuniones r
-            LEFT JOIN usuarios u ON r.ganador_socio_id = u.id
+            FROM natillera_reuniones r
+            LEFT JOIN natillera_usuarios u ON r.ganador_socio_id = u.id
             ORDER BY r.numero_quincena ASC
         ");
         return $stmt->fetchAll();
@@ -19,10 +19,10 @@ class Reunion extends Model {
         // Buscar la primera quincena sin llamado a lista registrado y que no esté cerrada
         $stmt = $this->db->query("
             SELECT r.* 
-            FROM reuniones r
+            FROM natillera_reuniones r
             WHERE r.estado != 'CERRADA'
               AND r.id NOT IN (
-                  SELECT DISTINCT reunion_id FROM ahorros_cuotas
+                  SELECT DISTINCT reunion_id FROM natillera_ahorros_cuotas
               )
             ORDER BY r.numero_quincena ASC 
             LIMIT 1
@@ -31,7 +31,7 @@ class Reunion extends Model {
 
         if (!$reunion) {
             $stmtPending = $this->db->query("
-                SELECT r.* FROM reuniones r
+                SELECT r.* FROM natillera_reuniones r
                 WHERE r.estado IN ('PROGRAMADA', 'EN_PROCESO')
                 ORDER BY r.numero_quincena ASC LIMIT 1
             ");
@@ -39,7 +39,7 @@ class Reunion extends Model {
         }
 
         if (!$reunion) {
-            $stmtLast = $this->db->query("SELECT * FROM reuniones ORDER BY numero_quincena DESC LIMIT 1");
+            $stmtLast = $this->db->query("SELECT * FROM natillera_reuniones ORDER BY numero_quincena DESC LIMIT 1");
             $reunion = $stmtLast->fetch();
         }
 
@@ -47,18 +47,18 @@ class Reunion extends Model {
     }
 
     public function getReunionById($id) {
-        $stmt = $this->db->prepare("SELECT * FROM reuniones WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT * FROM natillera_reuniones WHERE id = :id");
         $stmt->execute([':id' => $id]);
         return $stmt->fetch() ?: null;
     }
 
     public function crearReunion(array $datos): bool {
         // Calcular número de quincena automáticamente
-        $stmtMax = $this->db->query("SELECT IFNULL(MAX(numero_quincena), 0) + 1 as siguiente FROM reuniones");
+        $stmtMax = $this->db->query("SELECT IFNULL(MAX(numero_quincena), 0) + 1 as siguiente FROM natillera_reuniones");
         $siguienteNum = (int)$stmtMax->fetch()['siguiente'];
 
         $stmt = $this->db->prepare("
-            INSERT INTO reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
+            INSERT INTO natillera_reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
             VALUES (:num, :fecha, :hora, :cuota, :evento, :premio, 'PROGRAMADA')
         ");
         return $stmt->execute([
@@ -73,7 +73,7 @@ class Reunion extends Model {
 
     public function actualizarReunion(int $id, array $datos): bool {
         $stmt = $this->db->prepare("
-            UPDATE reuniones SET 
+            UPDATE natillera_reuniones SET 
                 fecha_reunion = :fecha,
                 hora_reunion = :hora,
                 valor_cuota_base = :cuota,
@@ -98,9 +98,9 @@ class Reunion extends Model {
     public function getAhorrosPorReunion(int $reunionId): array {
         $stmt = $this->db->prepare("
             SELECT ac.*, u.nombre_completo, u.cedula, p.anulado_sin_interes
-            FROM ahorros_cuotas ac
-            JOIN usuarios u ON ac.socio_id = u.id
-            LEFT JOIN prestamos p ON ac.prestamo_id_asociado = p.id
+            FROM natillera_ahorros_cuotas ac
+            JOIN natillera_usuarios u ON ac.socio_id = u.id
+            LEFT JOIN natillera_prestamos p ON ac.prestamo_id_asociado = p.id
             WHERE ac.reunion_id = :reunion_id
             ORDER BY u.nombre_completo ASC
         ");
@@ -112,7 +112,7 @@ class Reunion extends Model {
         $this->db->beginTransaction();
 
         try {
-            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM reuniones WHERE id = :id");
+            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM natillera_reuniones WHERE id = :id");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
             $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
@@ -130,16 +130,16 @@ class Reunion extends Model {
             $ahorroNetoConstante = 40000.00; // Ahorro neto acreditado al socio es SIEMPRE $40.000 COP
 
             // Eliminar registros anteriores de esta reunión si se está re-procesando
-            $stmtDelAhorros = $this->db->prepare("DELETE FROM ahorros_cuotas WHERE reunion_id = :reunion_id");
+            $stmtDelAhorros = $this->db->prepare("DELETE FROM natillera_ahorros_cuotas WHERE reunion_id = :reunion_id");
             $stmtDelAhorros->execute([':reunion_id' => $reunionId]);
 
             $stmtInsertAhorro = $this->db->prepare("
-                INSERT INTO ahorros_cuotas (reunion_id, socio_id, cuota_pagada, monto_cuota, monto_aporte_ronda, monto_aporte_rifa, monto_ahorro_extra, autoprestamo_generado, prestamo_id_asociado)
+                INSERT INTO natillera_ahorros_cuotas (reunion_id, socio_id, cuota_pagada, monto_cuota, monto_aporte_ronda, monto_aporte_rifa, monto_ahorro_extra, autoprestamo_generado, prestamo_id_asociado)
                 VALUES (:reunion_id, :socio_id, :cuota_pagada, :monto_cuota, :monto_aporte_ronda, :monto_aporte_rifa, :monto_ahorro_extra, :autoprestamo_generado, :prestamo_id_asociado)
             ");
 
             $stmtInsertPrestamo = $this->db->prepare("
-                INSERT INTO prestamos (socio_deudor_id, monto_prestado, tasa_interes_mensual, tipo_prestamo, es_autoprestamo)
+                INSERT INTO natillera_prestamos (socio_deudor_id, monto_prestado, tasa_interes_mensual, tipo_prestamo, es_autoprestamo)
                 VALUES (:socio_deudor_id, :monto_prestado, 10.00, 'AUTOPRESTAMO', 1)
             ");
 
@@ -173,7 +173,7 @@ class Reunion extends Model {
             }
 
             // Marcar reunión como CERRADA al guardar el llamado a lista
-            $stmtState = $this->db->prepare("UPDATE reuniones SET estado = 'CERRADA' WHERE id = :id");
+            $stmtState = $this->db->prepare("UPDATE natillera_reuniones SET estado = 'CERRADA' WHERE id = :id");
             $stmtState->execute([':id' => $reunionId]);
 
             $this->db->commit();
@@ -187,7 +187,7 @@ class Reunion extends Model {
     public function anularAutoprestamo24Horas(int $ahorroId): bool {
         $this->db->beginTransaction();
         try {
-            $stmtAhorro = $this->db->prepare("SELECT * FROM ahorros_cuotas WHERE id = :id");
+            $stmtAhorro = $this->db->prepare("SELECT * FROM natillera_ahorros_cuotas WHERE id = :id");
             $stmtAhorro->execute([':id' => $ahorroId]);
             $ahorro = $stmtAhorro->fetch();
 
@@ -195,7 +195,7 @@ class Reunion extends Model {
                 $prestamoId = (int)$ahorro['prestamo_id_asociado'];
 
                 // Consultar cuota base de la reunión para calcular desgloses
-                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM reuniones WHERE id = :id");
+                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM natillera_reuniones WHERE id = :id");
                 $stmtReunion->execute([':id' => $ahorro['reunion_id']]);
                 $rInfo = $stmtReunion->fetch();
                 $vBase = (float)($rInfo['valor_cuota_base'] ?? 55000);
@@ -213,7 +213,7 @@ class Reunion extends Model {
 
                 // Marcar préstamo como anulado sin interés y pagado
                 $stmtP = $this->db->prepare("
-                    UPDATE prestamos 
+                    UPDATE natillera_prestamos 
                     SET anulado_sin_interes = 1, estado = 'PAGADO' 
                     WHERE id = :p_id
                 ");
@@ -221,7 +221,7 @@ class Reunion extends Model {
 
                 // Actualizar ahorro a cuota pagada ($40.000 COP netos)
                 $stmtA = $this->db->prepare("
-                    UPDATE ahorros_cuotas 
+                    UPDATE natillera_ahorros_cuotas 
                     SET cuota_pagada = 1, 
                         monto_cuota = 40000.00,
                         monto_aporte_ronda = :ap_ronda,
