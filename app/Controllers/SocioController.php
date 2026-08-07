@@ -152,7 +152,7 @@ class SocioController extends Controller {
 
         // Obtener lista de roles para el select de edición
         $db = Database::getConnection();
-        $roles = $db->query("SELECT * FROM roles ORDER BY id ASC")->fetchAll();
+        $roles = $db->query("SELECT * FROM natillera_roles ORDER BY id ASC")->fetchAll();
 
         $this->render('admin/socios', [
             'socios' => $socios,
