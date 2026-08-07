@@ -81,8 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const val = e.target.value;
             if (val === 'RONDA') {
                 inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('300000') : '300.000';
-            } else {
+            } else if (val === 'RIFA') {
                 inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('150000') : '150.000';
+            } else if (val === 'PRESTAMO') {
+                inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('500000') : '500.000';
             }
             cargarSociosPendientes(val);
         });
@@ -90,18 +92,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function cargarSociosPendientes(tipo) {
         if (!selectSocio) return;
-        selectSocio.innerHTML = '<option value="">Cargando socios pendientes...</option>';
+        selectSocio.innerHTML = '<option value="">Cargando socios...</option>';
 
         fetch(`/admin/entregas/socios-pendientes-json?tipo=${tipo}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.socios) {
                     if (data.socios.length === 0) {
-                        selectSocio.innerHTML = `<option value="">-- Todos los socios han recibido su ${tipo} --</option>`;
+                        selectSocio.innerHTML = `<option value="">-- No hay socios disponibles --</option>`;
                         return;
                     }
 
-                    let opts = `<option value="">-- Seleccionar Socio Beneficiario (${data.socios.length} pendientes) --</option>`;
+                    const labelHeader = (tipo === 'PRESTAMO') ? 'Socio Deudor' : `Socio Beneficiario (${data.socios.length} pendientes)`;
+                    let opts = `<option value="">-- Seleccionar ${labelHeader} --</option>`;
                     data.socios.forEach(s => {
                         opts += `<option value="${s.id}">${s.nombre_completo} (C.C. ${s.cedula})</option>`;
                     });

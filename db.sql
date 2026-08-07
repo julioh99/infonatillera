@@ -105,6 +105,18 @@ CREATE TABLE actividad_participantes (
     FOREIGN KEY (socio_id) REFERENCES usuarios(id)
 );
 
+-- ABONOS A ACTIVIDADES COMUNITARIAS
+CREATE TABLE abonos_actividades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actividad_participante_id INTEGER NOT NULL,
+    monto_abono DECIMAL(10,2) NOT NULL,
+    fecha_abono DATETIME DEFAULT CURRENT_TIMESTAMP,
+    observacion VARCHAR(255),
+    registrado_por_usuario_id INTEGER NOT NULL,
+    FOREIGN KEY (actividad_participante_id) REFERENCES actividad_participantes(id),
+    FOREIGN KEY (registrado_por_usuario_id) REFERENCES usuarios(id)
+);
+
 -- SUSCRIPCIONES WEB PUSH NOTIFICATIONS
 CREATE TABLE push_subscriptions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

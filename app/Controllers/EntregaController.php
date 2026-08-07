@@ -21,16 +21,25 @@ class EntregaController extends Controller {
         $cronograma = $fondoModel->getCronograma();
         $entregas = $entregaModel->getTodasEntregas();
         $reuniones = $reunionModel->getReuniones();
+        $sociosPrestamo = $entregaModel->getSociosPendientes('PRESTAMO');
         $sociosRonda = $entregaModel->getSociosPendientes('RONDA');
         $sociosRifa = $entregaModel->getSociosPendientes('RIFA');
+
+        $tipoQuery = trim($_GET['tipo'] ?? 'PRESTAMO');
+        $socioIdQuery = (int)($_GET['socio_id'] ?? 0);
+        $montoQuery = (float)($_GET['monto'] ?? 0);
 
         $this->render('admin/entregas_beneficios', [
             'resumenFondos' => $resumenFondos,
             'cronograma' => $cronograma,
             'entregas' => $entregas,
             'reuniones' => $reuniones,
+            'sociosPrestamo' => $sociosPrestamo,
             'sociosRonda' => $sociosRonda,
-            'sociosRifa' => $sociosRifa
+            'sociosRifa' => $sociosRifa,
+            'tipoQuery' => $tipoQuery,
+            'socioIdQuery' => $socioIdQuery,
+            'montoQuery' => $montoQuery
         ]);
     }
 
@@ -39,12 +48,12 @@ class EntregaController extends Controller {
 
         $reunionId = (int)($_POST['reunion_id'] ?? 0);
         $socioId = (int)($_POST['socio_id'] ?? 0);
-        $tipoBeneficio = trim($_POST['tipo_beneficio'] ?? 'RONDA');
+        $tipoBeneficio = trim($_POST['tipo_beneficio'] ?? 'PRESTAMO');
         $montoStr = trim($_POST['monto_entregado'] ?? '0');
         $monto = (float)str_replace('.', '', $montoStr);
 
         if ($monto <= 0) {
-            $monto = ($tipoBeneficio === 'RONDA') ? 300000.00 : 150000.00;
+            $monto = ($tipoBeneficio === 'RONDA') ? 300000.00 : (($tipoBeneficio === 'RIFA') ? 150000.00 : 500000.00);
         }
 
         if ($reunionId <= 0 || $socioId <= 0) {

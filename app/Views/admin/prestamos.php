@@ -90,6 +90,13 @@
                                         <i class="fa-solid fa-list-check me-1"></i>Cuotas
                                     </button>
 
+                                    <!-- Firma Digital y Foto Evidencia -->
+                                    <a href="/admin/entregas?tipo=PRESTAMO&socio_id=<?= $p['socio_deudor_id'] ?>&monto=<?= $p['monto_prestado'] ?>" 
+                                       class="btn btn-xs btn-outline-warning text-dark rounded-pill px-2 py-1"
+                                       title="Registrar Firma Digital y Foto Evidencia del Desembolso">
+                                        <i class="fa-solid fa-signature me-1"></i>Firma/Foto
+                                    </a>
+
                                     <!-- Editar Préstamo (Presidente / Sec General) -->
                                     <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
                                         <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btnEditarPrestamo"

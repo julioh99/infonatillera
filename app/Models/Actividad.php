@@ -31,7 +31,100 @@ class Actividad extends Model {
             ORDER BY u.nombre_completo ASC
         ");
         $stmt->execute([':actividad_id' => $actividadId]);
+        $participantes = $stmt->fetchAll();
+
+        foreach ($participantes as &$p) {
+            $p['abonos'] = $this->getAbonosPorParticipante((int)$p['id']);
+        }
+        unset($p);
+
+        return $participantes;
+    }
+
+    public function getAbonosPorParticipante(int $participanteId): array {
+        $stmt = $this->db->prepare("
+            SELECT aa.*, u.nombre_completo as registrado_por_nombre
+            FROM abonos_actividades aa
+            JOIN usuarios u ON aa.registrado_por_usuario_id = u.id
+            WHERE aa.actividad_participante_id = :id
+            ORDER BY aa.fecha_abono ASC, aa.id ASC
+        ");
+        $stmt->execute([':id' => $participanteId]);
         return $stmt->fetchAll();
+    }
+
+    public function recalcularMontoPagado(int $participanteId): bool {
+        $stmtSum = $this->db->prepare("SELECT IFNULL(SUM(monto_abono), 0) as total FROM abonos_actividades WHERE actividad_participante_id = :id");
+        $stmtSum->execute([':id' => $participanteId]);
+        $totalPagado = (float)$stmtSum->fetch()['total'];
+
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada FROM actividad_participantes WHERE id = :id");
+        $stmtCheck->execute([':id' => $participanteId]);
+        $row = $stmtCheck->fetch();
+        if (!$row) return false;
+
+        $cuotaAsignada = (float)$row['cuota_asignada'];
+        $estado = ($totalPagado >= $cuotaAsignada && $cuotaAsignada > 0) ? 'PAGADO' : (($cuotaAsignada <= 0 && $totalPagado >= 0) ? 'PAGADO' : 'PENDIENTE');
+
+        $stmtUpd = $this->db->prepare("
+            UPDATE actividad_participantes 
+            SET monto_pagado = :monto_pagado, estado_pago = :estado
+            WHERE id = :id
+        ");
+        return $stmtUpd->execute([
+            ':id' => $participanteId,
+            ':monto_pagado' => $totalPagado,
+            ':estado' => $estado
+        ]);
+    }
+
+    public function registrarAbono(int $participanteId, float $montoAbono, int $registradoPorId, string $observacion = ''): bool {
+        if ($montoAbono <= 0) return false;
+
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO abonos_actividades (actividad_participante_id, monto_abono, observacion, registrado_por_usuario_id)
+                VALUES (:participante_id, :monto, :obs, :registrado_por)
+            ");
+            $stmt->execute([
+                ':participante_id' => $participanteId,
+                ':monto' => $montoAbono,
+                ':obs' => $observacion,
+                ':registrado_por' => $registradoPorId
+            ]);
+
+            $this->recalcularMontoPagado($participanteId);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
+
+    public function eliminarAbono(int $abonoId): bool {
+        $stmt = $this->db->prepare("SELECT actividad_participante_id FROM abonos_actividades WHERE id = :id");
+        $stmt->execute([':id' => $abonoId]);
+        $row = $stmt->fetch();
+        if (!$row) return false;
+
+        $participanteId = (int)$row['actividad_participante_id'];
+
+        $this->db->beginTransaction();
+        try {
+            $stmtDel = $this->db->prepare("DELETE FROM abonos_actividades WHERE id = :id");
+            $stmtDel->execute([':id' => $abonoId]);
+
+            $this->recalcularMontoPagado($participanteId);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
     }
 
     public function crearActividad(array $datos, array $participantesCuotas): bool {
@@ -89,14 +182,22 @@ class Actividad extends Model {
         }
     }
 
-    public function actualizarPagoParticipante(int $participanteId, float $montoPagado): bool {
-        $stmtCheck = $this->db->prepare("SELECT cuota_asignada FROM actividad_participantes WHERE id = :id");
+    public function actualizarPagoParticipante(int $participanteId, float $montoPagado, int $registradoPorId = 1, string $observacion = 'Abono directo'): bool {
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada, monto_pagado FROM actividad_participantes WHERE id = :id");
         $stmtCheck->execute([':id' => $participanteId]);
         $row = $stmtCheck->fetch();
         if (!$row) return false;
 
+        $montoActual = (float)$row['monto_pagado'];
+        $diferencia = $montoPagado - $montoActual;
+
+        if ($diferencia > 0) {
+            return $this->registrarAbono($participanteId, $diferencia, $registradoPorId, $observacion);
+        }
+
+        // Si es igual o menor y se desea fijar directamente:
         $cuotaAsignada = (float)$row['cuota_asignada'];
-        $estado = ($montoPagado >= $cuotaAsignada) ? 'PAGADO' : 'PENDIENTE';
+        $estado = ($montoPagado >= $cuotaAsignada && $cuotaAsignada > 0) ? 'PAGADO' : 'PENDIENTE';
 
         $stmt = $this->db->prepare("
             UPDATE actividad_participantes 

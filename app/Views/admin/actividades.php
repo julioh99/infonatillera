@@ -269,20 +269,75 @@ document.addEventListener('DOMContentLoaded', () => {
                         const pagado = parseFloat(p.monto_pagado || 0);
                         const saldo = cuota - pagado;
                         const isPagado = (p.estado_pago === 'PAGADO' || saldo <= 0);
+                        const abonos = p.abonos || [];
+                        const numAbonos = abonos.length;
+
+                        let abonosHtml = '';
+                        if (numAbonos > 0) {
+                            abonosHtml += `
+                                <div class="table-responsive mt-2">
+                                    <table class="table table-sm table-bordered bg-white fs-7 mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th>Fecha y Hora</th>
+                                                <th>Monto Abonado</th>
+                                                <th>Registrado Por</th>
+                                                <th>Nota / Detalle</th>
+                                                <th class="text-center" style="width: 50px;">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+                            abonos.forEach(ab => {
+                                const fStr = new Date(ab.fecha_abono).toLocaleString('es-CO');
+                                abonosHtml += `
+                                    <tr>
+                                        <td>${fStr}</td>
+                                        <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} COP</td>
+                                        <td>${ab.registrado_por_nombre || 'Sistema'}</td>
+                                        <td>${ab.observacion || '-'}</td>
+                                        <td class="text-center">
+                                            <form action="/admin/actividades/abono/eliminar" method="POST" onsubmit="return confirm('¿Deseas eliminar este abono de $${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))}?');" class="d-inline">
+                                                <input type="hidden" name="abono_id" value="${ab.id}">
+                                                <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Eliminar abono"><i class="fa-solid fa-trash-can"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                            abonosHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                        } else {
+                            abonosHtml = '<div class="text-muted small py-2"><i class="fa-solid fa-info-circle me-1"></i>No hay abonos individuales registrados para este socio aún.</div>';
+                        }
 
                         html += `
-                            <tr>
-                                <td class="ps-3 fw-bold text-dark">${p.nombre_completo}</td>
+                            <tr class="align-middle">
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">${p.nombre_completo}</div>
+                                    <button type="button" class="btn btn-xs btn-outline-info rounded-pill py-0 px-2 mt-1" data-bs-toggle="collapse" data-bs-target="#abonos_p_${p.id}">
+                                        <i class="fa-solid fa-receipt me-1"></i>Abonos (${numAbonos})
+                                    </button>
+                                </td>
                                 <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
                                 <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
                                 <td>${saldo > 0 ? `<span class="badge bg-danger">$${new Intl.NumberFormat('es-CO').format(saldo)}</span>` : '<span class="text-muted">$0</span>'}</td>
                                 <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
                                 <td class="text-end pe-3">
-                                    <form action="/admin/actividades/pago/actualizar" method="POST" class="d-inline-flex gap-1">
+                                    <form action="/admin/actividades/abono/guardar" method="POST" class="d-inline-flex align-items-center gap-1">
                                         <input type="hidden" name="participante_id" value="${p.id}">
-                                        <input type="number" step="1000" min="0" name="monto_pagado" value="${pagado}" class="form-control form-control-sm text-end" style="width: 100px;">
-                                        <button type="submit" class="btn btn-xs btn-primary fw-bold" title="Guardar Pago"><i class="fa-solid fa-floppy-disk"></i></button>
+                                        <input type="number" step="1000" min="1000" name="monto_abono" placeholder="Ej: 12000" class="form-control form-control-sm text-end" style="width: 110px;" required>
+                                        <button type="submit" class="btn btn-sm btn-success fw-bold px-2 py-1" title="Registrar Nuevo Abono"><i class="fa-solid fa-plus me-1"></i>Abonar</button>
                                     </form>
+                                </td>
+                            </tr>
+                            <tr class="collapse" id="abonos_p_${p.id}">
+                                <td colspan="6" class="bg-light p-3 border-bottom">
+                                    <div class="fw-semibold text-primary mb-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Historial de Pagos por Separado - ${p.nombre_completo}</div>
+                                    ${abonosHtml}
                                 </td>
                             </tr>
                         `;
@@ -291,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tbody.innerHTML = html;
                 })
                 .catch(() => {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error de conexión al cargar la información.</td></tr>';
                 });
         });
     });

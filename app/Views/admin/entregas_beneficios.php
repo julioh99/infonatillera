@@ -1,10 +1,10 @@
 <div class="row mb-4 align-items-center">
     <div class="col-12 col-md-6 mb-2 mb-md-0">
         <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-gift text-warning"></i>
-            Entregas de Beneficios (Rondas y Rifas)
+            <i class="fa-solid fa-file-signature text-warning"></i>
+            Control de Entregas, Desembolsos y Evidencias
         </h2>
-        <p class="text-muted m-0 fs-7">Control de liberaciones quincenales, cronograma acumulado y evidencia con firma y foto.</p>
+        <p class="text-muted m-0 fs-7">Firma digital táctil y evidencia fotográfica para desembolsos de préstamos, rondas y rifas.</p>
     </div>
     <div class="col-12 col-md-6 text-md-end">
         <button type="button" class="btn btn-warning text-dark rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalRegistrarEntrega">
@@ -13,10 +13,32 @@
     </div>
 </div>
 
-<!-- Tarjetas de Métricas de Fondos -->
+<!-- Tarjetas de Métricas de Fondos y Préstamos -->
 <div class="row g-3 mb-4">
+    <!-- Préstamos (Firma & Foto) -->
+    <div class="col-12 col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 bg-gradient-navy text-white h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="p-2 bg-white bg-opacity-10 rounded-circle text-primary fs-4">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-outfit fw-bold m-0 text-white">Desembolso Préstamos</h5>
+                        <span class="text-white-50 fs-8">Firma Digital & Foto Evidencia</span>
+                    </div>
+                </div>
+                <span class="badge bg-primary text-white font-outfit fs-7"><?= $resumenFondos['prestamo']['entregados_count'] ?> Entregas</span>
+            </div>
+            <div class="p-2 bg-white bg-opacity-10 rounded-3 text-center fs-7">
+                <span class="text-white-50 d-block fs-8">Total Desembolsado Registrado</span>
+                <strong class="font-outfit text-white fs-5">$<?= number_format($resumenFondos['prestamo']['entregados_monto'], 0, ',', '.') ?> COP</strong>
+            </div>
+        </div>
+    </div>
+
     <!-- Ronda $300.000 -->
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-gradient-navy text-white h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -24,29 +46,23 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </div>
                     <div>
-                        <h5 class="font-outfit fw-bold m-0 text-white">Fondo de Rondas ($300.000 COP)</h5>
-                        <span class="text-white-50 fs-8">Total 50 Beneficiados en el Año</span>
+                        <h5 class="font-outfit fw-bold m-0 text-white">Fondo Rondas ($300k)</h5>
+                        <span class="text-white-50 fs-8">Total 50 Beneficiados</span>
                     </div>
                 </div>
-                <span class="badge bg-warning text-dark font-outfit fs-7"><?= $resumenFondos['ronda']['entregados_count'] ?> / 50 Entregados</span>
+                <span class="badge bg-warning text-dark font-outfit fs-7"><?= $resumenFondos['ronda']['entregados_count'] ?> / 50</span>
             </div>
-            <div class="row g-2 text-center fs-7">
-                <div class="col-4">
+            <div class="row g-1 text-center fs-7">
+                <div class="col-6">
                     <div class="p-2 bg-white bg-opacity-10 rounded-3">
                         <span class="text-white-50 d-block fs-8">Recaudado Total</span>
                         <strong class="font-outfit text-white fs-6">$<?= number_format($resumenFondos['ronda']['total_recaudado'], 0, ',', '.') ?></strong>
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                     <div class="p-2 bg-white bg-opacity-10 rounded-3">
-                        <span class="text-white-50 d-block fs-8">Entregado en Rondas</span>
+                        <span class="text-white-50 d-block fs-8">Entregado</span>
                         <strong class="font-outfit text-warning fs-6">$<?= number_format($resumenFondos['ronda']['entregados_monto'], 0, ',', '.') ?></strong>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-2 bg-white bg-opacity-10 rounded-3">
-                        <span class="text-white-50 d-block fs-8">Saldo Acumulado</span>
-                        <strong class="font-outfit text-info fs-6">$<?= number_format($resumenFondos['ronda']['total_recaudado'] - $resumenFondos['ronda']['entregados_monto'], 0, ',', '.') ?></strong>
                     </div>
                 </div>
             </div>
@@ -54,7 +70,7 @@
     </div>
 
     <!-- Rifa $150.000 -->
-    <div class="col-12 col-md-6">
+    <div class="col-12 col-md-4">
         <div class="card border-0 shadow-sm rounded-4 p-4 bg-gradient-navy text-white h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="d-flex align-items-center gap-2">
@@ -62,29 +78,23 @@
                         <i class="fa-solid fa-ticket"></i>
                     </div>
                     <div>
-                        <h5 class="font-outfit fw-bold m-0 text-white">Fondo de Rifas ($150.000 COP)</h5>
-                        <span class="text-white-50 fs-8">Total 50 Beneficiados en el Año</span>
+                        <h5 class="font-outfit fw-bold m-0 text-white">Fondo Rifas ($150k)</h5>
+                        <span class="text-white-50 fs-8">Total 50 Beneficiados</span>
                     </div>
                 </div>
-                <span class="badge bg-info text-dark font-outfit fs-7"><?= $resumenFondos['rifa']['entregados_count'] ?> / 50 Entregados</span>
+                <span class="badge bg-info text-dark font-outfit fs-7"><?= $resumenFondos['rifa']['entregados_count'] ?> / 50</span>
             </div>
-            <div class="row g-2 text-center fs-7">
-                <div class="col-4">
+            <div class="row g-1 text-center fs-7">
+                <div class="col-6">
                     <div class="p-2 bg-white bg-opacity-10 rounded-3">
                         <span class="text-white-50 d-block fs-8">Recaudado Total</span>
                         <strong class="font-outfit text-white fs-6">$<?= number_format($resumenFondos['rifa']['total_recaudado'], 0, ',', '.') ?></strong>
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                     <div class="p-2 bg-white bg-opacity-10 rounded-3">
-                        <span class="text-white-50 d-block fs-8">Entregado en Rifas</span>
+                        <span class="text-white-50 d-block fs-8">Entregado</span>
                         <strong class="font-outfit text-info fs-6">$<?= number_format($resumenFondos['rifa']['entregados_monto'], 0, ',', '.') ?></strong>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-2 bg-white bg-opacity-10 rounded-3">
-                        <span class="text-white-50 d-block fs-8">Saldo Acumulado</span>
-                        <strong class="font-outfit text-warning fs-6">$<?= number_format($resumenFondos['rifa']['total_recaudado'] - $resumenFondos['rifa']['entregados_monto'], 0, ',', '.') ?></strong>
                     </div>
                 </div>
             </div>
@@ -116,7 +126,7 @@
                         <tr>
                             <th class="ps-4">Quincena / Fecha</th>
                             <th>Socio Beneficiario</th>
-                            <th>Tipo Premio</th>
+                            <th>Tipo Entrega</th>
                             <th>Monto Entregado</th>
                             <th class="text-center">Firma Digital</th>
                             <th class="text-center">Foto Evidencia</th>
@@ -128,7 +138,7 @@
                             <tr>
                                 <td colspan="7" class="text-center py-5 text-muted">
                                     <i class="fa-solid fa-gift fs-1 text-secondary mb-3 d-block"></i>
-                                    Aún no hay entregas de Rondas o Rifas registradas con evidencia.
+                                    Aún no hay entregas de préstamos, rondas o rifas registradas con evidencia.
                                 </td>
                             </tr>
                         <?php else: ?>
@@ -143,8 +153,8 @@
                                         <small class="text-muted">C.C. <?= htmlspecialchars($e['socio_cedula']) ?></small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-<?= $e['tipo_beneficio'] === 'RONDA' ? 'warning text-dark' : 'info text-dark' ?> fw-bold px-3 py-1">
-                                            <i class="fa-solid <?= $e['tipo_beneficio'] === 'RONDA' ? 'fa-arrows-rotate' : 'fa-ticket' ?> me-1"></i><?= $e['tipo_beneficio'] ?>
+                                        <span class="badge bg-<?= $e['tipo_beneficio'] === 'PRESTAMO' ? 'primary' : ($e['tipo_beneficio'] === 'RONDA' ? 'warning text-dark' : 'info text-dark') ?> fw-bold px-3 py-1">
+                                            <i class="fa-solid <?= $e['tipo_beneficio'] === 'PRESTAMO' ? 'fa-hand-holding-dollar' : ($e['tipo_beneficio'] === 'RONDA' ? 'fa-arrows-rotate' : 'fa-ticket') ?> me-1"></i><?= $e['tipo_beneficio'] ?>
                                         </span>
                                     </td>
                                     <td class="fw-bold text-success font-outfit fs-6">$<?= number_format($e['monto_entregado'], 0, ',', '.') ?> COP</td>
@@ -231,21 +241,22 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header bg-warning text-dark border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-signature me-2"></i>Registrar Entrega de Premio (Ronda / Rifa)</h5>
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-signature me-2"></i>Registrar Entrega / Desembolso (Firma & Evidencia)</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/entregas/guardar" method="POST" enctype="multipart/form-data" id="formRegistrarEntrega">
                 <input type="hidden" name="firma_base64" id="firma_base64">
                 <div class="modal-body p-4 text-dark">
                     <div class="row g-3 mb-3">
-                        <div class="col-12 col-md-4">
-                            <label for="entrega_tipo_beneficio" class="form-label fw-semibold fs-7">Tipo de Beneficio</label>
+                        <div class="col-12 col-md-5">
+                            <label for="entrega_tipo_beneficio" class="form-label fw-semibold fs-7">Tipo de Entrega</label>
                             <select name="tipo_beneficio" id="entrega_tipo_beneficio" class="form-select fw-bold text-dark" required>
-                                <option value="RONDA">RONDA ($300.000 COP)</option>
-                                <option value="RIFA">RIFA ($150.000 COP)</option>
+                                <option value="PRESTAMO" <?= ($tipoQuery === 'PRESTAMO') ? 'selected' : '' ?>>PRÉSTAMO (Desembolso Crédito)</option>
+                                <option value="RONDA" <?= ($tipoQuery === 'RONDA') ? 'selected' : '' ?>>RONDA ($300.000 COP)</option>
+                                <option value="RIFA" <?= ($tipoQuery === 'RIFA') ? 'selected' : '' ?>>RIFA ($150.000 COP)</option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-5">
+                        <div class="col-12 col-md-4">
                             <label for="entrega_reunion_id" class="form-label fw-semibold fs-7">Reunión / Quincena</label>
                             <select name="reunion_id" id="entrega_reunion_id" class="form-select" required>
                                 <?php foreach ($reuniones as $r): ?>
@@ -255,16 +266,21 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <label for="entrega_monto_entregado" class="form-label fw-semibold fs-7">Monto Entregado (COP)</label>
-                            <input type="text" name="monto_entregado" id="entrega_monto_entregado" class="form-control money-input fw-bold text-success" value="300.000" required>
+                            <?php $valMonto = ($montoQuery > 0) ? number_format($montoQuery, 0, ',', '.') : (($tipoQuery === 'RONDA') ? '300.000' : (($tipoQuery === 'RIFA') ? '150.000' : '500.000')); ?>
+                            <input type="text" name="monto_entregado" id="entrega_monto_entregado" class="form-control money-input fw-bold text-success" value="<?= $valMonto ?>" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="entrega_socio_id" class="form-label fw-semibold fs-7">Socio Beneficiario</label>
+                        <label for="entrega_socio_id" class="form-label fw-semibold fs-7">Socio Beneficiario / Deudor</label>
                         <select name="socio_id" id="entrega_socio_id" class="form-select fw-bold text-primary" required>
-                            <option value="">-- Seleccionar Socio Beneficiario --</option>
-                            <?php foreach ($sociosRonda as $s): ?>
-                                <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre_completo']) ?> (C.C. <?= htmlspecialchars($s['cedula']) ?>)</option>
+                            <option value="">-- Seleccionar Socio --</option>
+                            <?php 
+                            $listSocios = ($tipoQuery === 'RONDA') ? $sociosRonda : (($tipoQuery === 'RIFA') ? $sociosRifa : $sociosPrestamo);
+                            foreach ($listSocios as $s): 
+                                $sel = ($socioIdQuery > 0 && $socioIdQuery == $s['id']) ? 'selected' : '';
+                            ?>
+                                <option value="<?= $s['id'] ?>" <?= $sel ?>><?= htmlspecialchars($s['nombre_completo']) ?> (C.C. <?= htmlspecialchars($s['cedula']) ?>)</option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -312,3 +328,11 @@
 </div>
 
 <script src="/js/firma_canvas.js"></script>
+<?php if ($socioIdQuery > 0): ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = new bootstrap.Modal(document.getElementById('modalRegistrarEntrega'));
+    modal.show();
+});
+</script>
+<?php endif; ?>

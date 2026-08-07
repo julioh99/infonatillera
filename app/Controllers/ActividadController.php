@@ -101,12 +101,58 @@ class ActividadController extends Controller {
         }
 
         $actividadModel = new Actividad();
-        $ok = $actividadModel->actualizarPagoParticipante($participanteId, $montoPagado);
+        $ok = $actividadModel->actualizarPagoParticipante($participanteId, $montoPagado, $_SESSION['usuario']['id']);
 
         if ($ok) {
             $_SESSION['success'] = "Pago de la actividad actualizado correctamente.";
         } else {
             $_SESSION['error'] = "No se pudo actualizar el pago.";
+        }
+
+        $this->redirect('/admin/actividades');
+    }
+
+    public function registrarAbono(): void {
+        $this->requireRole(['Presidente', 'Secretaria Actividades']);
+
+        $participanteId = (int)($_POST['participante_id'] ?? 0);
+        $montoAbono = (float)str_replace('.', '', $_POST['monto_abono'] ?? 0);
+        $observacion = trim($_POST['observacion'] ?? '');
+
+        if ($participanteId <= 0 || $montoAbono <= 0) {
+            $_SESSION['error'] = "Ingresa un monto de abono válido mayor a $0.";
+            $this->redirect('/admin/actividades');
+        }
+
+        $actividadModel = new Actividad();
+        $ok = $actividadModel->registrarAbono($participanteId, $montoAbono, $_SESSION['usuario']['id'], $observacion);
+
+        if ($ok) {
+            $_SESSION['success'] = "Abono de $" . number_format($montoAbono, 0, ',', '.') . " COP registrado exitosamente.";
+        } else {
+            $_SESSION['error'] = "No se pudo registrar el abono.";
+        }
+
+        $this->redirect('/admin/actividades');
+    }
+
+    public function eliminarAbono(): void {
+        $this->requireRole(['Presidente', 'Secretaria Actividades']);
+
+        $abonoId = (int)($_POST['abono_id'] ?? 0);
+
+        if ($abonoId <= 0) {
+            $_SESSION['error'] = "Abono inválido.";
+            $this->redirect('/admin/actividades');
+        }
+
+        $actividadModel = new Actividad();
+        $ok = $actividadModel->eliminarAbono($abonoId);
+
+        if ($ok) {
+            $_SESSION['success'] = "Abono eliminado correctamente y saldo recalculado.";
+        } else {
+            $_SESSION['error'] = "No se pudo eliminar el abono.";
         }
 
         $this->redirect('/admin/actividades');

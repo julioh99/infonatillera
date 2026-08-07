@@ -139,6 +139,12 @@ class FondoBeneficio extends Model {
         ");
         $entRifa = $stmtEntregasRifa->fetch();
 
+        $stmtEntregasPrestamo = $this->db->query("
+            SELECT IFNULL(COUNT(*), 0) as ent_count, IFNULL(SUM(monto_entregado), 0) as ent_monto
+            FROM entregas_beneficios WHERE tipo_beneficio = 'PRESTAMO'
+        ");
+        $entPrestamo = $stmtEntregasPrestamo->fetch();
+
         return [
             'ronda' => [
                 'total_recaudado' => (float)$rondaInfo['total_recaudado'],
@@ -151,6 +157,10 @@ class FondoBeneficio extends Model {
                 'planificados' => (int)$rifaInfo['total_liberados_planificados'],
                 'entregados_count' => (int)$entRifa['ent_count'],
                 'entregados_monto' => (float)$entRifa['ent_monto']
+            ],
+            'prestamo' => [
+                'entregados_count' => (int)$entPrestamo['ent_count'],
+                'entregados_monto' => (float)$entPrestamo['ent_monto']
             ]
         ];
     }

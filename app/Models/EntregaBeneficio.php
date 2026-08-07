@@ -23,16 +23,18 @@ class EntregaBeneficio extends Model {
                 ':entregado_por' => $datos['entregado_por_usuario_id']
             ]);
 
-            // Actualizar socio ganador en la reunión si aplica
-            $stmtUpd = $this->db->prepare("
-                UPDATE reuniones 
-                SET ganador_socio_id = :socio_id 
-                WHERE id = :reunion_id AND (ganador_socio_id IS NULL OR ganador_socio_id = 0)
-            ");
-            $stmtUpd->execute([
-                ':socio_id' => $datos['socio_id'],
-                ':reunion_id' => $datos['reunion_id']
-            ]);
+            // Actualizar socio ganador en la reunión si aplica (únicamente para premios de Ronda o Rifa)
+            if (in_array($datos['tipo_beneficio'], ['RONDA', 'RIFA'])) {
+                $stmtUpd = $this->db->prepare("
+                    UPDATE reuniones 
+                    SET ganador_socio_id = :socio_id 
+                    WHERE id = :reunion_id AND (ganador_socio_id IS NULL OR ganador_socio_id = 0)
+                ");
+                $stmtUpd->execute([
+                    ':socio_id' => $datos['socio_id'],
+                    ':reunion_id' => $datos['reunion_id']
+                ]);
+            }
 
             $this->db->commit();
             return true;
@@ -57,10 +59,20 @@ class EntregaBeneficio extends Model {
     }
 
     public function getSociosPendientes(string $tipoBeneficio): array {
+        if ($tipoBeneficio === 'PRESTAMO') {
+            $stmt = $this->db->query("
+                SELECT u.id, u.nombre_completo, u.cedula
+                FROM usuarios u
+                WHERE u.estado = 1
+                ORDER BY u.nombre_completo ASC
+            ");
+            return $stmt->fetchAll();
+        }
+
         $stmt = $this->db->prepare("
             SELECT u.id, u.nombre_completo, u.cedula
             FROM usuarios u
-            WHERE u.id NOT IN (
+            WHERE u.estado = 1 AND u.id NOT IN (
                 SELECT socio_id FROM entregas_beneficios WHERE tipo_beneficio = :tipo
             )
             ORDER BY u.nombre_completo ASC

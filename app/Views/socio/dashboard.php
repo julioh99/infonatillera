@@ -272,11 +272,17 @@
                         $saldoAct = $cuota - $pagado;
                         $ganancia = (float)$act['ganancia_asignada'];
                         $isPagado = ($act['estado_pago'] === 'PAGADO' || $saldoAct <= 0);
+                        $abonosSocio = $act['abonos'] ?? [];
                     ?>
-                        <tr>
+                        <tr class="align-middle">
                             <td class="ps-4">
                                 <div class="fw-bold font-outfit text-dark"><?= htmlspecialchars($act['nombre_actividad']) ?></div>
                                 <small class="text-muted"><?= htmlspecialchars($act['descripcion'] ?: 'Venta extraordinaria comunitaria') ?></small>
+                                <div>
+                                    <button type="button" class="btn btn-xs btn-outline-success rounded-pill py-0 px-2 mt-1" data-bs-toggle="collapse" data-bs-target="#abonos_socio_act_<?= $act['id'] ?>">
+                                        <i class="fa-solid fa-receipt me-1"></i>Ver mis abonados (<?= count($abonosSocio) ?>)
+                                    </button>
+                                </div>
                             </td>
                             <td><span class="badge bg-secondary-subtle text-dark border"><i class="fa-solid fa-calendar-day me-1"></i><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span></td>
                             <td class="fw-bold text-dark font-outfit">$<?= number_format($cuota, 0, ',', '.') ?></td>
@@ -294,6 +300,37 @@
                                     <span class="badge bg-success rounded-pill px-3 py-1"><i class="fa-solid fa-check me-1"></i>Al Día</span>
                                 <?php else: ?>
                                     <span class="badge bg-warning text-dark rounded-pill px-3 py-1"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="abonos_socio_act_<?= $act['id'] ?>">
+                            <td colspan="7" class="bg-light p-3 border-bottom">
+                                <div class="fw-bold text-success mb-2 fs-7"><i class="fa-solid fa-clock-rotate-left me-1"></i>Desglose de Mis Pagos Abonados - <?= htmlspecialchars($act['nombre_actividad']) ?></div>
+                                <?php if (empty($abonosSocio)): ?>
+                                    <div class="text-muted small py-1"><i class="fa-solid fa-info-circle me-1"></i>Aún no has realizado abonos para esta actividad.</div>
+                                <?php else: ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered bg-white fs-7 mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Fecha y Hora</th>
+                                                    <th>Valor Abonado</th>
+                                                    <th>Recibido / Registrado Por</th>
+                                                    <th>Detalle</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($abonosSocio as $ab): ?>
+                                                    <tr>
+                                                        <td><?= date('d/m/Y h:i A', strtotime($ab['fecha_abono'])) ?></td>
+                                                        <td class="fw-bold text-success">$<?= number_format($ab['monto_abono'], 0, ',', '.') ?> COP</td>
+                                                        <td><?= htmlspecialchars($ab['registrado_por_nombre'] ?? 'Secretaría') ?></td>
+                                                        <td><?= htmlspecialchars($ab['observacion'] ?: '-') ?></td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                         </tr>

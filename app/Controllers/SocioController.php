@@ -66,12 +66,15 @@ class SocioController extends Controller {
         $misActividades = $stmtActividades->fetchAll();
 
         $totalDeudaActividades = 0.0;
-        foreach ($misActividades as $act) {
+        $actividadModel = new Actividad();
+        foreach ($misActividades as &$act) {
+            $act['abonos'] = $actividadModel->getAbonosPorParticipante((int)$act['id']);
             $saldoAct = (float)$act['cuota_asignada'] - (float)$act['monto_pagado'];
             if ($saldoAct > 0) {
                 $totalDeudaActividades += $saldoAct;
             }
         }
+        unset($act);
 
         $this->render('socio/dashboard', [
             'user' => $user,

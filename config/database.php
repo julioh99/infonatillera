@@ -68,6 +68,17 @@ class Database {
                     FOREIGN KEY (socio_id) REFERENCES usuarios(id),
                     FOREIGN KEY (entregado_por_usuario_id) REFERENCES usuarios(id)
                 );
+
+                CREATE TABLE IF NOT EXISTS abonos_actividades (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    actividad_participante_id INTEGER NOT NULL,
+                    monto_abono DECIMAL(10,2) NOT NULL,
+                    fecha_abono DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    observacion VARCHAR(255),
+                    registrado_por_usuario_id INTEGER NOT NULL,
+                    FOREIGN KEY (actividad_participante_id) REFERENCES actividad_participantes(id),
+                    FOREIGN KEY (registrado_por_usuario_id) REFERENCES usuarios(id)
+                );
             ");
         } catch (Exception $e) {
             // Silencioso si ya existen

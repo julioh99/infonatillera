@@ -115,6 +115,8 @@ class Reunion extends Model {
             $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM reuniones WHERE id = :id");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
+            $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
+
             if ($valorCuotaBase >= 65000) {
                 $aporteRondaBase = 20000.00;
                 $aporteRifaBase = 5000.00;

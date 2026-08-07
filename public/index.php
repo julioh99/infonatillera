@@ -59,6 +59,8 @@ $router->get('/admin/actividades', [ActividadController::class, 'index']);
 $router->post('/admin/actividades/guardar', [ActividadController::class, 'guardar']);
 $router->get('/admin/actividades/participantes-json', [ActividadController::class, 'participantesJson']);
 $router->post('/admin/actividades/pago/actualizar', [ActividadController::class, 'actualizarPago']);
+$router->post('/admin/actividades/abono/guardar', [ActividadController::class, 'registrarAbono']);
+$router->post('/admin/actividades/abono/eliminar', [ActividadController::class, 'eliminarAbono']);
 
 // Rutas Admin - Entregas de Rondas y Rifas (Firma y Foto)
 $router->get('/admin/entregas', [EntregaController::class, 'index']);
