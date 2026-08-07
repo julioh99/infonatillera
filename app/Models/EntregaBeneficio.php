@@ -38,9 +38,11 @@ class EntregaBeneficio extends Model {
 
             $this->db->commit();
             return true;
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            return false;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
         }
     }
 

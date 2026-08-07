@@ -79,8 +79,22 @@ $router->post('/admin/reuniones/actualizar', [ReunionController::class, 'actuali
 
 // Rutas Admin - Gestión de Socios
 $router->get('/admin/socios', [SocioController::class, 'gestionarSocios']);
+$router->get('/admin/socios/expediente-json', [SocioController::class, 'expedienteJson']);
 $router->post('/admin/socios/crear', [SocioController::class, 'crearSocio']);
 $router->post('/admin/socios/actualizar', [SocioController::class, 'actualizarSocio']);
+
+// Rutas Admin - Inyecciones de Capital
+$router->get('/admin/inyecciones', [InyeccionController::class, 'index']);
+$router->post('/admin/inyecciones/crear', [InyeccionController::class, 'crear']);
+$router->post('/admin/inyecciones/retirar', [InyeccionController::class, 'retirar']);
+
+// Rutas Admin - Arqueo y Cierre Financiero por Reunión
+$router->get('/admin/cierre-reunion', [CierreController::class, 'index']);
+$router->post('/admin/cierre-reunion/cerrar', [CierreController::class, 'cerrar']);
+
+// Rutas Admin - Transferencias entre Cajas
+$router->get('/admin/transferencias-cajas', [TransferenciaCajaController::class, 'index']);
+$router->post('/admin/transferencias-cajas/crear', [TransferenciaCajaController::class, 'crear']);
 
 // Rutas Socio
 $router->get('/socio/dashboard', [SocioController::class, 'dashboard']);

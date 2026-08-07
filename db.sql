@@ -170,3 +170,62 @@ CREATE TABLE IF NOT EXISTS natillera_entregas_beneficios (
     FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
     FOREIGN KEY (entregado_por_usuario_id) REFERENCES natillera_usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- INYECCIONES DE CAPITAL DE SOCIOS
+CREATE TABLE IF NOT EXISTS natillera_inyecciones_capital (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    socio_id INT NOT NULL,
+    reunion_id INT NOT NULL,
+    monto_inyectado DECIMAL(10,2) NOT NULL,
+    tasa_rendimiento_porcentaje DECIMAL(5,2) DEFAULT 5.00,
+    monto_rendimiento_generado DECIMAL(10,2) DEFAULT 0.00,
+    fecha_inyeccion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_retiro_permitido DATE NOT NULL,
+    estado VARCHAR(20) DEFAULT 'ACTIVA', -- 'ACTIVA', 'RETIRADA'
+    fecha_retiro DATETIME NULL,
+    observaciones VARCHAR(255),
+    registrado_por_usuario_id INT NOT NULL,
+    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
+    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
+    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- CIERRE DE CAJA Y LIQUIDACIÓN FINANCIERA POR REUNIÓN
+CREATE TABLE IF NOT EXISTS natillera_cierres_reunion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reunion_id INT NOT NULL UNIQUE,
+    total_ingresos_cuotas_base DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_ahorro_extra DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_rondas_rifas DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_abono_capital DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_intereses_prestamos DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_actividades DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_inyecciones DECIMAL(10,2) DEFAULT 0.00,
+    total_ingresos_general DECIMAL(10,2) DEFAULT 0.00,
+    total_egresos_prestamos_otorgados DECIMAL(10,2) DEFAULT 0.00,
+    total_egresos_premios_entregados DECIMAL(10,2) DEFAULT 0.00,
+    total_egresos_inyecciones_devueltas DECIMAL(10,2) DEFAULT 0.00,
+    total_egresos_general DECIMAL(10,2) DEFAULT 0.00,
+    saldo_neto_reunion DECIMAL(10,2) DEFAULT 0.00,
+    saldo_acumulado_caja DECIMAL(10,2) DEFAULT 0.00,
+    desglose_json LONGTEXT,
+    fecha_cierre DATETIME DEFAULT CURRENT_TIMESTAMP,
+    cerrado_por_usuario_id INT NOT NULL,
+    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
+    FOREIGN KEY (cerrado_por_usuario_id) REFERENCES natillera_usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- PRÉSTAMOS Y TRANSFERENCIAS ENTRE CAJA MAYOR Y CAJA DE ACTIVIDADES
+CREATE TABLE IF NOT EXISTS natillera_transferencias_cajas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    reunion_id INT NOT NULL,
+    actividad_id INT NULL,
+    tipo_movimiento VARCHAR(30) NOT NULL, -- 'PRESTAMO_A_ACTIVIDAD', 'DEVOLUCION_A_CAJA_MAYOR'
+    monto DECIMAL(10,2) NOT NULL,
+    concepto VARCHAR(255) NOT NULL,
+    fecha_transferencia DATETIME DEFAULT CURRENT_TIMESTAMP,
+    registrado_por_usuario_id INT NOT NULL,
+    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
+    FOREIGN KEY (actividad_id) REFERENCES natillera_actividades(id),
+    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

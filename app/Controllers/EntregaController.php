@@ -65,11 +65,11 @@ class EntregaController extends Controller {
         $firmasDir = __DIR__ . '/../../public/uploads/firmas';
         $evidenciasDir = __DIR__ . '/../../public/uploads/evidencias';
 
-        if (!file_exists($firmasDir)) {
-            mkdir($firmasDir, 0777, true);
+        if (!is_dir($firmasDir)) {
+            @mkdir($firmasDir, 0777, true);
         }
-        if (!file_exists($evidenciasDir)) {
-            mkdir($evidenciasDir, 0777, true);
+        if (!is_dir($evidenciasDir)) {
+            @mkdir($evidenciasDir, 0777, true);
         }
 
         // 1. Guardar Firma Digital Canvas (Base64)
@@ -81,7 +81,7 @@ class EntregaController extends Controller {
                 $data = base64_decode($data);
                 if ($data !== false) {
                     $fileNameFirma = "firma_{$socioId}_{$tipoBeneficio}_" . time() . ".png";
-                    file_put_contents("{$firmasDir}/{$fileNameFirma}", $data);
+                    @file_put_contents("{$firmasDir}/{$fileNameFirma}", $data);
                     $firmaPath = "/uploads/firmas/{$fileNameFirma}";
                 }
             }
@@ -93,7 +93,7 @@ class EntregaController extends Controller {
             $ext = strtolower(pathinfo($_FILES['foto_evidencia']['name'], PATHINFO_EXTENSION));
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
                 $fileNameFoto = "foto_{$socioId}_{$tipoBeneficio}_" . time() . ".{$ext}";
-                if (move_uploaded_file($_FILES['foto_evidencia']['tmp_name'], "{$evidenciasDir}/{$fileNameFoto}")) {
+                if (@move_uploaded_file($_FILES['foto_evidencia']['tmp_name'], "{$evidenciasDir}/{$fileNameFoto}")) {
                     $fotoPath = "/uploads/evidencias/{$fileNameFoto}";
                 }
             }
@@ -104,27 +104,53 @@ class EntregaController extends Controller {
                 $data = base64_decode($data);
                 if ($data !== false) {
                     $fileNameFoto = "foto_{$socioId}_{$tipoBeneficio}_" . time() . ".jpg";
-                    file_put_contents("{$evidenciasDir}/{$fileNameFoto}", $data);
+                    @file_put_contents("{$evidenciasDir}/{$fileNameFoto}", $data);
                     $fotoPath = "/uploads/evidencias/{$fileNameFoto}";
                 }
             }
         }
 
-        $entregaModel = new EntregaBeneficio();
-        $ok = $entregaModel->registrarEntrega([
-            'reunion_id' => $reunionId,
-            'socio_id' => $socioId,
-            'tipo_beneficio' => $tipoBeneficio,
-            'monto_entregado' => $monto,
-            'firma_digital_path' => $firmaPath,
-            'foto_evidencia_path' => $fotoPath,
-            'entregado_por_usuario_id' => $_SESSION['usuario']['id']
-        ]);
+        try {
+            $usuarioModel = new Usuario();
 
-        if ($ok) {
-            $_SESSION['success'] = "Entrega de {$tipoBeneficio} por $" . number_format($monto, 0, ',', '.') . " registrada exitosamente con evidencia.";
-        } else {
-            $_SESSION['error'] = "No se pudo registrar la entrega de beneficio.";
+            $entregadoPor = (int)($_SESSION['usuario']['id'] ?? 1);
+            $userExist = $usuarioModel->getSocioById($entregadoPor);
+
+            if (!$userExist) {
+                // Si el ID guardado en sesión previa no existe en la BD actual, asignar ID 1 o la primera persona
+                $todosSocios = $usuarioModel->getAllSocios();
+                $entregadoPor = !empty($todosSocios) ? (int)$todosSocios[0]['id'] : 1;
+                // Actualizar la sesión para sincronizarla
+                if (isset($_SESSION['usuario']) && !empty($todosSocios)) {
+                    $_SESSION['usuario']['id'] = $entregadoPor;
+                }
+            }
+
+            // Verificar que el socio beneficiario exista
+            $socioBeneficiario = $usuarioModel->getSocioById($socioId);
+            if (!$socioBeneficiario) {
+                $_SESSION['error'] = "El socio beneficiario seleccionado (ID {$socioId}) no existe en la base de datos.";
+                $this->redirect('/admin/entregas');
+            }
+
+            $entregaModel = new EntregaBeneficio();
+            $ok = $entregaModel->registrarEntrega([
+                'reunion_id' => $reunionId,
+                'socio_id' => $socioId,
+                'tipo_beneficio' => $tipoBeneficio,
+                'monto_entregado' => $monto,
+                'firma_digital_path' => $firmaPath,
+                'foto_evidencia_path' => $fotoPath,
+                'entregado_por_usuario_id' => $entregadoPor
+            ]);
+
+            if ($ok) {
+                $_SESSION['success'] = "Entrega de {$tipoBeneficio} por $" . number_format($monto, 0, ',', '.') . " registrada exitosamente con evidencia.";
+            } else {
+                $_SESSION['error'] = "No se pudo registrar la entrega de beneficio.";
+            }
+        } catch (Throwable $e) {
+            $_SESSION['error'] = "Error al registrar la entrega: " . $e->getMessage();
         }
 
         $this->redirect('/admin/entregas');
