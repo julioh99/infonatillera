@@ -24,7 +24,8 @@ class Actividad extends Model {
 
     public function getParticipantes(int $actividadId): array {
         $stmt = $this->db->prepare("
-            SELECT ap.*, u.nombre_completo, u.cedula, u.id
+            SELECT ap.id, ap.actividad_id, ap.socio_id, ap.cuota_asignada, ap.monto_pagado, ap.ganancia_asignada, ap.estado_pago,
+                   u.nombre_completo, u.cedula, u.id as socio_user_id
             FROM natillera_actividad_participantes ap
             JOIN natillera_usuarios u ON ap.socio_id = u.id
             WHERE ap.actividad_id = :actividad_id
@@ -79,7 +80,29 @@ class Actividad extends Model {
     }
 
     public function registrarAbono(int $participanteId, float $montoAbono, int $registradoPorId, string $observacion = ''): bool {
-        if ($montoAbono <= 0) return false;
+        if ($montoAbono <= 0) {
+            throw new Exception("El monto del abono debe ser mayor a $0.");
+        }
+
+        $stmtCheck = $this->db->prepare("SELECT cuota_asignada, monto_pagado, estado_pago FROM natillera_actividad_participantes WHERE id = :id");
+        $stmtCheck->execute([':id' => $participanteId]);
+        $part = $stmtCheck->fetch();
+
+        if (!$part) {
+            throw new Exception("El participante de la actividad no existe.");
+        }
+
+        $cuotaAsignada = (float)$part['cuota_asignada'];
+        $montoPagado = (float)$part['monto_pagado'];
+        $saldoPendiente = max(0, $cuotaAsignada - $montoPagado);
+
+        if ($saldoPendiente <= 0 || $part['estado_pago'] === 'PAGADO') {
+            throw new Exception("El socio ya completó el pago de esta actividad. No se permiten abonos adicionales.");
+        }
+
+        if ($montoAbono > ($saldoPendiente + 0.01)) {
+            throw new Exception("El abono ($" . number_format($montoAbono, 0, ',', '.') . ") supera el saldo pendiente ($" . number_format($saldoPendiente, 0, ',', '.') . ").");
+        }
 
         $this->db->beginTransaction();
         try {
@@ -100,7 +123,7 @@ class Actividad extends Model {
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
-            return false;
+            throw $e;
         }
     }
 

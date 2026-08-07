@@ -117,7 +117,7 @@
 
                     <!-- Asignación de Cuotas Individuales por Socio -->
                     <div class="border rounded-3 p-3 bg-light mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <div>
                                 <label class="form-label fw-bold font-outfit fs-7 mb-0 text-dark">
                                     <i class="fa-solid fa-users me-1 text-info"></i>Socios Participantes y Cuotas Individuales:
@@ -133,18 +133,26 @@
                             </div>
                         </div>
 
-                        <div class="row g-2 overflow-auto" style="max-height: 280px;">
+                        <div class="mb-2">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="searchCrearActividadSocio" class="form-control" placeholder="Buscar socio por # ID o Nombre para asignar cuota..." onkeyup="filtrarSociosNuevaActividad()">
+                            </div>
+                        </div>
+
+                        <div class="row g-2 overflow-auto" style="max-height: 280px;" id="containerSociosNuevaAct">
                             <?php foreach ($socios as $s): ?>
-                                <div class="col-12 col-md-6">
+                                <div class="col-12 col-md-6 item-socio-nueva-act" data-id="<?= $s['id'] ?>" data-nombre="<?= strtolower(htmlspecialchars($s['nombre_completo'])) ?>">
                                     <div class="card p-2 border shadow-none bg-white">
                                         <div class="d-flex align-items-center justify-content-between gap-2">
-                                            <div class="form-check m-0">
+                                            <div class="form-check m-0 d-flex align-items-center gap-1">
                                                 <input class="form-check-input chk-socio-act" type="checkbox" name="participantes[]" value="<?= $s['id'] ?>" id="part_<?= $s['id'] ?>" onchange="toggleSocioCuotaInput(this, <?= $s['id'] ?>)" checked>
-                                                <label class="form-check-label fs-7 fw-semibold text-dark text-truncate" for="part_<?= $s['id'] ?>" style="max-width: 170px;" title="<?= htmlspecialchars($s['nombre_completo']) ?>">
+                                                <span class="badge bg-secondary font-outfit fs-8">#<?= $s['id'] ?></span>
+                                                <label class="form-check-label fs-7 fw-semibold text-dark text-truncate" for="part_<?= $s['id'] ?>" style="max-width: 150px;" title="<?= htmlspecialchars($s['nombre_completo']) ?>">
                                                     <?= htmlspecialchars($s['nombre_completo']) ?>
                                                 </label>
                                             </div>
-                                            <div class="input-group input-group-sm" style="width: 140px;">
+                                            <div class="input-group input-group-sm" style="width: 130px;">
                                                 <span class="input-group-text">$</span>
                                                 <input type="text" name="cuotas_individuales[<?= $s['id'] ?>]" id="cuota_socio_<?= $s['id'] ?>" class="form-control form-control-sm text-end fw-bold input-cuota-socio money-input" value="20.000" placeholder="0">
                                             </div>
@@ -178,13 +186,24 @@
                         <h6 class="m-0 fw-bold font-outfit text-primary" id="act_modal_nombre">---</h6>
                         <small class="text-muted" id="act_modal_fecha">---</small>
                     </div>
+                    <span id="cntParticipantesVisibles" class="badge bg-light text-dark border fs-7 font-outfit">---</span>
+                </div>
+
+                <!-- Buscador por # ID o Nombre -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" id="searchParticipanteAct" class="form-control" placeholder="Buscar por # ID (1 a 50) o Nombre de socio..." onkeyup="filtrarParticipantesActividad()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="limpiarBuscadorParticipantesAct()"><i class="fa-solid fa-xmark"></i> Limpiar</button>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle fs-7 mb-0">
                         <thead class="table-dark font-outfit">
-                            <tr>
-                                <th class="ps-3">Socio</th>
+                            <tr class="align-middle">
+                                <th class="text-center" style="width: 55px;"># ID</th>
+                                <th>Socio</th>
                                 <th>Cuota Asignada</th>
                                 <th>Monto Pagado</th>
                                 <th>Saldo Pendiente</th>
@@ -194,7 +213,7 @@
                         </thead>
                         <tbody id="tbodyParticipantesAct">
                             <tr>
-                                <td colspan="6" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td>
+                                <td colspan="7" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -208,6 +227,8 @@
 </div>
 
 <script>
+let currentParticipantesAct = [];
+
 function toggleSocioCuotaInput(chk, socioId) {
     const input = document.getElementById('cuota_socio_' + socioId);
     if (input) {
@@ -238,115 +259,320 @@ function aplicarCuotaBaseASocios() {
     });
 }
 
+function filtrarSociosNuevaActividad() {
+    const q = document.getElementById('searchCrearActividadSocio').value.toLowerCase().trim();
+    document.querySelectorAll('.item-socio-nueva-act').forEach(el => {
+        const sId = el.getAttribute('data-id');
+        const sNom = el.getAttribute('data-nombre');
+        if (q === '' || sId === q || sId.includes(q) || sNom.includes(q)) {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+function limpiarBuscadorParticipantesAct() {
+    const inp = document.getElementById('searchParticipanteAct');
+    if (inp) inp.value = '';
+    filtrarParticipantesActividad();
+}
+
+function filtrarParticipantesActividad() {
+    const query = (document.getElementById('searchParticipanteAct').value || '').trim().toLowerCase();
+    const tbody = document.getElementById('tbodyParticipantesAct');
+    
+    if (!currentParticipantesAct || currentParticipantesAct.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No hay socios en esta actividad.</td></tr>';
+        document.getElementById('cntParticipantesVisibles').innerText = '0 socios';
+        return;
+    }
+
+    const filtrados = currentParticipantesAct.filter(p => {
+        if (!query) return true;
+        const socioIdStr = (p.socio_id || p.id || '').toString();
+        const nombreStr = (p.nombre_completo || '').toLowerCase();
+        return (socioIdStr === query || socioIdStr.includes(query) || nombreStr.includes(query));
+    });
+
+    document.getElementById('cntParticipantesVisibles').innerText = `${filtrados.length} de ${currentParticipantesAct.length} socios`;
+
+    if (filtrados.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-muted"><i class="fa-solid fa-circle-exclamation me-1 text-warning"></i>No se encontró ningún socio coincidente con "${query}".</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    filtrados.forEach(p => {
+        const socioId = p.socio_id || p.id;
+        const cuota = parseFloat(p.cuota_asignada || 0);
+        const pagado = parseFloat(p.monto_pagado || 0);
+        const saldo = cuota - pagado;
+        const isPagado = (p.estado_pago === 'PAGADO' || saldo <= 0);
+        const abonos = p.abonos || [];
+        const numAbonos = abonos.length;
+
+        let abonosHtml = '';
+        if (numAbonos > 0) {
+            abonosHtml += `
+                <div class="table-responsive mt-2">
+                    <table class="table table-sm table-bordered bg-white fs-7 mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Fecha y Hora</th>
+                                <th>Monto Abonado</th>
+                                <th>Registrado Por</th>
+                                <th>Nota / Detalle</th>
+                                <th class="text-center" style="width: 50px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            abonos.forEach(ab => {
+                const fStr = new Date(ab.fecha_abono).toLocaleString('es-CO');
+                abonosHtml += `
+                    <tr>
+                        <td>${fStr}</td>
+                        <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} COP</td>
+                        <td>${ab.registrado_por_nombre || 'Sistema'}</td>
+                        <td>${ab.observacion || '-'}</td>
+                        <td class="text-center">
+                            <form action="/admin/actividades/abono/eliminar" method="POST" onsubmit="eliminarAbonoAjax(event, this, '${ab.monto_abono}');" class="d-inline">
+                                <input type="hidden" name="abono_id" value="${ab.id}">
+                                <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Eliminar abono"><i class="fa-solid fa-trash-can"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                `;
+            });
+            abonosHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            abonosHtml = '<div class="text-muted small py-2"><i class="fa-solid fa-info-circle me-1"></i>No hay abonos individuales registrados para este socio aún.</div>';
+        }
+
+        html += `
+            <tr class="align-middle">
+                <td class="text-center">
+                    <span class="badge bg-secondary font-outfit fs-7 px-2">#${socioId}</span>
+                </td>
+                <td class="ps-2">
+                    <div class="fw-bold text-dark">${p.nombre_completo}</div>
+                    <button type="button" class="btn btn-xs btn-outline-info rounded-pill py-0 px-2 mt-1" data-bs-toggle="collapse" data-bs-target="#abonos_p_${p.id}">
+                        <i class="fa-solid fa-receipt me-1"></i>Abonos (${numAbonos})
+                    </button>
+                </td>
+                <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
+                <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
+                <td>${saldo > 0 ? `<span class="badge bg-danger">$${new Intl.NumberFormat('es-CO').format(saldo)}</span>` : '<span class="text-muted">$0</span>'}</td>
+                <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
+                <td class="text-end pe-3">
+                    ${isPagado ? `
+                        <span class="badge bg-success font-outfit py-1 px-2 fs-7 shadow-sm"><i class="fa-solid fa-circle-check me-1"></i>Completo</span>
+                    ` : `
+                        <form action="/admin/actividades/abono/guardar" method="POST" onsubmit="registrarAbonoAjax(event, this);" class="d-inline-flex align-items-center gap-1">
+                            <input type="hidden" name="participante_id" value="${p.id}">
+                            <input type="text" inputmode="numeric" name="monto_abono" data-max-saldo="${saldo}" placeholder="Máx: $${new Intl.NumberFormat('es-CO').format(saldo)}" class="form-control form-control-sm text-end money-input fw-bold" style="width: 120px;" required>
+                            <button type="submit" class="btn btn-sm btn-success fw-bold px-2 py-1" title="Registrar Nuevo Abono"><i class="fa-solid fa-plus me-1"></i>Abonar</button>
+                        </form>
+                    `}
+                </td>
+            </tr>
+            <tr class="collapse" id="abonos_p_${p.id}">
+                <td colspan="7" class="bg-light p-3 border-bottom">
+                    <div class="fw-semibold text-primary mb-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Historial de Pagos por Separado - #${socioId} ${p.nombre_completo}</div>
+                    ${abonosHtml}
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+    if (typeof initMoneyInputs === 'function') {
+        initMoneyInputs(tbody);
+    }
+}
+
+let currentActividadIdModal = 0;
+
+function reloadModalParticipantes() {
+    if (currentActividadIdModal <= 0) return;
+    fetch(`/admin/actividades/participantes-json?actividad_id=${currentActividadIdModal}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                currentParticipantesAct = data.participantes || [];
+                filtrarParticipantesActividad();
+            }
+        });
+}
+
+function registrarAbonoAjax(e, form) {
+    e.preventDefault();
+
+    const montoInp = form.querySelector('.money-input');
+    const rawVal = montoInp ? montoInp.value : '0';
+    const montoAbono = typeof unformatMoneyString === 'function' ? parseFloat(unformatMoneyString(rawVal)) : parseFloat(rawVal);
+    const maxSaldo = parseFloat(montoInp ? (montoInp.getAttribute('data-max-saldo') || 0) : 0);
+
+    if (montoAbono > maxSaldo + 0.01) {
+        const formattedMonto = typeof formatMoneyString === 'function' ? formatMoneyString(montoAbono) : montoAbono;
+        const formattedMax = typeof formatMoneyString === 'function' ? formatMoneyString(maxSaldo) : maxSaldo;
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sobrepago No Permitido',
+                text: `El abono ingresado ($${formattedMonto} COP) supera el saldo pendiente de este socio ($${formattedMax} COP).`
+            });
+        } else {
+            alert(`El abono ingresado ($${formattedMonto} COP) supera el saldo pendiente ($${formattedMax} COP).`);
+        }
+        return;
+    }
+
+    const formData = new FormData(form);
+    formData.append('is_ajax', '1');
+
+    if (montoInp && typeof unformatMoneyString === 'function') {
+        formData.set('monto_abono', unformatMoneyString(montoInp.value));
+    }
+
+    fetch('/admin/actividades/abono/guardar', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Abono Registrado',
+                    text: res.message,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+            form.reset();
+            reloadModalParticipantes();
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || 'No se pudo guardar el abono.'
+                });
+            } else {
+                alert(res.message || 'Error al guardar abono.');
+            }
+        }
+    })
+    .catch(() => {
+        alert('Error de conexión al registrar el abono.');
+    });
+}
+
+function eliminarAbonoAjax(e, form, montoVal) {
+    e.preventDefault();
+    const formattedVal = typeof formatMoneyString === 'function' ? formatMoneyString(montoVal) : montoVal;
+    
+    const ejecutarEliminación = () => {
+        const formData = new FormData(form);
+        formData.append('is_ajax', '1');
+
+        fetch('/admin/actividades/abono/eliminar', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Abono Eliminado',
+                        text: res.message,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+                reloadModalParticipantes();
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.message || 'No se pudo eliminar el abono.'
+                    });
+                } else {
+                    alert(res.message || 'Error al eliminar abono.');
+                }
+            }
+        })
+        .catch(() => {
+            alert('Error de conexión al eliminar abono.');
+        });
+    };
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '¿Eliminar Abono?',
+            text: `¿Deseas eliminar este abono de $${formattedVal} COP?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Sí, Eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(result => {
+            if (result.isConfirmed) {
+                ejecutarEliminación();
+            }
+        });
+    } else {
+        if (confirm(`¿Deseas eliminar este abono de $${formattedVal} COP?`)) {
+            ejecutarEliminación();
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Cargar Participantes de Actividad via AJAX
     const btnsVerParticipantes = document.querySelectorAll('.btnVerParticipantes');
     btnsVerParticipantes.forEach(btn => {
         btn.addEventListener('click', () => {
-            const actId = btn.getAttribute('data-id');
+            const actId = parseInt(btn.getAttribute('data-id'), 10);
+            currentActividadIdModal = actId;
             const tbody = document.getElementById('tbodyParticipantesAct');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td></tr>';
+            const searchInput = document.getElementById('searchParticipanteAct');
+            if (searchInput) searchInput.value = '';
+
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando participantes...</td></tr>';
 
             fetch(`/admin/actividades/participantes-json?actividad_id=${actId}`)
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success || !data.actividad) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error al cargar información.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-danger">Error al cargar información.</td></tr>';
                         return;
                     }
 
                     document.getElementById('act_modal_nombre').innerText = data.actividad.nombre_actividad;
                     document.getElementById('act_modal_fecha').innerText = `Fecha: ${data.actividad.fecha_actividad}`;
 
-                    if (!data.participantes || data.participantes.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No se registraron participantes para esta actividad.</td></tr>';
-                        return;
-                    }
-
-                    let html = '';
-                    data.participantes.forEach(p => {
-                        const cuota = parseFloat(p.cuota_asignada || 0);
-                        const pagado = parseFloat(p.monto_pagado || 0);
-                        const saldo = cuota - pagado;
-                        const isPagado = (p.estado_pago === 'PAGADO' || saldo <= 0);
-                        const abonos = p.abonos || [];
-                        const numAbonos = abonos.length;
-
-                        let abonosHtml = '';
-                        if (numAbonos > 0) {
-                            abonosHtml += `
-                                <div class="table-responsive mt-2">
-                                    <table class="table table-sm table-bordered bg-white fs-7 mb-0">
-                                        <thead class="bg-light">
-                                            <tr>
-                                                <th>Fecha y Hora</th>
-                                                <th>Monto Abonado</th>
-                                                <th>Registrado Por</th>
-                                                <th>Nota / Detalle</th>
-                                                <th class="text-center" style="width: 50px;">Acción</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
-                            abonos.forEach(ab => {
-                                const fStr = new Date(ab.fecha_abono).toLocaleString('es-CO');
-                                abonosHtml += `
-                                    <tr>
-                                        <td>${fStr}</td>
-                                        <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} COP</td>
-                                        <td>${ab.registrado_por_nombre || 'Sistema'}</td>
-                                        <td>${ab.observacion || '-'}</td>
-                                        <td class="text-center">
-                                            <form action="/admin/actividades/abono/eliminar" method="POST" onsubmit="return confirm('¿Deseas eliminar este abono de $${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))}?');" class="d-inline">
-                                                <input type="hidden" name="abono_id" value="${ab.id}">
-                                                <button type="submit" class="btn btn-link text-danger p-0 border-0" title="Eliminar abono"><i class="fa-solid fa-trash-can"></i></button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                            abonosHtml += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            `;
-                        } else {
-                            abonosHtml = '<div class="text-muted small py-2"><i class="fa-solid fa-info-circle me-1"></i>No hay abonos individuales registrados para este socio aún.</div>';
-                        }
-
-                        html += `
-                            <tr class="align-middle">
-                                <td class="ps-3">
-                                    <div class="fw-bold text-dark">${p.nombre_completo}</div>
-                                    <button type="button" class="btn btn-xs btn-outline-info rounded-pill py-0 px-2 mt-1" data-bs-toggle="collapse" data-bs-target="#abonos_p_${p.id}">
-                                        <i class="fa-solid fa-receipt me-1"></i>Abonos (${numAbonos})
-                                    </button>
-                                </td>
-                                <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
-                                <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
-                                <td>${saldo > 0 ? `<span class="badge bg-danger">$${new Intl.NumberFormat('es-CO').format(saldo)}</span>` : '<span class="text-muted">$0</span>'}</td>
-                                <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
-                                <td class="text-end pe-3">
-                                    <form action="/admin/actividades/abono/guardar" method="POST" class="d-inline-flex align-items-center gap-1">
-                                        <input type="hidden" name="participante_id" value="${p.id}">
-                                        <input type="number" step="1000" min="1000" name="monto_abono" placeholder="Ej: 12000" class="form-control form-control-sm text-end" style="width: 110px;" required>
-                                        <button type="submit" class="btn btn-sm btn-success fw-bold px-2 py-1" title="Registrar Nuevo Abono"><i class="fa-solid fa-plus me-1"></i>Abonar</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <tr class="collapse" id="abonos_p_${p.id}">
-                                <td colspan="6" class="bg-light p-3 border-bottom">
-                                    <div class="fw-semibold text-primary mb-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Historial de Pagos por Separado - ${p.nombre_completo}</div>
-                                    ${abonosHtml}
-                                </td>
-                            </tr>
-                        `;
-                    });
-
-                    tbody.innerHTML = html;
+                    currentParticipantesAct = data.participantes || [];
+                    filtrarParticipantesActividad();
                 })
                 .catch(() => {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Error de conexión al cargar la información.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-danger">Error de conexión al cargar la información.</td></tr>';
                 });
         });
     });

@@ -115,22 +115,43 @@ class ActividadController extends Controller {
     public function registrarAbono(): void {
         $this->requireRole(['Presidente', 'Secretaria Actividades']);
 
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || isset($_POST['is_ajax']);
+
         $participanteId = (int)($_POST['participante_id'] ?? 0);
         $montoAbono = (float)str_replace('.', '', $_POST['monto_abono'] ?? 0);
         $observacion = trim($_POST['observacion'] ?? '');
 
         if ($participanteId <= 0 || $montoAbono <= 0) {
-            $_SESSION['error'] = "Ingresa un monto de abono válido mayor a $0.";
+            $errMsg = "Ingresa un monto de abono válido mayor a $0.";
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                return;
+            }
+            $_SESSION['error'] = $errMsg;
             $this->redirect('/admin/actividades');
         }
 
         $actividadModel = new Actividad();
-        $ok = $actividadModel->registrarAbono($participanteId, $montoAbono, $_SESSION['usuario']['id'], $observacion);
-
-        if ($ok) {
-            $_SESSION['success'] = "Abono de $" . number_format($montoAbono, 0, ',', '.') . " COP registrado exitosamente.";
-        } else {
-            $_SESSION['error'] = "No se pudo registrar el abono.";
+        try {
+            $ok = $actividadModel->registrarAbono($participanteId, $montoAbono, $_SESSION['usuario']['id'], $observacion);
+            if ($ok) {
+                $msg = "Abono de $" . number_format($montoAbono, 0, ',', '.') . " COP registrado exitosamente.";
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $msg]);
+                    return;
+                }
+                $_SESSION['success'] = $msg;
+            }
+        } catch (Exception $e) {
+            $errMsg = $e->getMessage();
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                return;
+            }
+            $_SESSION['error'] = $errMsg;
         }
 
         $this->redirect('/admin/actividades');
@@ -139,10 +160,18 @@ class ActividadController extends Controller {
     public function eliminarAbono(): void {
         $this->requireRole(['Presidente', 'Secretaria Actividades']);
 
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || isset($_POST['is_ajax']);
+
         $abonoId = (int)($_POST['abono_id'] ?? 0);
 
         if ($abonoId <= 0) {
-            $_SESSION['error'] = "Abono inválido.";
+            $errMsg = "Abono inválido.";
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                return;
+            }
+            $_SESSION['error'] = $errMsg;
             $this->redirect('/admin/actividades');
         }
 
@@ -150,9 +179,21 @@ class ActividadController extends Controller {
         $ok = $actividadModel->eliminarAbono($abonoId);
 
         if ($ok) {
-            $_SESSION['success'] = "Abono eliminado correctamente y saldo recalculado.";
+            $msg = "Abono eliminado correctamente y saldo recalculado.";
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => $msg]);
+                return;
+            }
+            $_SESSION['success'] = $msg;
         } else {
-            $_SESSION['error'] = "No se pudo eliminar el abono.";
+            $errMsg = "No se pudo eliminar el abono.";
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                return;
+            }
+            $_SESSION['error'] = $errMsg;
         }
 
         $this->redirect('/admin/actividades');
