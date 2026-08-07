@@ -24,11 +24,11 @@ class Actividad extends Model {
 
     public function getParticipantes(int $actividadId): array {
         $stmt = $this->db->prepare("
-            SELECT ap.*, u.nombre_completo, u.cedula
+            SELECT ap.*, u.nombre_completo, u.cedula, u.id
             FROM natillera_actividad_participantes ap
             JOIN natillera_usuarios u ON ap.socio_id = u.id
             WHERE ap.actividad_id = :actividad_id
-            ORDER BY u.nombre_completo ASC
+            ORDER BY u.id ASC
         ");
         $stmt->execute([':actividad_id' => $actividadId]);
         $participantes = $stmt->fetchAll();

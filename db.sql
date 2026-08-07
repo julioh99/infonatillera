@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS natillera_abonos_prestamos (
     FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ACTIVIDADES (TAMALES, EVENTOS)
+-- ACTIVIDADES (TAMALES, RIFAS)
 CREATE TABLE IF NOT EXISTS natillera_actividades (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre_actividad VARCHAR(100) NOT NULL,

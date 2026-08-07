@@ -27,7 +27,7 @@ class Usuario extends Model {
             SELECT u.id, u.cedula, u.nombre_completo, u.telefono, u.fecha_nacimiento, u.rol_id, u.tope_prestamo_personalizado, u.interes_minimo_meta, u.estado, r.nombre as rol_nombre
             FROM natillera_usuarios u
             JOIN natillera_roles r ON u.rol_id = r.id
-            ORDER BY u.nombre_completo ASC
+            ORDER BY u.id ASC
         ");
         return $stmt->fetchAll();
     }

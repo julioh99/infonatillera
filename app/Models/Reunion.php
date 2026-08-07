@@ -97,12 +97,12 @@ class Reunion extends Model {
 
     public function getAhorrosPorReunion(int $reunionId): array {
         $stmt = $this->db->prepare("
-            SELECT ac.*, u.nombre_completo, u.cedula, p.anulado_sin_interes
+            SELECT ac.*, u.nombre_completo, u.cedula, p.anulado_sin_interes, u.id
             FROM natillera_ahorros_cuotas ac
             JOIN natillera_usuarios u ON ac.socio_id = u.id
             LEFT JOIN natillera_prestamos p ON ac.prestamo_id_asociado = p.id
             WHERE ac.reunion_id = :reunion_id
-            ORDER BY u.nombre_completo ASC
+            ORDER BY u.id ASC
         ");
         $stmt->execute([':reunion_id' => $reunionId]);
         return $stmt->fetchAll();

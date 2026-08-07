@@ -64,7 +64,7 @@ class EntregaBeneficio extends Model {
                 SELECT u.id, u.nombre_completo, u.cedula
                 FROM natillera_usuarios u
                 WHERE u.estado = 1
-                ORDER BY u.nombre_completo ASC
+                ORDER BY u.id ASC
             ");
             return $stmt->fetchAll();
         }
@@ -75,7 +75,7 @@ class EntregaBeneficio extends Model {
             WHERE u.estado = 1 AND u.id NOT IN (
                 SELECT socio_id FROM natillera_entregas_beneficios WHERE tipo_beneficio = :tipo
             )
-            ORDER BY u.nombre_completo ASC
+            ORDER BY u.id ASC
         ");
         $stmt->execute([':tipo' => $tipoBeneficio]);
         return $stmt->fetchAll();

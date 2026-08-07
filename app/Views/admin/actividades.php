@@ -2,7 +2,7 @@
     <div class="col-12 col-md-6 mb-2 mb-md-0">
         <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
             <i class="fa-solid fa-utensils text-info"></i>
-            Actividades Especiales (Tamales / Eventos)
+            Actividades Especiales (Tamales / Rifas)
         </h2>
         <p class="text-muted m-0 fs-7">Gestión contable, asignación de cuotas individuales por socio y recaudo.</p>
     </div>
@@ -86,7 +86,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-8">
                             <label for="nombre_actividad" class="form-label fw-semibold fs-7">Nombre de la Actividad</label>
-                            <input type="text" name="nombre_actividad" id="nombre_actividad" class="form-control" placeholder="Ej: Venta de Tamales de Junio" required>
+                            <input type="text" name="nombre_actividad" id="nombre_actividad" class="form-control" placeholder="Ej:Tamales #1" required>
                         </div>
                         <div class="col-12 col-md-4">
                             <label for="fecha_actividad" class="form-label fw-semibold fs-7">Fecha Realización</label>

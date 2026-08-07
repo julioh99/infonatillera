@@ -81,7 +81,7 @@
                     <li>
                         <a class="nav-link <?= strpos($currentUri, '/admin/actividades') === 0 ? 'active' : '' ?>" href="/admin/actividades">
                             <i class="fa-solid fa-utensils text-info"></i>
-                            <span>Actividades (Tamales)</span>
+                            <span>Actividades</span>
                         </a>
                     </li>
                 <?php endif; ?>

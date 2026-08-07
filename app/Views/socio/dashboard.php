@@ -228,7 +228,7 @@
     </div>
 </div>
 
-<!-- Sección 2: Mis Actividades Comunitarias y Deudas (Tamales) -->
+<!-- Sección 2: Mis Actividades Comunitarias y Deudas (Tamales/Rifas) -->
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
     <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
         <h5 class="font-outfit fw-bold m-0 d-flex align-items-center gap-2">
