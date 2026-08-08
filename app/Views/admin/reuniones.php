@@ -17,7 +17,7 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
                 <tr>
-                    <th class="ps-4">Quincena</th>
+                    <th class="ps-4">Reunión</th>
                     <th>Fecha / Hora</th>
                     <th>Valor Cuota Base</th>
                     <th>Evento / Pasarela</th>
@@ -31,7 +31,7 @@
                 <?php foreach ($reuniones as $r): ?>
                     <tr>
                         <td class="ps-4">
-                            <strong class="font-outfit fs-6">Quincena Nº <?= $r['numero_quincena'] ?></strong>
+                            <strong class="font-outfit fs-6">Reunión Nº <?= $r['numero_quincena'] ?></strong>
                         </td>
                         <td>
                             <div class="fw-semibold text-dark"><i class="fa-solid fa-calendar-day text-primary me-1"></i><?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></div>
@@ -103,7 +103,7 @@
             <form action="/admin/reuniones/actualizar" method="POST">
                 <input type="hidden" name="reunion_id" id="edit_reunion_id">
                 <div class="modal-body p-4">
-                    <p class="fw-bold font-outfit text-primary fs-6 mb-3">Modificando Quincena Nº <span id="lblQuincenaNum"></span></p>
+                    <p class="fw-bold font-outfit text-primary fs-6 mb-3">Modificando Reunión Nº <span id="lblQuincenaNum"></span></p>
 
                     <div class="row g-2 mb-3">
                         <div class="col-7">

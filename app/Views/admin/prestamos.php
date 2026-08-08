@@ -283,16 +283,16 @@
                     <p class="mb-3 text-muted fs-7">Saldo Pendiente Capital: <strong id="abono_saldo_capital" class="text-dark"></strong></p>
 
                     <div class="mb-3">
-                        <label for="abono_reunion_id" class="form-label fw-semibold fs-7">Quincena / Reunión Correspondiente</label>
+                        <label for="abono_reunion_id" class="form-label fw-semibold fs-7">Reunión Correspondiente</label>
                         <select name="reunion_id" id="abono_reunion_id" class="form-select fw-bold">
                             <option value="">-- Autodetectar por Fecha --</option>
                             <?php if (!empty($reuniones)): ?>
                                 <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </select>
-                        <small class="text-muted fs-8">Vincula directamente este abono al arqueo de caja de la quincena seleccionada.</small>
+                        <small class="text-muted fs-8">Vincula directamente este abono al arqueo de caja de la reunión seleccionada.</small>
                     </div>
 
                     <div class="mb-3">

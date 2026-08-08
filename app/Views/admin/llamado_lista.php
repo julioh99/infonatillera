@@ -2,18 +2,18 @@
     <div class="col-12 col-md-6 mb-2 mb-md-0">
         <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
             <i class="fa-solid fa-clipboard-user text-primary"></i>
-            Llamado a Lista Quincenal
+            Llamado a Lista de Reunión
         </h2>
         <p class="text-muted m-0 fs-7">Control rápido mobile-first de cobro de cuotas y autopréstamos.</p>
     </div>
     <div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center gap-2">
-        <!-- Seleccionar Quincena -->
+        <!-- Seleccionar Reunión -->
         <form method="GET" action="/admin/llamado-lista" class="d-flex align-items-center gap-2 w-100 w-md-auto">
-            <label for="reunion_id" class="form-label mb-0 fw-semibold text-nowrap fs-7">Quincena:</label>
+            <label for="reunion_id" class="form-label mb-0 fw-semibold text-nowrap fs-7">Reunión:</label>
             <select name="reunion_id" id="reunion_id" class="form-select form-select-sm border-primary fw-bold shadow-sm" onchange="this.form.submit()">
                 <?php foreach ($reuniones as $r): ?>
                     <option value="<?= $r['id'] ?>" <?= ($reunionActual && $reunionActual['id'] == $r['id']) ? 'selected' : '' ?>>
-                        Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?> ($<?= number_format($r['valor_cuota_base'], 0, ',', '.') ?>)
+                        R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?> ($<?= number_format($r['valor_cuota_base'], 0, ',', '.') ?>)
                         <?= $r['tipo_evento_extra'] !== 'NINGUNO' ? ' [' . $r['tipo_evento_extra'] . ']' : '' ?>
                         <?= $r['estado'] === 'CERRADA' ? ' ✔' : '' ?>
                     </option>
@@ -34,7 +34,7 @@
                             <i class="fa-solid fa-calendar-day"></i>
                         </div>
                         <div>
-                            <span class="text-white-50 fs-7 d-block">Quincena Nº <?= $reunionActual['numero_quincena'] ?></span>
+                            <span class="text-white-50 fs-7 d-block">Reunión Nº <?= $reunionActual['numero_quincena'] ?></span>
                             <strong class="fs-5 font-outfit"><?= date('d/m/Y', strtotime($reunionActual['fecha_reunion'])) ?> - <?= $reunionActual['hora_reunion'] ?></strong>
                         </div>
                     </div>
@@ -45,7 +45,7 @@
                             <i class="fa-solid fa-money-bill-wave"></i>
                         </div>
                         <div>
-                            <span class="text-white-50 fs-7 d-block">Cuota Base Quincenal</span>
+                            <span class="text-white-50 fs-7 d-block">Cuota Base de Reunión</span>
                             <strong class="fs-4 font-outfit text-warning">$<?= number_format($reunionActual['valor_cuota_base'], 0, ',', '.') ?> COP</strong>
                         </div>
                     </div>
@@ -62,7 +62,7 @@
                             <?php elseif ($reunionActual['tipo_evento_extra'] === 'RONDA'): ?>
                                 <span class="badge bg-success fs-6">Ronda de Sorteo ($300k)</span>
                             <?php else: ?>
-                                <span class="badge bg-secondary fs-6">Quincena Regular</span>
+                                <span class="badge bg-secondary fs-6">Reunión Regular</span>
                             <?php endif; ?>
                         </div>
                     </div>

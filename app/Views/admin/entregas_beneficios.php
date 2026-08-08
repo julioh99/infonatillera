@@ -111,7 +111,7 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link rounded-pill px-4 font-outfit fw-bold" id="tab-cronograma-tab" data-bs-toggle="pill" data-bs-target="#tab-cronograma" type="button" role="tab">
-            <i class="fa-solid fa-calendar-days me-2"></i>Cronograma 26 Quincenas
+            <i class="fa-solid fa-calendar-days me-2"></i>Cronograma 26 Reuniones
         </button>
     </li>
 </ul>
@@ -124,7 +124,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4">Quincena / Fecha</th>
+                            <th class="ps-4">Reunión / Fecha</th>
                             <th>Socio Beneficiario</th>
                             <th>Tipo Entrega</th>
                             <th>Monto Entregado</th>
@@ -145,7 +145,7 @@
                             <?php foreach ($entregas as $e): ?>
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold font-outfit text-dark">Q<?= $e['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($e['fecha_reunion'])) ?></div>
+                                        <div class="fw-bold font-outfit text-dark">R<?= $e['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($e['fecha_reunion'])) ?></div>
                                         <small class="text-muted"><?= date('d/m/Y H:i', strtotime($e['fecha_entrega'])) ?></small>
                                     </td>
                                     <td>
@@ -188,7 +188,7 @@
         </div>
     </div>
 
-    <!-- Tab 2: Cronograma 26 Quincenas -->
+    <!-- Tab 2: Cronograma 26 Reuniones -->
     <div class="tab-pane fade" id="tab-cronograma" role="tabpanel">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-header bg-dark text-white p-3">
@@ -198,7 +198,7 @@
                 <table class="table table-sm table-hover align-middle mb-0 fs-7">
                     <thead class="bg-light font-outfit text-uppercase">
                         <tr>
-                            <th class="ps-3">Quincena</th>
+                            <th class="ps-3">Reunión</th>
                             <th>Tipo Fondo</th>
                             <th>Cuota Base</th>
                             <th>Aporte c/u</th>
@@ -211,7 +211,7 @@
                     <tbody>
                         <?php foreach ($cronograma as $c): ?>
                             <tr>
-                                <td class="ps-3 fw-bold font-outfit">Q<?= $c['numero_quincena'] ?> (<?= date('d/m/Y', strtotime($c['fecha_reunion'])) ?>)</td>
+                                <td class="ps-3 fw-bold font-outfit">R<?= $c['numero_quincena'] ?> (<?= date('d/m/Y', strtotime($c['fecha_reunion'])) ?>)</td>
                                 <td>
                                     <span class="badge bg-<?= $c['tipo_beneficio'] === 'RONDA' ? 'warning text-dark' : 'info text-dark' ?>">
                                         <?= $c['tipo_beneficio'] ?>
@@ -257,10 +257,10 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-4">
-                            <label for="entrega_reunion_id" class="form-label fw-semibold fs-7">Reunión / Quincena</label>
+                            <label for="entrega_reunion_id" class="form-label fw-semibold fs-7">Reunión</label>
                             <select name="reunion_id" id="entrega_reunion_id" class="form-select" required>
                                 <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

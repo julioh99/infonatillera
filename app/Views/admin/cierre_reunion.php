@@ -4,7 +4,7 @@
             <i class="fa-solid fa-file-invoice-dollar text-primary"></i>
             Arqueo de Caja y Cierre Financiero por Reunión
         </h2>
-        <p class="text-muted m-0 fs-7">Liquidación detallada de ingresos (+), egresos (-) y saldo de caja para cada quincena.</p>
+        <p class="text-muted m-0 fs-7">Liquidación detallada de ingresos (+), egresos (-) y saldo de caja para cada reunión.</p>
     </div>
     <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2">
         <form method="GET" action="/admin/cierre-reunion" class="d-flex align-items-center gap-2">
@@ -12,7 +12,7 @@
             <select name="reunion_id" id="selectReunionCierre" class="form-select form-select-sm fw-bold shadow-sm" onchange="this.form.submit()">
                 <?php foreach ($reuniones as $r): ?>
                     <option value="<?= $r['id'] ?>" <?= ($r['id'] == $reunionId) ? 'selected' : '' ?>>
-                        Quincena Q<?= $r['numero_quincena'] ?> (<?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?>) - <?= $r['estado'] ?>
+                        Reunión R<?= $r['numero_quincena'] ?> (<?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?>) - <?= $r['estado'] ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -31,7 +31,7 @@
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
                 <span class="badge bg-white text-dark font-outfit fw-bold fs-7 px-3 py-1 mb-2">
-                    <i class="fa-solid fa-calendar-day text-primary me-1"></i>Quincena Q<?= $rInfo['numero_quincena'] ?>
+                    <i class="fa-solid fa-calendar-day text-primary me-1"></i>Reunión R<?= $rInfo['numero_quincena'] ?>
                 </span>
                 <h3 class="font-outfit fw-bold text-white m-0">
                     Fecha de Reunión: <?= date('d/m/Y', strtotime($rInfo['fecha_reunion'])) ?>
@@ -153,7 +153,7 @@
     <div class="card border-0 shadow-lg rounded-4 mb-5 p-4 bg-white">
         <div class="row align-items-center g-4">
             <div class="col-12 col-md-4 border-end-md">
-                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Flujo Neto de la Reunión (Q<?= $rInfo['numero_quincena'] ?>)</span>
+                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Flujo Neto de la Reunión (R<?= $rInfo['numero_quincena'] ?>)</span>
                 <h2 class="font-outfit fw-bold <?= ($resumen['saldo_neto_reunion'] >= 0) ? 'text-success' : 'text-danger' ?> m-0 mt-1">
                     $<?= number_format($resumen['saldo_neto_reunion'], 0, ',', '.') ?> COP
                 </h2>
@@ -172,7 +172,7 @@
                         <i class="fa-solid fa-lock me-1"></i>Reunión ya Cerrada
                     </button>
                 <?php else: ?>
-                    <form action="/admin/cierre-reunion/cerrar" method="POST" onsubmit="return confirm('¿Confirmas realizar el CIERRE FINANCIERO de la Quincena Q<?= $rInfo['numero_quincena'] ?>? Esta acción guardará el arqueo e inmovilizará los registros.');">
+                    <form action="/admin/cierre-reunion/cerrar" method="POST" onsubmit="return confirm('¿Confirmas realizar el CIERRE FINANCIERO de la Reunión R<?= $rInfo['numero_quincena'] ?>? Esta acción guardará el arqueo e inmovilizará los registros.');">
                         <input type="hidden" name="reunion_id" value="<?= $rInfo['id'] ?>">
                         <button type="submit" class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow">
                             <i class="fa-solid fa-lock me-2"></i>Realizar Cierre Financiero
@@ -193,7 +193,7 @@
         <table class="table table-hover align-middle mb-0 fs-7">
             <thead class="bg-light font-outfit text-uppercase fs-8">
                 <tr>
-                    <th class="ps-4">Reunión / Quincena</th>
+                    <th class="ps-4">Reunión</th>
                     <th>Fecha Cierre</th>
                     <th>Total Ingresos</th>
                     <th>Total Egresos</th>
@@ -211,7 +211,7 @@
                     <?php foreach ($todosCierres as $c): ?>
                         <tr>
                             <td class="ps-4 fw-bold font-outfit">
-                                Quincena Q<?= $c['numero_quincena'] ?>
+                                Reunión R<?= $c['numero_quincena'] ?>
                                 <small class="d-block text-muted fw-normal"><?= date('d/m/Y', strtotime($c['fecha_reunion'])) ?></small>
                             </td>
                             <td><?= date('d/m/Y g:i a', strtotime($c['fecha_cierre'])) ?></td>

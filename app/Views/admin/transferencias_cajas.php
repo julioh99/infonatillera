@@ -48,7 +48,7 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
                 <tr>
-                    <th class="ps-4">Quincena / Reunión</th>
+                    <th class="ps-4">Reunión</th>
                     <th>Tipo de Movimiento</th>
                     <th>Actividad Asociada</th>
                     <th>Monto Transferido</th>
@@ -71,7 +71,7 @@
                     ?>
                         <tr>
                             <td class="ps-4">
-                                <span class="badge bg-primary font-outfit fs-7">Quincena Q<?= $t['numero_quincena'] ?></span>
+                                <span class="badge bg-primary font-outfit fs-7">Reunión R<?= $t['numero_quincena'] ?></span>
                                 <small class="d-block text-muted fs-8"><?= date('d/m/Y', strtotime($t['fecha_reunion'])) ?></small>
                             </td>
                             <td>
@@ -119,10 +119,10 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label for="trans_reunion_id" class="form-label fw-semibold fs-7">Reunión / Quincena</label>
+                            <label for="trans_reunion_id" class="form-label fw-semibold fs-7">Reunión</label>
                             <select name="reunion_id" id="trans_reunion_id" class="form-select" required>
                                 <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

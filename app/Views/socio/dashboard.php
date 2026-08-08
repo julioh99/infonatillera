@@ -98,17 +98,17 @@
 
 <!-- Tabs de Historial -->
 <div class="row g-4 mb-4">
-    <!-- Historial de Cuotas Quincenales -->
+    <!-- Historial de Cuotas de Reunión -->
     <div class="col-12 col-lg-7">
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
             <div class="card-header bg-dark text-white p-3">
-                <h5 class="font-outfit fw-bold m-0"><i class="fa-solid fa-list-check me-2 text-warning"></i>Historial de Ahorros por Quincena</h5>
+                <h5 class="font-outfit fw-bold m-0"><i class="fa-solid fa-list-check me-2 text-warning"></i>Historial de Ahorros por Reunión</h5>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light font-outfit fs-7 text-uppercase">
                         <tr>
-                            <th class="ps-4">Quincena</th>
+                            <th class="ps-4">Reunión</th>
                             <th>Cuota Pagada</th>
                             <th>Ahorro Extra</th>
                             <th class="text-end pe-4">Total Aportado</th>
@@ -125,7 +125,7 @@
                             ?>
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold font-outfit">Q<?= $c['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($c['fecha_reunion'])) ?></div>
+                                        <div class="fw-bold font-outfit">R<?= $c['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($c['fecha_reunion'])) ?></div>
                                         <small class="text-muted"><?= $c['tipo_evento_extra'] !== 'NINGUNO' ? $c['tipo_evento_extra'] : 'Regular' ?></small>
                                     </td>
                                     <td>

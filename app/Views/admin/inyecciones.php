@@ -50,9 +50,8 @@
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
-                <tr>
-                    <th class="ps-4">Socio Inversionista</th>
-                    <th>Quincena / Reunión</th>
+                <tr>                    <th class="ps-4">Socio Inversionista</th>
+                    <th>Reunión</th>
                     <th>Monto Inyectado</th>
                     <th>Rendimiento (5%)</th>
                     <th>Fecha Inyección</th>
@@ -80,7 +79,7 @@
                                 <small class="text-muted">C.C. <?= htmlspecialchars($iny['socio_cedula']) ?></small>
                             </td>
                             <td>
-                                <span class="badge bg-primary">Quincena Q<?= $iny['numero_quincena'] ?></span>
+                                <span class="badge bg-primary">Reunión R<?= $iny['numero_quincena'] ?></span>
                                 <small class="d-block text-muted fs-8"><?= date('d/m/Y', strtotime($iny['fecha_reunion'])) ?></small>
                             </td>
                             <td class="fw-bold font-outfit text-success fs-6">$<?= number_format($iny['monto_inyectado'], 0, ',', '.') ?> COP</td>
@@ -112,7 +111,7 @@
                                     <span class="text-muted fs-8"><i class="fa-solid fa-circle-check text-success me-1"></i>Completado</span>
                                 <?php endif; ?>
                             </td>
-                        </tr>
+                            </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
@@ -142,15 +141,15 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-7">
-                            <label for="iny_reunion_id" class="form-label fw-semibold fs-7">Reunión / Quincena (Apertura)</label>
+                            <label for="iny_reunion_id" class="form-label fw-semibold fs-7">Reunión (Apertura)</label>
                             <select name="reunion_id" id="iny_reunion_id" class="form-select" required>
                                 <?php foreach ($reuniones as $r): ?>
                                     <option value="<?= $r['id'] ?>" <?= in_array($r['numero_quincena'], [1, 2]) ? 'class="fw-bold text-success"' : '' ?>>
-                                        Quincena Q<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?>
+                                        Reunión R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                        </div>
+                        </div>       </div>
                         <div class="col-5">
                             <label for="iny_tasa" class="form-label fw-semibold fs-7">Tasa Rendimiento %</label>
                             <input type="number" step="0.01" name="tasa_rendimiento_porcentaje" id="iny_tasa" class="form-control fw-bold text-warning" value="5.00" readonly required>

@@ -105,7 +105,7 @@
 
                     <div class="mb-3">
                         <label for="mensaje" class="form-label fw-semibold fs-7">Contenido del Mensaje</label>
-                        <textarea name="mensaje" id="mensaje" class="form-control" rows="3" placeholder="Ej: Hoy a las 2:00 PM nos reunimos. Cuota de la quincena: $55.000 COP." required></textarea>
+                        <textarea name="mensaje" id="mensaje" class="form-control" rows="3" placeholder="Ej: Hoy a las 2:00 PM nos reunimos. Cuota de la reunión: $55.000 COP." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">

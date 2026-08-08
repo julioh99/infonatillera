@@ -333,7 +333,7 @@
                                     <table class="table table-sm table-bordered align-middle fs-7 mb-0">
                                         <thead class="bg-dark text-white font-outfit">
                                             <tr>
-                                                <th>Reunión / Quincena</th>
+                                                <th>Reunión</th>
                                                 <th>Fecha</th>
                                                 <th>Cuota Base ($40.000)</th>
                                                 <th>Ahorro Voluntario</th>
@@ -403,7 +403,7 @@
                                                 <th>Tipo Entrega</th>
                                                 <th>Fecha y Hora</th>
                                                 <th>Monto Entregado</th>
-                                                <th>Reunión / Quincena</th>
+                                                <th>Reunión</th>
                                                 <th class="text-center">Evidencia Firma</th>
                                                 <th class="text-center">Comprobante Foto</th>
                                             </tr>
@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const isPagada = c.cuota_pagada == 1;
                             html += `
                                 <tr>
-                                    <td class="fw-bold">Q${c.numero_quincena}</td>
+                                    <td class="fw-bold">R${c.numero_quincena}</td>
                                     <td>${c.fecha_reunion}</td>
                                     <td class="fw-bold text-dark">$${new Intl.NumberFormat('es-CO').format(cuotaVal)}</td>
                                     <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(extraVal)}</td>
@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td><span class="badge bg-${e.tipo_beneficio === 'PRESTAMO' ? 'primary' : (e.tipo_beneficio === 'RONDA' ? 'success' : 'warning text-dark')}">${e.tipo_beneficio}</span></td>
                                     <td>${new Date(e.fecha_entrega).toLocaleString('es-CO')}</td>
                                     <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(monto)}</td>
-                                    <td>Quincena Q${e.numero_quincena || '-'}</td>
+                                    <td>Reunión R${e.numero_quincena || '-'}</td>
                                     <td class="text-center">${firmaImg}</td>
                                     <td class="text-center">${fotoImg}</td>
                                 </tr>

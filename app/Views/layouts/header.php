@@ -88,12 +88,6 @@
 
                 <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
                     <li>
-                        <a class="nav-link <?= strpos($currentUri, '/admin/inyecciones') === 0 ? 'active' : '' ?>" href="/admin/inyecciones">
-                            <i class="fa-solid fa-chart-line text-success"></i>
-                            <span>Inyecciones Capital</span>
-                        </a>
-                    </li>
-                    <li>
                         <a class="nav-link <?= strpos($currentUri, '/admin/cierre-reunion') === 0 ? 'active' : '' ?>" href="/admin/cierre-reunion">
                             <i class="fa-solid fa-file-invoice-dollar text-primary"></i>
                             <span>Cierre de Reunión</span>
@@ -124,6 +118,15 @@
                         <a class="nav-link <?= strpos($currentUri, '/admin/socios') === 0 ? 'active' : '' ?>" href="/admin/socios">
                             <i class="fa-solid fa-users-gear text-primary"></i>
                             <span>Gestión Socios</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/inyecciones') === 0 ? 'active' : '' ?>" href="/admin/inyecciones">
+                            <i class="fa-solid fa-chart-line text-success"></i>
+                            <span>Inyecciones Capital</span>
                         </a>
                     </li>
                 <?php endif; ?>
