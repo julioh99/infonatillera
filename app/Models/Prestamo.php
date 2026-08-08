@@ -12,7 +12,17 @@ class Prestamo extends Model {
                 u_deudor.nombre_completo as deudor_nombre,
                 u_deudor.cedula as deudor_cedula,
                 IFNULL(SUM(ap.monto_capital_pagado), 0) as total_capital_pagado,
-                IFNULL(SUM(ap.monto_interes_pagado), 0) as total_interes_pagado
+                IFNULL(SUM(ap.monto_interes_pagado), 0) as total_interes_pagado,
+                (SELECT COUNT(*) 
+                 FROM natillera_entregas_beneficios eb 
+                 WHERE eb.socio_id = p.socio_deudor_id 
+                   AND eb.tipo_beneficio = 'PRESTAMO' 
+                   AND (
+                       (eb.firma_digital_path IS NOT NULL AND eb.firma_digital_path != '') 
+                       OR 
+                       (eb.foto_evidencia_path IS NOT NULL AND eb.foto_evidencia_path != '')
+                   )
+                ) as tiene_firma_foto
             FROM natillera_prestamos p
             JOIN natillera_usuarios u_deudor ON p.socio_deudor_id = u_deudor.id
             LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id

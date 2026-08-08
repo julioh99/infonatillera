@@ -108,7 +108,7 @@
                     <tr>
                         <th class="ps-4">Socio / Cédula</th>
                         <th class="text-center">Pagó Cuota ($<?= number_format($reunionActual['valor_cuota_base'], 0, ',', '.') ?>)</th>
-                        <th class="text-center" style="width: 180px;">Ahorro Extra (COP)</th>
+                        <th class="text-center" style="min-width: 170px; width: 220px;">Ahorro Extra (COP)</th>
                         <th class="text-center">Generar Autopréstamo</th>
                         <th class="text-end pe-4">Regla 24h / Estado</th>
                     </tr>
@@ -142,10 +142,10 @@
                                            <?= $pagoCuota ? 'checked' : '' ?>>
                                 </div>
                             </td>
-                            <td class="text-center">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">$</span>
-                                    <input type="text" class="form-control input-ahorro-extra money-input fw-semibold text-end" 
+                            <td class="text-center" style="min-width: 160px;">
+                                <div class="input-group input-group-sm mx-auto" style="min-width: 150px; max-width: 220px;">
+                                    <span class="input-group-text fw-bold text-dark">$</span>
+                                    <input type="text" class="form-control input-ahorro-extra money-input fw-bold text-end text-primary fs-6" 
                                            id="ahorro_<?= $socio['id'] ?>" 
                                            value="<?= $ahorroExtra > 0 ? number_format($ahorroExtra, 0, ',', '.') : '' ?>" 
                                            placeholder="0">

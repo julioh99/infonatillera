@@ -91,10 +91,11 @@
                                     </button>
 
                                     <!-- Firma Digital y Foto Evidencia -->
+                                    <?php $tieneFirmaFoto = !empty($p['tiene_firma_foto']) && $p['tiene_firma_foto'] > 0; ?>
                                     <a href="/admin/entregas?tipo=PRESTAMO&socio_id=<?= $p['socio_deudor_id'] ?>&monto=<?= $p['monto_prestado'] ?>" 
-                                       class="btn btn-xs btn-outline-warning text-dark rounded-pill px-2 py-1"
-                                       title="Registrar Firma Digital y Foto Evidencia del Desembolso">
-                                        <i class="fa-solid fa-signature me-1"></i>Firma/Foto
+                                       class="btn btn-xs <?= $tieneFirmaFoto ? 'btn-warning text-dark font-outfit fw-bold shadow-sm' : 'btn-outline-warning text-dark' ?> rounded-pill px-2 py-1"
+                                       title="<?= $tieneFirmaFoto ? 'Firma/Foto Registrada - Click para ver/editar en Módulo Entregas' : 'Registrar Firma Digital y Foto Evidencia del Desembolso' ?>">
+                                        <i class="fa-solid <?= $tieneFirmaFoto ? 'fa-circle-check text-dark' : 'fa-signature' ?> me-1"></i>Firma/Foto<?= $tieneFirmaFoto ? ' ✔' : '' ?>
                                     </a>
 
                                     <!-- Editar Préstamo (Presidente / Sec General) -->
