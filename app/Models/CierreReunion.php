@@ -30,12 +30,11 @@ class CierreReunion extends Model {
         $fechaReunion = $reunion['fecha_reunion'];
 
         // 2. INGRESOS (+)
-        // a) Cuotas base ($40.000)
+        // a) Cuotas base ($40.000) y Ahorros Voluntarios Extras
         $stmtCuotas = $this->db->prepare("
             SELECT 
                 IFNULL(SUM(CASE WHEN cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END), 0) as total_cuotas_base,
-                IFNULL(SUM(monto_ahorro_extra), 0) as total_ahorro_extra,
-                IFNULL(SUM(monto_aporte_ronda + monto_aporte_rifa), 0) as total_rondas_rifas
+                IFNULL(SUM(monto_ahorro_extra), 0) as total_ahorro_extra
             FROM natillera_ahorros_cuotas
             WHERE reunion_id = :reunion_id
         ");
@@ -44,17 +43,33 @@ class CierreReunion extends Model {
 
         $cuotasBase = (float)$resCuotas['total_cuotas_base'];
         $ahorroExtra = (float)$resCuotas['total_ahorro_extra'];
-        $rondasRifas = (float)$resCuotas['total_rondas_rifas'];
 
-        // b) Abonos a préstamos (Capital e Intereses) realizados en la fecha de la reunión o asociados a esta quincena
+        // b) Abonos a préstamos (Capital e Intereses) asociados a esta quincena o realizados en el rango de fechas
+        $quincenaNum = (int)$reunion['numero_quincena'];
+        $quincenaPrevNum = $quincenaNum - 1;
+
         $stmtPrestamos = $this->db->prepare("
             SELECT 
                 IFNULL(SUM(monto_capital_pagado), 0) as total_capital,
                 IFNULL(SUM(monto_interes_pagado), 0) as total_interes
-            FROM natillera_abonos_prestamos
-            WHERE DATE(fecha_abono) = :fecha
+            FROM natillera_abonos_prestamos ap
+            WHERE 
+                ap.reunion_id = :reunion_id
+                OR (
+                    ap.reunion_id IS NULL AND (
+                        DATE(ap.fecha_abono) = :fecha
+                        OR (
+                            DATE(ap.fecha_abono) <= :fecha
+                            AND DATE(ap.fecha_abono) > IFNULL((SELECT fecha_reunion FROM natillera_reuniones WHERE numero_quincena = :quincena_prev LIMIT 1), '2000-01-01')
+                        )
+                    )
+                )
         ");
-        $stmtPrestamos->execute([':fecha' => $fechaReunion]);
+        $stmtPrestamos->execute([
+            ':reunion_id' => $reunionId,
+            ':fecha' => $fechaReunion,
+            ':quincena_prev' => $quincenaPrevNum
+        ]);
         $resPrestamos = $stmtPrestamos->fetch();
 
         $abonoCapital = (float)$resPrestamos['total_capital'];
@@ -78,7 +93,7 @@ class CierreReunion extends Model {
         $stmtInyecciones->execute([':reunion_id' => $reunionId]);
         $inyecciones = (float)$stmtInyecciones->fetch()['total_inyecciones'];
 
-        $totalIngresos = $cuotasBase + $ahorroExtra + $rondasRifas + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
+        $totalIngresos = $cuotasBase + $ahorroExtra + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
 
         // 3. EGRESOS (-)
         // a) Préstamos otorgados / desembolsados a socios en esta reunión
@@ -90,16 +105,7 @@ class CierreReunion extends Model {
         $stmtEgrPrestamos->execute([':reunion_id' => $reunionId]);
         $prestamosOtorgados = (float)$stmtEgrPrestamos->fetch()['total_prestamos_otorgados'];
 
-        // b) Premios entregados (Rondas y Rifas)
-        $stmtEgrPremios = $this->db->prepare("
-            SELECT IFNULL(SUM(monto_entregado), 0) as total_premios
-            FROM natillera_entregas_beneficios
-            WHERE reunion_id = :reunion_id AND tipo_beneficio IN ('RONDA', 'RIFA')
-        ");
-        $stmtEgrPremios->execute([':reunion_id' => $reunionId]);
-        $premiosEntregados = (float)$stmtEgrPremios->fetch()['total_premios'];
-
-        // c) Inyecciones de capital devueltas/retiradas en esta reunión
+        // b) Inyecciones de capital devueltas/retiradas en esta reunión
         $stmtEgrInyDev = $this->db->prepare("
             SELECT IFNULL(SUM(monto_inyectado), 0) as total_devueltas
             FROM natillera_inyecciones_capital
@@ -108,7 +114,7 @@ class CierreReunion extends Model {
         $stmtEgrInyDev->execute([':fecha' => $fechaReunion]);
         $inyeccionesDevueltas = (float)$stmtEgrInyDev->fetch()['total_devueltas'];
 
-        // d) Préstamos sin interés otorgados desde la Caja Mayor hacia la Caja de Actividades
+        // c) Préstamos sin interés otorgados desde la Caja Mayor hacia la Caja de Actividades
         $stmtPrestAct = $this->db->prepare("
             SELECT IFNULL(SUM(monto), 0) as total_prestamos_actividades
             FROM natillera_transferencias_cajas
@@ -117,7 +123,7 @@ class CierreReunion extends Model {
         $stmtPrestAct->execute([':reunion_id' => $reunionId]);
         $prestamosAActividades = (float)$stmtPrestAct->fetch()['total_prestamos_actividades'];
 
-        $totalEgresos = $prestamosOtorgados + $premiosEntregados + $inyeccionesDevueltas + $prestamosAActividades;
+        $totalEgresos = $prestamosOtorgados + $inyeccionesDevueltas + $prestamosAActividades;
 
         // 4. Saldo Neto de la Reunión
         $saldoNetoReunion = $totalIngresos - $totalEgresos;
@@ -139,7 +145,6 @@ class CierreReunion extends Model {
             'ingresos' => [
                 'cuotas_base' => $cuotasBase,
                 'ahorro_extra' => $ahorroExtra,
-                'rondas_rifas' => $rondasRifas,
                 'abono_capital' => $abonoCapital,
                 'intereses_prestamos' => $interesesPrestamos,
                 'devoluciones_actividades' => $devolucionesActividades,
@@ -148,7 +153,6 @@ class CierreReunion extends Model {
             ],
             'egresos' => [
                 'prestamos_otorgados' => $prestamosOtorgados,
-                'premios_entregados' => $premiosEntregados,
                 'inyecciones_devueltas' => $inyeccionesDevueltas,
                 'prestamos_actividades' => $prestamosAActividades,
                 'total' => $totalEgresos

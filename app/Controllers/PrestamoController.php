@@ -4,6 +4,7 @@
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../Models/Prestamo.php';
 require_once __DIR__ . '/../Models/Usuario.php';
+require_once __DIR__ . '/../Models/Reunion.php';
 
 class PrestamoController extends Controller {
 
@@ -12,13 +13,16 @@ class PrestamoController extends Controller {
 
         $prestamoModel = new Prestamo();
         $usuarioModel = new Usuario();
+        $reunionModel = new Reunion();
 
         $prestamos = $prestamoModel->getTodosPrestamos();
         $socios = $usuarioModel->getAllSocios();
+        $reuniones = $reunionModel->getReuniones();
 
         $this->render('admin/prestamos', [
             'prestamos' => $prestamos,
             'socios' => $socios,
+            'reuniones' => $reuniones,
             'userRole' => $_SESSION['usuario']['rol_nombre']
         ]);
     }
@@ -102,6 +106,7 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $prestamoId = (int)($_POST['prestamo_id'] ?? 0);
+        $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
         $montoCapital = (float)str_replace('.', '', $_POST['monto_capital_pagado'] ?? 0);
         $montoInteres = (float)str_replace('.', '', $_POST['monto_interes_pagado'] ?? 0);
 
@@ -110,8 +115,15 @@ class PrestamoController extends Controller {
             $this->redirect('/admin/prestamos');
         }
 
+        $usuarioModel = new Usuario();
+        $usuarioId = (int)($_SESSION['usuario']['id'] ?? 1);
+        if (!$usuarioModel->getSocioById($usuarioId)) {
+            $todosSocios = $usuarioModel->getAllSocios();
+            $usuarioId = !empty($todosSocios) ? (int)$todosSocios[0]['id'] : 1;
+        }
+
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->registrarAbono($prestamoId, $montoCapital, $montoInteres, $_SESSION['usuario']['id']);
+        $ok = $prestamoModel->registrarAbono($prestamoId, $montoCapital, $montoInteres, $usuarioId, $reunionId);
 
         if ($ok) {
             $_SESSION['success'] = "Abono registrado correctamente.";

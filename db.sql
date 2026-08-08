@@ -69,11 +69,13 @@ CREATE TABLE IF NOT EXISTS natillera_prestamos (
 CREATE TABLE IF NOT EXISTS natillera_abonos_prestamos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prestamo_id INT NOT NULL,
+    reunion_id INT NULL,
     monto_interes_pagado DECIMAL(10,2) DEFAULT 0.00,
     monto_capital_pagado DECIMAL(10,2) DEFAULT 0.00,
     fecha_abono DATETIME DEFAULT CURRENT_TIMESTAMP,
     registrado_por_usuario_id INT NOT NULL,
     FOREIGN KEY (prestamo_id) REFERENCES natillera_prestamos(id),
+    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
     FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

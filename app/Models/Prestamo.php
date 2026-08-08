@@ -93,15 +93,16 @@ class Prestamo extends Model {
         return $stmt->fetchAll();
     }
 
-    public function registrarAbono(int $prestamoId, float $montoCapital, float $montoInteres, int $usuarioId): bool {
+    public function registrarAbono(int $prestamoId, float $montoCapital, float $montoInteres, int $usuarioId, ?int $reunionId = null): bool {
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO natillera_abonos_prestamos (prestamo_id, monto_capital_pagado, monto_interes_pagado, registrado_por_usuario_id)
-                VALUES (:prestamo_id, :monto_capital, :monto_interes, :registrado_por)
+                INSERT INTO natillera_abonos_prestamos (prestamo_id, reunion_id, monto_capital_pagado, monto_interes_pagado, registrado_por_usuario_id)
+                VALUES (:prestamo_id, :reunion_id, :monto_capital, :monto_interes, :registrado_por)
             ");
             $stmt->execute([
                 ':prestamo_id' => $prestamoId,
+                ':reunion_id' => $reunionId,
                 ':monto_capital' => $montoCapital,
                 ':monto_interes' => $montoInteres,
                 ':registrado_por' => $usuarioId
@@ -116,7 +117,7 @@ class Prestamo extends Model {
         }
     }
 
-    public function actualizarAbono(int $abonoId, float $montoCapital, float $montoInteres, ?string $fechaAbono = null): bool {
+    public function actualizarAbono(int $abonoId, float $montoCapital, float $montoInteres, ?string $fechaAbono = null, ?int $reunionId = null): bool {
         $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM natillera_abonos_prestamos WHERE id = :id");
         $stmtAbono->execute([':id' => $abonoId]);
         $abono = $stmtAbono->fetch();
@@ -134,6 +135,11 @@ class Prestamo extends Model {
         if (!empty($fechaAbono)) {
             $fields[] = "fecha_abono = :fecha";
             $params[':fecha'] = $fechaAbono;
+        }
+
+        if ($reunionId !== null) {
+            $fields[] = "reunion_id = :reunion_id";
+            $params[':reunion_id'] = $reunionId;
         }
 
         $sql = "UPDATE natillera_abonos_prestamos SET " . implode(', ', $fields) . " WHERE id = :id";

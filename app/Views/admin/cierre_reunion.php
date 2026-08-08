@@ -80,13 +80,6 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                             <div>
-                                <strong class="d-block">Aportes a Fondo Rondas y Rifas</strong>
-                                <small class="text-muted">Aportes comunitarios de la quincena</small>
-                            </div>
-                            <span class="fw-bold text-info font-outfit fs-6">$<?= number_format($ing['rondas_rifas'], 0, ',', '.') ?></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <div>
                                 <strong class="d-block">Abonos a Capital de Préstamos</strong>
                                 <small class="text-muted">Recuperación de principal prestado</small>
                             </div>
@@ -135,13 +128,6 @@
                                 <small class="text-muted">Capital girado a socios en la reunión</small>
                             </div>
                             <span class="fw-bold text-danger font-outfit fs-6">$<?= number_format($egr['prestamos_otorgados'], 0, ',', '.') ?></span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <div>
-                                <strong class="d-block">Premios Entregados (Rondas y Rifas)</strong>
-                                <small class="text-muted">Desembolsos de beneficios a ganadores</small>
-                            </div>
-                            <span class="fw-bold text-danger font-outfit fs-6">$<?= number_format($egr['premios_entregados'], 0, ',', '.') ?></span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                             <div>
