@@ -97,7 +97,7 @@ class CierreReunion extends Model {
         $stmtInyecciones->execute([':reunion_id' => $reunionId]);
         $inyecciones = (float)$stmtInyecciones->fetch()['total_inyecciones'];
 
-        $totalIngresos = $cuotasBase + $ahorroExtra + $rondasRifas + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
+        $totalIngresos = $cuotasBase + $ahorroExtra + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
 
         // 3. EGRESOS (-)
         // a) Préstamos otorgados / desembolsados a socios en esta reunión
@@ -149,7 +149,7 @@ class CierreReunion extends Model {
             'ingresos' => [
                 'cuotas_base' => $cuotasBase,
                 'ahorro_extra' => $ahorroExtra,
-                'rondas_rifas' => $rondasRifas,
+                'rondas_rifas' => 0.00,
                 'abono_capital' => $abonoCapital,
                 'intereses_prestamos' => $interesesPrestamos,
                 'devoluciones_actividades' => $devolucionesActividades,

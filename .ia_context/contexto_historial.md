@@ -419,6 +419,17 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
   - **Descripción**: Viñetas explicativas detalladas con todas las mejoras y correcciones realizadas.
   - **Ejecución**: Ejecutar `git commit` y `git push` únicamente cuando el usuario envíe comandos explícitos como *"Haz commit"*, *"Crea el commit"* o *"Haz commit y push"*.
 
+---
+
+### 📌 Petición 36: Exclusión de Fondos de Rondas y Rifas del Cierre Financiero de Caja Mayor
+**Requerimiento del Usuario:**
+`Está bien lo del cierre, pero en el cierre incluiste nuevamente los 750 de los aportes de ronda y rifa y eso no se tiene en cuenta ahí, porque eso se maneja independiente. Entonces no se deben tener en cuenta ahí, no se pueden sumar eso.`
+
+**Solución Brindada:**
+- **Corrección en Modelo (`CierreReunion.php`):** Se eliminó la suma de `$rondasRifas` de los `$totalIngresos` de la Caja Mayor y se fijó en 0.00 el rubro de rondas/rifas en el arqueo financiero.
+- **Limpieza de Interfaz (`cierre_reunion.php`):** Se retiró el ítem de *Aportes a Ronda y Rifa* del bloque visual de **INGRESOS A CAJA (+)**, dejando exclusivamente las cuotas base ($40k), ahorro extra, abonos a préstamos, intereses, inyecciones y devoluciones.
+
+
 
 
 

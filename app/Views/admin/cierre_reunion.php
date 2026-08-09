@@ -85,13 +85,7 @@
                             </div>
                             <span class="fw-bold text-success font-outfit fs-6">$<?= number_format($ing['ahorro_extra'], 0, ',', '.') ?></span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                            <div>
-                                <strong class="d-block">Aportes a Ronda y Rifa</strong>
-                                <small class="text-muted">Recaudo de fondo para rondas y rifas quincenales</small>
-                            </div>
-                            <span class="fw-bold text-warning font-outfit fs-6">$<?= number_format($ing['rondas_rifas'] ?? 0, 0, ',', '.') ?></span>
-                        </li>
+
                         <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                             <div>
                                 <strong class="d-block">Abonos a Capital de Préstamos</strong>
