@@ -139,8 +139,8 @@ class Reunion extends Model {
             ");
 
             $stmtInsertPrestamo = $this->db->prepare("
-                INSERT INTO natillera_prestamos (socio_deudor_id, monto_prestado, tasa_interes_mensual, tipo_prestamo, es_autoprestamo)
-                VALUES (:socio_deudor_id, :monto_prestado, 10.00, 'AUTOPRESTAMO', 1)
+                INSERT INTO natillera_prestamos (socio_deudor_id, reunion_id, monto_prestado, tasa_interes_mensual, tipo_prestamo, es_autoprestamo)
+                VALUES (:socio_deudor_id, :reunion_id, :monto_prestado, 10.00, 'AUTOPRESTAMO', 1)
             ");
 
             foreach ($registros as $reg) {
@@ -154,18 +154,22 @@ class Reunion extends Model {
                 if (!$pagouCuota && $generarAutoprestamo) {
                     $stmtInsertPrestamo->execute([
                         ':socio_deudor_id' => $socioId,
+                        ':reunion_id' => $reunionId,
                         ':monto_prestado' => $valorCuotaBase
                     ]);
                     $prestamoId = (int)$this->db->lastInsertId();
                 }
 
+                // El dinero de la cuotas base ($40k, $10k ronda, $5k rifa) ingresa a la natillera por pago directo o por desembolso de autopréstamo
+                $cuotaIngresada = ($pagouCuota || !empty($prestamoId));
+
                 $stmtInsertAhorro->execute([
                     ':reunion_id' => $reunionId,
                     ':socio_id' => $socioId,
-                    ':cuota_pagada' => $pagouCuota ? 1 : 0,
-                    ':monto_cuota' => $pagouCuota ? $ahorroNetoConstante : 0.00,
-                    ':monto_aporte_ronda' => $pagouCuota ? $aporteRondaBase : 0.00,
-                    ':monto_aporte_rifa' => $pagouCuota ? $aporteRifaBase : 0.00,
+                    ':cuota_pagada' => $cuotaIngresada ? 1 : 0,
+                    ':monto_cuota' => $cuotaIngresada ? $ahorroNetoConstante : 0.00,
+                    ':monto_aporte_ronda' => $cuotaIngresada ? $aporteRondaBase : 0.00,
+                    ':monto_aporte_rifa' => $cuotaIngresada ? $aporteRifaBase : 0.00,
                     ':monto_ahorro_extra' => $ahorroExtra,
                     ':autoprestamo_generado' => $prestamoId ? 1 : 0,
                     ':prestamo_id_asociado' => $prestamoId

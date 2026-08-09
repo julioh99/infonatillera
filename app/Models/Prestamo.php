@@ -11,16 +11,19 @@ class Prestamo extends Model {
                 p.*,
                 u_deudor.nombre_completo as deudor_nombre,
                 u_deudor.cedula as deudor_cedula,
+                r.numero_quincena,
+                r.fecha_reunion,
                 IFNULL(SUM(ap.monto_capital_pagado), 0) as total_capital_pagado,
                 IFNULL(SUM(ap.monto_interes_pagado), 0) as total_interes_pagado,
                 (SELECT COUNT(*) 
                  FROM natillera_entregas_beneficios eb 
                  WHERE eb.socio_id = p.socio_deudor_id 
                    AND eb.tipo_beneficio = 'PRESTAMO'
-                   
+                   AND ((eb.firma_digital_path IS NOT NULL AND eb.firma_digital_path != '') OR (eb.foto_evidencia_path IS NOT NULL AND eb.foto_evidencia_path != ''))
                 ) as tiene_firma_foto
             FROM natillera_prestamos p
             JOIN natillera_usuarios u_deudor ON p.socio_deudor_id = u_deudor.id
+            LEFT JOIN natillera_reuniones r ON p.reunion_id = r.id
             LEFT JOIN natillera_abonos_prestamos ap ON p.id = ap.prestamo_id
             GROUP BY p.id
             ORDER BY p.fecha_inicio DESC
@@ -30,9 +33,10 @@ class Prestamo extends Model {
 
     public function getPrestamoById(int $id) {
         $stmt = $this->db->prepare("
-            SELECT p.*, u.nombre_completo as deudor_nombre, u.cedula as deudor_cedula
+            SELECT p.*, u.nombre_completo as deudor_nombre, u.cedula as deudor_cedula, r.numero_quincena, r.fecha_reunion
             FROM natillera_prestamos p
             JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
+            LEFT JOIN natillera_reuniones r ON p.reunion_id = r.id
             WHERE p.id = :id
         ");
         $stmt->execute([':id' => $id]);
@@ -42,16 +46,17 @@ class Prestamo extends Model {
     public function crearPrestamo(array $datos): bool {
         $stmt = $this->db->prepare("
             INSERT INTO natillera_prestamos (
-                socio_deudor_id, nombre_referencia, monto_prestado, 
+                socio_deudor_id, reunion_id, nombre_referencia, monto_prestado, 
                 tasa_interes_mensual, tipo_prestamo, es_autoprestamo, estado
             ) VALUES (
-                :socio_deudor_id, :nombre_referencia, :monto_prestado, 
+                :socio_deudor_id, :reunion_id, :nombre_referencia, :monto_prestado, 
                 :tasa_interes_mensual, :tipo_prestamo, :es_autoprestamo, 'ACTIVO'
             )
         ");
 
         return $stmt->execute([
             ':socio_deudor_id' => $datos['socio_deudor_id'],
+            ':reunion_id' => !empty($datos['reunion_id']) ? $datos['reunion_id'] : null,
             ':nombre_referencia' => !empty($datos['nombre_referencia']) ? $datos['nombre_referencia'] : null,
             ':monto_prestado' => $datos['monto_prestado'],
             ':tasa_interes_mensual' => $datos['tasa_interes_mensual'] ?? 10.00,
@@ -64,6 +69,7 @@ class Prestamo extends Model {
         $stmt = $this->db->prepare("
             UPDATE natillera_prestamos SET
                 socio_deudor_id = :socio_deudor_id,
+                reunion_id = :reunion_id,
                 monto_prestado = :monto_prestado,
                 tasa_interes_mensual = :tasa_interes_mensual,
                 nombre_referencia = :nombre_referencia,
@@ -74,6 +80,7 @@ class Prestamo extends Model {
         $ok = $stmt->execute([
             ':id' => $id,
             ':socio_deudor_id' => $datos['socio_deudor_id'],
+            ':reunion_id' => !empty($datos['reunion_id']) ? $datos['reunion_id'] : null,
             ':monto_prestado' => $datos['monto_prestado'],
             ':tasa_interes_mensual' => $datos['tasa_interes_mensual'],
             ':nombre_referencia' => !empty($datos['nombre_referencia']) ? $datos['nombre_referencia'] : null,

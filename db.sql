@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS natillera_ahorros_cuotas (
 CREATE TABLE IF NOT EXISTS natillera_prestamos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     socio_deudor_id INT NOT NULL,
+    reunion_id INT NULL,
     nombre_referencia VARCHAR(150), -- Nombre de referencia / Persona referente opcional
     monto_prestado DECIMAL(10,2) NOT NULL,
     tasa_interes_mensual DECIMAL(5,2) DEFAULT 10.00,
@@ -62,7 +63,8 @@ CREATE TABLE IF NOT EXISTS natillera_prestamos (
     es_autoprestamo TINYINT(1) DEFAULT 0,
     anulado_sin_interes TINYINT(1) DEFAULT 0,
     estado VARCHAR(20) DEFAULT 'ACTIVO', -- 'ACTIVO', 'PAGADO', 'ANULADO'
-    FOREIGN KEY (socio_deudor_id) REFERENCES natillera_usuarios(id)
+    FOREIGN KEY (socio_deudor_id) REFERENCES natillera_usuarios(id),
+    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ABONOS A PRÉSTAMOS

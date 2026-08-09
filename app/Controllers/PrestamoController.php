@@ -50,9 +50,12 @@ class PrestamoController extends Controller {
             $this->redirect('/admin/prestamos');
         }
 
+        $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
+
         $prestamoModel = new Prestamo();
         $ok = $prestamoModel->crearPrestamo([
             'socio_deudor_id' => $socioDeudorId,
+            'reunion_id' => $reunionId,
             'nombre_referencia' => $nombreReferencia,
             'monto_prestado' => $monto,
             'tasa_interes_mensual' => $tasa,
@@ -74,6 +77,7 @@ class PrestamoController extends Controller {
 
         $id = (int)($_POST['prestamo_id'] ?? 0);
         $socioDeudorId = (int)($_POST['socio_deudor_id'] ?? 0);
+        $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
         $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
@@ -87,6 +91,7 @@ class PrestamoController extends Controller {
         $prestamoModel = new Prestamo();
         $ok = $prestamoModel->actualizarPrestamo($id, [
             'socio_deudor_id' => $socioDeudorId,
+            'reunion_id' => $reunionId,
             'monto_prestado' => $monto,
             'tasa_interes_mensual' => $tasa,
             'nombre_referencia' => $nombreReferencia,

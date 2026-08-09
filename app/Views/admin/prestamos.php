@@ -18,6 +18,28 @@
     </div>
 </div>
 
+<!-- Barra de Filtros y Búsqueda en Préstamos -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="buscarPrestamo" class="form-control border-start-0 ps-0" placeholder="Buscar por socio, cédula, referencia o reunión (ej: R1, R2, Juan)...">
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <select id="filtrarEstadoPrestamo" class="form-select border-secondary text-dark fw-semibold">
+                    <option value="">-- Todos los Préstamos --</option>
+                    <option value="ACTIVO">Solo Activos</option>
+                    <option value="PAGADO">Solo Pagados</option>
+                    <option value="AUTOPRESTAMO">Solo Autopréstamos</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Lista de Préstamos -->
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
     <div class="table-responsive">
@@ -25,7 +47,8 @@
             <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
                 <tr>
                     <th class="ps-4">Socio Deudor</th>
-                    <th>Referencia / Persona Referente</th>
+                    <th>Reunión</th>
+                    <th>Referencia / Alias</th>
                     <th>Monto Prestado</th>
                     <th>Tasa %</th>
                     <th>Capital Pagado</th>
@@ -37,17 +60,29 @@
             <tbody>
                 <?php if (empty($prestamos)): ?>
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">No hay préstamos registrados aún.</td>
+                        <td colspan="9" class="text-center py-4 text-muted">No hay préstamos registrados aún.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($prestamos as $p): 
                         $saldoCapital = (float)$p['monto_prestado'] - (float)$p['total_capital_pagado'];
                         $refText = !empty($p['nombre_referencia']) ? $p['nombre_referencia'] : (!empty($p['tercero_nombre']) ? $p['tercero_nombre'] : '');
+                        $numR = !empty($p['numero_quincena']) ? 'R' . $p['numero_quincena'] : '';
                     ?>
-                        <tr>
+                        <tr class="prestamo-row" 
+                            data-search="<?= strtolower(htmlspecialchars($p['deudor_nombre'] . ' ' . $p['deudor_cedula'] . ' ' . $refText . ' ' . $numR . ' ' . ($p['es_autoprestamo'] ? 'autoprestamo' : ''))) ?>"
+                            data-estado="<?= $p['estado'] ?>"
+                            data-tipo="<?= $p['tipo_prestamo'] ?>">
                             <td class="ps-4">
                                 <div class="fw-bold text-dark font-outfit"><?= htmlspecialchars($p['deudor_nombre']) ?></div>
                                 <small class="text-muted">C.C. <?= htmlspecialchars($p['deudor_cedula']) ?></small>
+                            </td>
+                            <td>
+                                <?php if (!empty($p['numero_quincena'])): ?>
+                                    <span class="badge bg-primary font-outfit fs-7">R<?= $p['numero_quincena'] ?></span>
+                                    <small class="d-block text-muted fs-8"><?= date('d/m/Y', strtotime($p['fecha_reunion'])) ?></small>
+                                <?php else: ?>
+                                    <span class="text-muted fs-8">General / Sin R</span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($refText)): ?>
@@ -69,6 +104,9 @@
                                     <span class="badge bg-success">Pagado ✔</span>
                                 <?php else: ?>
                                     <span class="badge bg-danger">Activo (Bal: $<?= number_format($saldoCapital, 0, ',', '.') ?>)</span>
+                                <?php endif; ?>
+                                <?php if ($p['es_autoprestamo']): ?>
+                                    <small class="d-block text-warning fw-bold fs-8 mt-1"><i class="fa-solid fa-bolt me-1"></i>Autopréstamo</small>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end pe-4">
@@ -103,6 +141,7 @@
                                         <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btnEditarPrestamo"
                                                 data-id="<?= $p['id'] ?>"
                                                 data-deudor-id="<?= $p['socio_deudor_id'] ?>"
+                                                data-reunion-id="<?= $p['reunion_id'] ?? '' ?>"
                                                 data-monto="<?= $p['monto_prestado'] ?>"
                                                 data-tasa="<?= $p['tasa_interes_mensual'] ?>"
                                                 data-ref="<?= htmlspecialchars($refText) ?>"
@@ -139,6 +178,16 @@
                                 <option value="<?= $s['id'] ?>">
                                     <?= htmlspecialchars($s['nombre_completo']) ?> (Tope: $<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?>)
                                 </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
+                        <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
+                            <option value="">-- General / Sin Reunión Específica --</option>
+                            <?php foreach ($reuniones as $r): ?>
+                                <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -186,6 +235,16 @@
                         <select name="socio_deudor_id" id="edit_socio_deudor_id" class="form-select" required>
                             <?php foreach ($socios as $s): ?>
                                 <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre_completo']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_reunion_id" class="form-label fw-semibold fs-7">Reunión Asociada</label>
+                        <select name="reunion_id" id="edit_reunion_id" class="form-select">
+                            <option value="">-- General / Sin Reunión --</option>
+                            <?php foreach ($reuniones as $r): ?>
+                                <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -402,12 +461,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Buscador y Filtro Dinámico de Préstamos
+    const inputBuscarPrestamo = document.getElementById('buscarPrestamo');
+    const selectFiltrarEstado = document.getElementById('filtrarEstadoPrestamo');
+    const prestamoRows = document.querySelectorAll('.prestamo-row');
+
+    function filterPrestamosTable() {
+        const query = inputBuscarPrestamo ? inputBuscarPrestamo.value.toLowerCase().trim() : '';
+        const estadoFilter = selectFiltrarEstado ? selectFiltrarEstado.value : '';
+
+        prestamoRows.forEach(row => {
+            const searchText = row.getAttribute('data-search') || '';
+            const rowEstado = row.getAttribute('data-estado') || '';
+            const rowTipo = row.getAttribute('data-tipo') || '';
+
+            const matchQuery = (!query || searchText.includes(query));
+            let matchEstado = true;
+
+            if (estadoFilter === 'ACTIVO') {
+                matchEstado = (rowEstado === 'ACTIVO');
+            } else if (estadoFilter === 'PAGADO') {
+                matchEstado = (rowEstado === 'PAGADO');
+            } else if (estadoFilter === 'AUTOPRESTAMO') {
+                matchEstado = (rowTipo === 'AUTOPRESTAMO');
+            }
+
+            row.style.display = (matchQuery && matchEstado) ? '' : 'none';
+        });
+    }
+
+    if (inputBuscarPrestamo) inputBuscarPrestamo.addEventListener('input', filterPrestamosTable);
+    if (selectFiltrarEstado) selectFiltrarEstado.addEventListener('change', filterPrestamosTable);
+
     // Abrir Modal de Editar Préstamo
     const btnsEditarPrestamo = document.querySelectorAll('.btnEditarPrestamo');
     btnsEditarPrestamo.forEach(btn => {
         btn.addEventListener('click', () => {
             document.getElementById('edit_prestamo_id').value = btn.getAttribute('data-id');
             document.getElementById('edit_socio_deudor_id').value = btn.getAttribute('data-deudor-id');
+            const editReunionEl = document.getElementById('edit_reunion_id');
+            if (editReunionEl) editReunionEl.value = btn.getAttribute('data-reunion-id') || '';
             document.getElementById('edit_monto_prestado').value = btn.getAttribute('data-monto');
             document.getElementById('edit_tasa_interes_mensual').value = btn.getAttribute('data-tasa');
             document.getElementById('edit_nombre_referencia').value = btn.getAttribute('data-ref') || '';
