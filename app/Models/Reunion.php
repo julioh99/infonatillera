@@ -176,8 +176,8 @@ class Reunion extends Model {
                 ]);
             }
 
-            // Marcar reunión como CERRADA al guardar el llamado a lista
-            $stmtState = $this->db->prepare("UPDATE natillera_reuniones SET estado = 'CERRADA' WHERE id = :id");
+            // Marcar el llamado a lista de la reunión como realizado (LLAMADO_CERRADO)
+            $stmtState = $this->db->prepare("UPDATE natillera_reuniones SET estado = 'LLAMADO_CERRADO' WHERE id = :id AND estado != 'CERRADA'");
             $stmtState->execute([':id' => $reunionId]);
 
             $this->db->commit();

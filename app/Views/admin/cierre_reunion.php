@@ -24,7 +24,8 @@
     $rInfo = $resumen['reunion'];
     $ing = $resumen['ingresos'];
     $egr = $resumen['egresos'];
-    $isCerrada = ($rInfo['estado'] === 'CERRADA');
+    $isCierreRealizado = (!empty($cierreExistente) || $rInfo['estado'] === 'CERRADA');
+    $hasLlamado = !empty($resumen['tiene_llamado_lista']);
 ?>
     <!-- Encabezado de la Reunión Seleccionada -->
     <div class="card border-0 shadow-sm rounded-4 mb-4 bg-gradient-navy text-white p-4">
@@ -39,13 +40,19 @@
                 <small class="text-white-50 fs-8">Valor Cuota Base: $<?= number_format($rInfo['valor_cuota_base'], 0, ',', '.') ?> COP | Evento: <?= htmlspecialchars($rInfo['tipo_evento_extra']) ?></small>
             </div>
             <div class="text-end">
-                <?php if ($isCerrada): ?>
-                    <span class="badge bg-success fs-6 px-4 py-2 rounded-pill"><i class="fa-solid fa-lock me-2"></i>REUNIÓN CERRADA</span>
+                <?php if ($hasLlamado): ?>
+                    <span class="badge bg-info text-dark fs-7 px-3 py-2 rounded-pill me-1">
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Llamado a Lista Registrado
+                    </span>
+                <?php endif; ?>
+
+                <?php if ($isCierreRealizado): ?>
+                    <span class="badge bg-success fs-6 px-4 py-2 rounded-pill"><i class="fa-solid fa-lock me-2"></i>CIERRE FINANCIERO REALIZADO</span>
                     <?php if ($cierreExistente): ?>
                         <small class="d-block text-white-50 fs-8 mt-1">Cerrado el <?= date('d/m/Y g:i a', strtotime($cierreExistente['fecha_cierre'])) ?> por <?= htmlspecialchars($cierreExistente['cerrado_por_nombre']) ?></small>
                     <?php endif; ?>
                 <?php else: ?>
-                    <span class="badge bg-warning text-dark fs-6 px-4 py-2 rounded-pill"><i class="fa-solid fa-unlock me-2"></i>EN PROCESO / PENDIENTE CIERRE</span>
+                    <span class="badge bg-warning text-dark fs-6 px-4 py-2 rounded-pill"><i class="fa-solid fa-unlock me-2"></i>PENDIENTE DE CIERRE FINANCIERO</span>
                 <?php endif; ?>
             </div>
         </div>
@@ -77,6 +84,13 @@
                                 <small class="text-muted">Ahorro adicional elegido por socios</small>
                             </div>
                             <span class="fw-bold text-success font-outfit fs-6">$<?= number_format($ing['ahorro_extra'], 0, ',', '.') ?></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <strong class="d-block">Aportes a Ronda y Rifa</strong>
+                                <small class="text-muted">Recaudo de fondo para rondas y rifas quincenales</small>
+                            </div>
+                            <span class="fw-bold text-warning font-outfit fs-6">$<?= number_format($ing['rondas_rifas'] ?? 0, 0, ',', '.') ?></span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                             <div>
@@ -152,27 +166,34 @@
     <!-- Balance Final y Acción de Cierre -->
     <div class="card border-0 shadow-lg rounded-4 mb-5 p-4 bg-white">
         <div class="row align-items-center g-4">
-            <div class="col-12 col-md-4 border-end-md">
-                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Flujo Neto de la Reunión (R<?= $rInfo['numero_quincena'] ?>)</span>
-                <h2 class="font-outfit fw-bold <?= ($resumen['saldo_neto_reunion'] >= 0) ? 'text-success' : 'text-danger' ?> m-0 mt-1">
+            <div class="col-12 col-md-3 border-end-md">
+                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Saldo Inicial de Caja (Reunión Anterior)</span>
+                <h4 class="font-outfit fw-bold text-secondary m-0 mt-1">
+                    $<?= number_format($resumen['saldo_inicial_caja'], 0, ',', '.') ?> COP
+                </h4>
+                <small class="text-muted fs-8">Acumulado heredado de cierres previos</small>
+            </div>
+            <div class="col-12 col-md-3 border-end-md">
+                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Flujo Neto de Reunión R<?= $rInfo['numero_quincena'] ?></span>
+                <h3 class="font-outfit fw-bold <?= ($resumen['saldo_neto_reunion'] >= 0) ? 'text-success' : 'text-danger' ?> m-0 mt-1">
                     $<?= number_format($resumen['saldo_neto_reunion'], 0, ',', '.') ?> COP
-                </h2>
-                <small class="text-muted fs-8">Calculado como: Total Ingresos - Total Egresos</small>
+                </h3>
+                <small class="text-muted fs-8">Ingresos ($<?= number_format($ing['total'], 0, ',', '.') ?>) - Egresos ($<?= number_format($egr['total'], 0, ',', '.') ?>)</small>
             </div>
-            <div class="col-12 col-md-4 border-end-md">
-                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Saldo Acumulado Global en Caja</span>
-                <h2 class="font-outfit fw-bold text-primary m-0 mt-1">
+            <div class="col-12 col-md-3 border-end-md">
+                <span class="fs-8 text-muted fw-semibold text-uppercase d-block">Saldo Acumulado Final en Caja</span>
+                <h3 class="font-outfit fw-bold text-primary m-0 mt-1">
                     $<?= number_format($resumen['saldo_acumulado_caja'], 0, ',', '.') ?> COP
-                </h2>
-                <small class="text-muted fs-8">Efectivo total disponible en la Natillera</small>
+                </h3>
+                <small class="text-muted fs-8">Saldo Inicial + Flujo Neto de esta reunión</small>
             </div>
-            <div class="col-12 col-md-4 text-md-end">
-                <?php if ($isCerrada): ?>
-                    <button type="button" class="btn btn-secondary rounded-pill fw-bold px-4 py-2" disabled>
-                        <i class="fa-solid fa-lock me-1"></i>Reunión ya Cerrada
+            <div class="col-12 col-md-3 text-md-end">
+                <?php if ($isCierreRealizado): ?>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold px-4 py-2" disabled>
+                        <i class="fa-solid fa-lock me-1"></i>Cierre Financiero Realizado
                     </button>
                 <?php else: ?>
-                    <form action="/admin/cierre-reunion/cerrar" method="POST" onsubmit="return confirm('¿Confirmas realizar el CIERRE FINANCIERO de la Reunión R<?= $rInfo['numero_quincena'] ?>? Esta acción guardará el arqueo e inmovilizará los registros.');">
+                    <form action="/admin/cierre-reunion/cerrar" method="POST" onsubmit="return confirm('¿Confirmas realizar el CIERRE FINANCIERO de la Reunión R<?= $rInfo['numero_quincena'] ?>? Esta acción consolidará la caja e inmovilizará el arqueo.');">
                         <input type="hidden" name="reunion_id" value="<?= $rInfo['id'] ?>">
                         <button type="submit" class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow">
                             <i class="fa-solid fa-lock me-2"></i>Realizar Cierre Financiero

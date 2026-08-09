@@ -30,11 +30,13 @@ class CierreReunion extends Model {
         $fechaReunion = $reunion['fecha_reunion'];
 
         // 2. INGRESOS (+)
-        // a) Cuotas base ($40.000) y Ahorros Voluntarios Extras
+        // a) Cuotas base ($40.000), Ahorros Voluntarios Extras y Aportes a Rondas/Rifas
         $stmtCuotas = $this->db->prepare("
             SELECT 
                 IFNULL(SUM(CASE WHEN cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END), 0) as total_cuotas_base,
-                IFNULL(SUM(monto_ahorro_extra), 0) as total_ahorro_extra
+                IFNULL(SUM(monto_ahorro_extra), 0) as total_ahorro_extra,
+                IFNULL(SUM(monto_aporte_ronda + monto_aporte_rifa), 0) as total_rondas_rifas,
+                COUNT(*) as cantidad_registros
             FROM natillera_ahorros_cuotas
             WHERE reunion_id = :reunion_id
         ");
@@ -43,6 +45,8 @@ class CierreReunion extends Model {
 
         $cuotasBase = (float)$resCuotas['total_cuotas_base'];
         $ahorroExtra = (float)$resCuotas['total_ahorro_extra'];
+        $rondasRifas = (float)$resCuotas['total_rondas_rifas'];
+        $tieneLlamado = ((int)$resCuotas['cantidad_registros'] > 0);
 
         // b) Abonos a préstamos (Capital e Intereses) asociados a esta quincena o realizados en el rango de fechas
         $quincenaNum = (int)$reunion['numero_quincena'];
@@ -93,7 +97,7 @@ class CierreReunion extends Model {
         $stmtInyecciones->execute([':reunion_id' => $reunionId]);
         $inyecciones = (float)$stmtInyecciones->fetch()['total_inyecciones'];
 
-        $totalIngresos = $cuotasBase + $ahorroExtra + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
+        $totalIngresos = $cuotasBase + $ahorroExtra + $rondasRifas + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
 
         // 3. EGRESOS (-)
         // a) Préstamos otorgados / desembolsados a socios en esta reunión
@@ -145,6 +149,7 @@ class CierreReunion extends Model {
             'ingresos' => [
                 'cuotas_base' => $cuotasBase,
                 'ahorro_extra' => $ahorroExtra,
+                'rondas_rifas' => $rondasRifas,
                 'abono_capital' => $abonoCapital,
                 'intereses_prestamos' => $interesesPrestamos,
                 'devoluciones_actividades' => $devolucionesActividades,
@@ -155,10 +160,13 @@ class CierreReunion extends Model {
                 'prestamos_otorgados' => $prestamosOtorgados,
                 'inyecciones_devueltas' => $inyeccionesDevueltas,
                 'prestamos_actividades' => $prestamosAActividades,
+                'premios_entregados' => 0.00,
                 'total' => $totalEgresos
             ],
+            'saldo_inicial_caja' => $acumuladoPrevio,
             'saldo_neto_reunion' => $saldoNetoReunion,
-            'saldo_acumulado_caja' => $saldoAcumuladoCaja
+            'saldo_acumulado_caja' => $saldoAcumuladoCaja,
+            'tiene_llamado_lista' => $tieneLlamado
         ];
     }
 
