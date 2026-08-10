@@ -19,11 +19,13 @@ class PrestamoController extends Controller {
         $prestamos = $prestamoModel->getTodosPrestamos();
         $socios = $usuarioModel->getAllSocios();
         $reuniones = $reunionModel->getReuniones();
+        $reunionActual = $reunionModel->getReunionActual();
 
         $this->render('admin/prestamos', [
             'prestamos' => $prestamos,
             'socios' => $socios,
             'reuniones' => $reuniones,
+            'reunionActual' => $reunionActual,
             'userRole' => $user['rol_nombre']
         ]);
     }

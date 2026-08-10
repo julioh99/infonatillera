@@ -450,6 +450,17 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Relación por `prestamo_id` (`db.sql`, `alter_entregas_prestamo_id.php`):** Se añadió la columna nullable `prestamo_id` a la tabla `natillera_entregas_beneficios` en BD local y producción para vincular de forma directa y unívoca cada entrega a su préstamo respectivo.
 - **Formulario Unificado al Crear Préstamo (`prestamos.php`, `PrestamoController.php`, `firma_canvas.js`):** Se incorporaron el pad de firma táctil y la captura de foto evidencia dentro del modal de creación de préstamos, generando el préstamo y su constancia de entrega simultáneamente en una sola transacción.
 
+---
+
+### 📌 Petición 39: Corrección de Escalado en Firma Canvas de Modales y Priorización de Reunión con Llamado Cerrado
+**Requerimiento del Usuario:**
+`Al crear el préstamo no se está organizando bien y no permite firmar, corrígelo. Y siempre que una reunión esté en el llamado cerrado, ponla de primera a la hora de registrar un nuevo préstamo, a la hora de registrar cuotas y en todo listado quiero que aparezca esa de primero, ya que si el llamado está cerrado, esa es la que está actual y esa es la que más se necesita.`
+
+**Solución Brindada:**
+- **Reajuste Canvas de Firma (`public/js/firma_canvas.js`):** Se creó la función `initCanvasSignature()` conectada al evento `shown.bs.modal` de Bootstrap para recalcular resolución y escala exacta (`scaleX`, `scaleY`) en pantallas táctiles y escritorio al abrir los modales de nuevo préstamo y entregas.
+- **Priorización de Reunión en `LLAMADO_CERRADO` (`Reunion.php`, `PrestamoController.php`, `prestamos.php`):** Se modificó `getReuniones()` y `getReunionActual()` para ubicar en primer lugar (`ORDER BY CASE WHEN estado = 'LLAMADO_CERRADO' THEN 1...`) la reunión en estado de llamado cerrado, preseleccionándola de forma predeterminada como la opción N° 1 en todos los menús desplegables.
+
+
 
 
 

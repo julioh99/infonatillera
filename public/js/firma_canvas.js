@@ -1,81 +1,124 @@
 /**
  * InfoNatillera - Pad de Firma Digital HTML5 Canvas & Captura de Foto Evidencia
  * Soporta pantallas táctiles móviles (Mobile-First) y puntero de escritorio.
+ * Ajusta automáticamente escala y resolución al abrir Modales de Bootstrap.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('canvasFirma');
+function initCanvasSignature(canvasId, btnClearId, inputHiddenId, formId, modalId) {
+    const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const btnLimpiar = document.getElementById('btnLimpiarFirma');
-    const inputFirmaBase64 = document.getElementById('firma_base64');
-    const selectTipo = document.getElementById('entrega_tipo_beneficio');
-    const inputMonto = document.getElementById('entrega_monto_entregado');
-    const selectSocio = document.getElementById('entrega_socio_id');
-    const formEntrega = document.getElementById('formRegistrarEntrega');
+    const btnClear = btnClearId ? document.getElementById(btnClearId) : null;
+    const inputHidden = inputHiddenId ? document.getElementById(inputHiddenId) : null;
+    const form = formId ? document.getElementById(formId) : null;
+    const modalEl = modalId ? document.getElementById(modalId) : null;
 
-    let dibujando = false;
-    let tieneFirma = false;
+    let dib = false;
+    let tieneF = false;
 
-    // Configuración del trazado
-    ctx.strokeStyle = '#0f172a';
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    function obtenerCoordenadas(e) {
+    function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
+        if (rect.width > 0) {
+            canvas.width = Math.round(rect.width);
+            canvas.height = 150;
+        }
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
     }
 
-    function iniciarTrazo(e) {
-        dibujando = true;
-        tieneFirma = true;
-        const pos = obtenerCoordenadas(e);
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-        e.preventDefault();
-    }
-
-    function dibujarTrazo(e) {
-        if (!dibujando) return;
-        const pos = obtenerCoordenadas(e);
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        e.preventDefault();
-    }
-
-    function detenerTrazo() {
-        dibujando = false;
-    }
-
-    // Eventos de ratón
-    canvas.addEventListener('mousedown', iniciarTrazo);
-    canvas.addEventListener('mousemove', dibujarTrazo);
-    canvas.addEventListener('mouseup', detenerTrazo);
-    canvas.addEventListener('mouseleave', detenerTrazo);
-
-    // Eventos táctiles para dispositivos móviles
-    canvas.addEventListener('touchstart', iniciarTrazo, { passive: false });
-    canvas.addEventListener('touchmove', dibujarTrazo, { passive: false });
-    canvas.addEventListener('touchend', detenerTrazo);
-
-    // Limpiar Firma
-    if (btnLimpiar) {
-        btnLimpiar.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            tieneFirma = false;
-            if (inputFirmaBase64) inputFirmaBase64.value = '';
+    // Ajustar resolución cuando la ventana cargue y al desplegarse el modal
+    resizeCanvas();
+    if (modalEl) {
+        modalEl.addEventListener('shown.bs.modal', () => {
+            resizeCanvas();
         });
     }
 
-    // Sincronizar monto según beneficio
+    function getCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX = e.clientX;
+        let clientY = e.clientY;
+
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        }
+
+        const scaleX = canvas.width / (rect.width || 1);
+        const scaleY = canvas.height / (rect.height || 1);
+
+        return {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+        };
+    }
+
+    function startDraw(e) {
+        dib = true;
+        tieneF = true;
+        const pos = getCoords(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        if (e.cancelable) e.preventDefault();
+    }
+
+    function moveDraw(e) {
+        if (!dib) return;
+        const pos = getCoords(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        if (e.cancelable) e.preventDefault();
+    }
+
+    function stopDraw() {
+        dib = false;
+    }
+
+    // Eventos de ratón de escritorio
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseleave', stopDraw);
+
+    // Eventos táctiles para dispositivos móviles
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', stopDraw);
+
+    // Botón Limpiar Firma
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tieneF = false;
+            if (inputHidden) inputHidden.value = '';
+        });
+    }
+
+    // Guardar imagen Base64 al enviar el formulario
+    if (form) {
+        form.addEventListener('submit', () => {
+            if (tieneF && inputHidden) {
+                inputHidden.value = canvas.toDataURL('image/png');
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Inicializar Firma Modal Entregas Beneficios
+    initCanvasSignature('canvasFirma', 'btnLimpiarFirma', 'firma_base64', 'formRegistrarEntrega', 'modalRegistrarEntrega');
+
+    // 2. Inicializar Firma Modal Nuevo Préstamo
+    initCanvasSignature('canvasFirmaPrestamo', 'btnLimpiarFirmaPrestamo', 'firma_base64_prestamo', 'formNuevoPrestamo', 'modalNuevoPrestamo');
+
+    // Lógica dinámica de selección de beneficiarios según tipo en Entregas
+    const selectTipo = document.getElementById('entrega_tipo_beneficio');
+    const inputMonto = document.getElementById('entrega_monto_entregado');
+    const selectSocio = document.getElementById('entrega_socio_id');
+
     if (selectTipo && inputMonto) {
         selectTipo.addEventListener('change', (e) => {
             const val = e.target.value;
@@ -115,87 +158,5 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err);
                 selectSocio.innerHTML = '<option value="">Error al cargar socios</option>';
             });
-    }
-
-    // Preparar firma al enviar formulario de entrega
-    if (formEntrega) {
-        formEntrega.addEventListener('submit', (e) => {
-            if (tieneFirma && inputFirmaBase64) {
-                inputFirmaBase64.value = canvas.toDataURL('image/png');
-            }
-        });
-    }
-
-    // Inicializar Canvas de Firma en Modal Nuevo Préstamo
-    const canvasP = document.getElementById('canvasFirmaPrestamo');
-    if (canvasP) {
-        const ctxP = canvasP.getContext('2d');
-        const btnLimpiarP = document.getElementById('btnLimpiarFirmaPrestamo');
-        const inputFirmaBase64P = document.getElementById('firma_base64_prestamo');
-        const formNuevoP = document.getElementById('formNuevoPrestamo');
-
-        let dibujandoP = false;
-        let tieneFirmaP = false;
-
-        ctxP.strokeStyle = '#0f172a';
-        ctxP.lineWidth = 2.5;
-        ctxP.lineCap = 'round';
-        ctxP.lineJoin = 'round';
-
-        function obtenerPosP(e) {
-            const rect = canvasP.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
-        }
-
-        function iniciarP(e) {
-            dibujandoP = true;
-            tieneFirmaP = true;
-            const pos = obtenerPosP(e);
-            ctxP.beginPath();
-            ctxP.moveTo(pos.x, pos.y);
-            e.preventDefault();
-        }
-
-        function dibujarP(e) {
-            if (!dibujandoP) return;
-            const pos = obtenerPosP(e);
-            ctxP.lineTo(pos.x, pos.y);
-            ctxP.stroke();
-            e.preventDefault();
-        }
-
-        function detenerP() {
-            dibujandoP = false;
-        }
-
-        canvasP.addEventListener('mousedown', iniciarP);
-        canvasP.addEventListener('mousemove', dibujarP);
-        canvasP.addEventListener('mouseup', detenerP);
-        canvasP.addEventListener('mouseleave', detenerP);
-
-        canvasP.addEventListener('touchstart', iniciarP, { passive: false });
-        canvasP.addEventListener('touchmove', dibujarP, { passive: false });
-        canvasP.addEventListener('touchend', detenerP);
-
-        if (btnLimpiarP) {
-            btnLimpiarP.addEventListener('click', () => {
-                ctxP.clearRect(0, 0, canvasP.width, canvasP.height);
-                tieneFirmaP = false;
-                if (inputFirmaBase64P) inputFirmaBase64P.value = '';
-            });
-        }
-
-        if (formNuevoP) {
-            formNuevoP.addEventListener('submit', () => {
-                if (tieneFirmaP && inputFirmaBase64P) {
-                    inputFirmaBase64P.value = canvasP.toDataURL('image/png');
-                }
-            });
-        }
     }
 });

@@ -10,24 +10,43 @@ class Reunion extends Model {
             SELECT r.*, u.nombre_completo as ganador_nombre
             FROM natillera_reuniones r
             LEFT JOIN natillera_usuarios u ON r.ganador_socio_id = u.id
-            ORDER BY r.numero_quincena ASC
+            ORDER BY 
+                CASE 
+                    WHEN r.estado = 'LLAMADO_CERRADO' THEN 1 
+                    WHEN r.estado = 'EN_PROCESO' THEN 2
+                    WHEN r.estado = 'PROGRAMADA' THEN 3
+                    ELSE 4 
+                END,
+                r.numero_quincena ASC
         ");
         return $stmt->fetchAll();
     }
 
     public function getReunionActual() {
-        // Buscar la primera quincena sin llamado a lista registrado y que no esté cerrada
-        $stmt = $this->db->query("
+        // Prioridad 1: Reunión que tenga el llamado a lista cerrado (LLAMADO_CERRADO)
+        $stmtLlamado = $this->db->query("
             SELECT r.* 
             FROM natillera_reuniones r
-            WHERE r.estado != 'CERRADA'
-              AND r.id NOT IN (
-                  SELECT DISTINCT reunion_id FROM natillera_ahorros_cuotas
-              )
-            ORDER BY r.numero_quincena ASC 
+            WHERE r.estado = 'LLAMADO_CERRADO'
+            ORDER BY r.numero_quincena DESC 
             LIMIT 1
         ");
-        $reunion = $stmt->fetch();
+        $reunion = $stmtLlamado->fetch();
+
+        if (!$reunion) {
+            // Prioridad 2: Primera quincena sin cerrar y sin llamado
+            $stmt = $this->db->query("
+                SELECT r.* 
+                FROM natillera_reuniones r
+                WHERE r.estado != 'CERRADA'
+                  AND r.id NOT IN (
+                      SELECT DISTINCT reunion_id FROM natillera_ahorros_cuotas
+                  )
+                ORDER BY r.numero_quincena ASC 
+                LIMIT 1
+            ");
+            $reunion = $stmt->fetch();
+        }
 
         if (!$reunion) {
             $stmtPending = $this->db->query("

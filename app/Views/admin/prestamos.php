@@ -187,8 +187,11 @@
                             <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
                             <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
                                 <option value="">-- General / Sin Reunión Específica --</option>
-                                <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                <?php foreach ($reuniones as $r): 
+                                    $isAct = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
+                                    $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
+                                ?>
+                                    <option value="<?= $r['id'] ?>" <?= $isAct ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -274,7 +277,7 @@
                     <div class="mb-3">
                         <label for="edit_reunion_id" class="form-label fw-semibold fs-7">Reunión Asociada</label>
                         <select name="reunion_id" id="edit_reunion_id" class="form-select">
-                            <option value="">-- General / Sin Reunión --</option>
+                            <option value="">-- Sin Reunión Específica --</option>
                             <?php foreach ($reuniones as $r): ?>
                                 <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                             <?php endforeach; ?>
@@ -329,25 +332,22 @@
                         <h6 class="m-0 fw-bold font-outfit text-primary" id="cuotas_deudor_nombre">---</h6>
                         <small class="text-muted" id="cuotas_prestamo_resumen">---</small>
                     </div>
-                    <span id="cuotas_estado_badge" class="badge bg-secondary">---</span>
+                    <span class="badge bg-success font-outfit fs-7" id="cuotas_total_abonos">$0 COP</span>
                 </div>
-
-                <div class="table-responsive mb-3">
-                    <table class="table table-sm table-bordered align-middle">
-                        <thead class="table-dark font-outfit fs-7">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0 fs-7">
+                        <thead class="bg-light font-outfit text-uppercase">
                             <tr>
-                                <th>Fecha Abono</th>
-                                <th>Abono Capital</th>
-                                <th>Abono Interés</th>
+                                <th>Fecha</th>
+                                <th>Capital Pagado</th>
+                                <th>Interés Pagado</th>
                                 <th>Registrado Por</th>
-                                <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
-                                    <th class="text-end">Acciones</th>
-                                <?php endif; ?>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tblCuotasBody">
+                        <tbody id="tbodyHistorialCuotas">
                             <tr>
-                                <td colspan="5" class="text-center py-3 text-muted">Cargando cuotas...</td>
+                                <td colspan="5" class="text-center py-3 text-muted">Cargando historial...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -379,8 +379,11 @@
                         <select name="reunion_id" id="abono_reunion_id" class="form-select fw-bold">
                             <option value="">-- Autodetectar por Fecha --</option>
                             <?php if (!empty($reuniones)): ?>
-                                <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                <?php foreach ($reuniones as $r): 
+                                    $isActA = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
+                                    $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
+                                ?>
+                                    <option value="<?= $r['id'] ?>" <?= $isActA ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </select>
