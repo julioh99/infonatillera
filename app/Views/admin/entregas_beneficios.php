@@ -177,7 +177,15 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <small class="fw-semibold text-muted d-block"><i class="fa-solid fa-user-check text-primary me-1"></i><?= htmlspecialchars($e['entregado_por_nombre']) ?></small>
+                                        <div class="d-flex align-items-center justify-content-end gap-2">
+                                            <small class="fw-semibold text-muted"><i class="fa-solid fa-user-check text-primary me-1"></i><?= htmlspecialchars($e['entregado_por_nombre']) ?></small>
+                                            <form action="/admin/entregas/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿Confirmas eliminar esta constancia de entrega N° <?= $e['id'] ?>?')">
+                                                <input type="hidden" name="entrega_id" value="<?= $e['id'] ?>">
+                                                <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" title="Eliminar constancia de entrega">
+                                                    <i class="fa-solid fa-trash me-1"></i>Borrar
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -246,6 +254,7 @@
             </div>
             <form action="/admin/entregas/guardar" method="POST" enctype="multipart/form-data" id="formRegistrarEntrega">
                 <input type="hidden" name="firma_base64" id="firma_base64">
+                <input type="hidden" name="prestamo_id" value="<?= $prestamoIdQuery ?? '' ?>">
                 <div class="modal-body p-4 text-dark">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-5">

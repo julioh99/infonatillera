@@ -162,34 +162,36 @@
 
 <!-- Modal Nuevo Préstamo -->
 <div class="modal fade" id="modalNuevoPrestamo" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header bg-warning text-dark border-0">
                 <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Registrar Nuevo Préstamo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/admin/prestamos/guardar" method="POST">
+            <form action="/admin/prestamos/guardar" method="POST" enctype="multipart/form-data" id="formNuevoPrestamo">
+                <input type="hidden" name="firma_base64" id="firma_base64_prestamo">
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label for="socio_deudor_id" class="form-label fw-semibold fs-7">Socio Deudor</label>
-                        <select name="socio_deudor_id" id="socio_deudor_id" class="form-select border-primary" required>
-                            <option value="">-- Seleccionar Socio --</option>
-                            <?php foreach ($socios as $s): ?>
-                                <option value="<?= $s['id'] ?>">
-                                    <?= htmlspecialchars($s['nombre_completo']) ?> (Tope: $<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
-                        <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
-                            <option value="">-- General / Sin Reunión Específica --</option>
-                            <?php foreach ($reuniones as $r): ?>
-                                <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-7">
+                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7">Socio Deudor</label>
+                            <select name="socio_deudor_id" id="socio_deudor_id" class="form-select border-primary" required>
+                                <option value="">-- Seleccionar Socio --</option>
+                                <?php foreach ($socios as $s): ?>
+                                    <option value="<?= $s['id'] ?>">
+                                        <?= htmlspecialchars($s['nombre_completo']) ?> (Tope: $<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
+                            <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
+                                <option value="">-- General / Sin Reunión Específica --</option>
+                                <?php foreach ($reuniones as $r): ?>
+                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -208,10 +210,40 @@
                             <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="tasa_interes_mensual" class="form-control fw-bold" value="10.0">
                         </div>
                     </div>
+
+                    <!-- Firma Digital & Foto Evidencia en un solo formulario -->
+                    <div class="card border-0 bg-light p-3 rounded-3 mt-3">
+                        <h6 class="font-outfit fw-bold text-dark mb-2">
+                            <i class="fa-solid fa-file-signature text-warning me-1"></i>Constancia de Entrega Directa (Firma & Foto Evidencia)
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-7">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label fw-semibold fs-8 mb-0 text-dark">
+                                        <i class="fa-solid fa-pen-nib text-primary me-1"></i>Firma Digital del Socio (Opcional):
+                                    </label>
+                                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" id="btnLimpiarFirmaPrestamo">
+                                        <i class="fa-solid fa-eraser me-1"></i>Limpiar
+                                    </button>
+                                </div>
+                                <div class="border bg-white rounded-3 p-1 text-center shadow-inner overflow-hidden">
+                                    <canvas id="canvasFirmaPrestamo" width="340" height="130" class="w-100 cursor-crosshair" style="touch-action: none; background-color: #ffffff;"></canvas>
+                                </div>
+                                <small class="text-muted fs-8 d-block mt-1">Si el socio firma aquí, la constancia de entrega se creará automáticamente.</small>
+                            </div>
+                            <div class="col-12 col-md-5">
+                                <label for="foto_evidencia_prestamo" class="form-label fw-semibold fs-8 mb-1 text-dark">
+                                    <i class="fa-solid fa-camera text-info me-1"></i>Foto Evidencia de Entrega:
+                                </label>
+                                <input type="file" name="foto_evidencia" id="foto_evidencia_prestamo" class="form-control form-control-sm mb-2" accept="image/*" capture="environment">
+                                <small class="text-muted fs-8 d-block">Sube o toma una foto del socio recibiendo el dinero.</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Crear Préstamo</button>
+                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Crear Préstamo y Constancia</button>
                 </div>
             </form>
         </div>
@@ -594,3 +626,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+<script src="/js/firma_canvas.js"></script>

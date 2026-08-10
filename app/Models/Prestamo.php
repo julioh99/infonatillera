@@ -17,8 +17,7 @@ class Prestamo extends Model {
                 IFNULL(SUM(ap.monto_interes_pagado), 0) as total_interes_pagado,
                 (SELECT COUNT(*) 
                  FROM natillera_entregas_beneficios eb 
-                 WHERE eb.socio_id = p.socio_deudor_id 
-                   AND eb.tipo_beneficio = 'PRESTAMO'
+                 WHERE (eb.prestamo_id = p.id OR (eb.socio_id = p.socio_deudor_id AND eb.tipo_beneficio = 'PRESTAMO'))
                    AND ((eb.firma_digital_path IS NOT NULL AND eb.firma_digital_path != '') OR (eb.foto_evidencia_path IS NOT NULL AND eb.foto_evidencia_path != ''))
                 ) as tiene_firma_foto
             FROM natillera_prestamos p
@@ -43,7 +42,7 @@ class Prestamo extends Model {
         return $stmt->fetch() ?: null;
     }
 
-    public function crearPrestamo(array $datos): bool {
+    public function crearPrestamo(array $datos) {
         $stmt = $this->db->prepare("
             INSERT INTO natillera_prestamos (
                 socio_deudor_id, reunion_id, nombre_referencia, monto_prestado, 
@@ -54,7 +53,7 @@ class Prestamo extends Model {
             )
         ");
 
-        return $stmt->execute([
+        $ok = $stmt->execute([
             ':socio_deudor_id' => $datos['socio_deudor_id'],
             ':reunion_id' => !empty($datos['reunion_id']) ? $datos['reunion_id'] : null,
             ':nombre_referencia' => !empty($datos['nombre_referencia']) ? $datos['nombre_referencia'] : null,
@@ -63,6 +62,11 @@ class Prestamo extends Model {
             ':tipo_prestamo' => $datos['tipo_prestamo'] ?? 'DIRECTO',
             ':es_autoprestamo' => $datos['es_autoprestamo'] ?? 0
         ]);
+
+        if ($ok) {
+            return (int)$this->db->lastInsertId();
+        }
+        return false;
     }
 
     public function actualizarPrestamo(int $id, array $datos): bool {

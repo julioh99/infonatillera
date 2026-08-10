@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../Models/Prestamo.php';
 require_once __DIR__ . '/../Models/Usuario.php';
 require_once __DIR__ . '/../Models/Reunion.php';
+require_once __DIR__ . '/../Models/EntregaBeneficio.php';
 
 class PrestamoController extends Controller {
 
@@ -23,7 +24,7 @@ class PrestamoController extends Controller {
             'prestamos' => $prestamos,
             'socios' => $socios,
             'reuniones' => $reuniones,
-            'userRole' => $_SESSION['usuario']['rol_nombre']
+            'userRole' => $user['rol_nombre']
         ]);
     }
 
@@ -53,7 +54,7 @@ class PrestamoController extends Controller {
         $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->crearPrestamo([
+        $prestamoId = $prestamoModel->crearPrestamo([
             'socio_deudor_id' => $socioDeudorId,
             'reunion_id' => $reunionId,
             'nombre_referencia' => $nombreReferencia,
@@ -63,8 +64,63 @@ class PrestamoController extends Controller {
             'es_autoprestamo' => 0
         ]);
 
-        if ($ok) {
-            $_SESSION['success'] = "Préstamo registrado exitosamente.";
+        if ($prestamoId) {
+            // Verificar si enviaron Firma Digital o Foto Evidencia en la creación directa
+            $firmasDir = __DIR__ . '/../../public/uploads/firmas';
+            $evidenciasDir = __DIR__ . '/../../public/uploads/evidencias';
+
+            if (!is_dir($firmasDir)) @mkdir($firmasDir, 0777, true);
+            if (!is_dir($evidenciasDir)) @mkdir($evidenciasDir, 0777, true);
+
+            $firmaPath = null;
+            if (!empty($_POST['firma_base64'])) {
+                $firmaData = $_POST['firma_base64'];
+                if (preg_match('/^data:image\/(\w+);base64,/', $firmaData, $type)) {
+                    $data = substr($firmaData, strpos($firmaData, ',') + 1);
+                    $data = base64_decode($data);
+                    if ($data !== false) {
+                        $fileNameFirma = "firma_{$socioDeudorId}_PRESTAMO_" . time() . ".png";
+                        @file_put_contents("{$firmasDir}/{$fileNameFirma}", $data);
+                        $firmaPath = "/uploads/firmas/{$fileNameFirma}";
+                    }
+                }
+            }
+
+            $fotoPath = null;
+            if (!empty($_FILES['foto_evidencia']['tmp_name']) && is_uploaded_file($_FILES['foto_evidencia']['tmp_name'])) {
+                $ext = strtolower(pathinfo($_FILES['foto_evidencia']['name'], PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $fileNameFoto = "foto_{$socioDeudorId}_PRESTAMO_" . time() . ".{$ext}";
+                    if (@move_uploaded_file($_FILES['foto_evidencia']['tmp_name'], "{$evidenciasDir}/{$fileNameFoto}")) {
+                        $fotoPath = "/uploads/evidencias/{$fileNameFoto}";
+                    }
+                }
+            }
+
+            if (!empty($firmaPath) || !empty($fotoPath)) {
+                $entregaModel = new EntregaBeneficio();
+                $reunionFinalId = $reunionId;
+                if (!$reunionFinalId) {
+                    $reunionModel = new Reunion();
+                    $rAct = $reunionModel->getReunionActual();
+                    $reunionFinalId = $rAct ? (int)$rAct['id'] : 1;
+                }
+
+                $entregadoPor = (int)($_SESSION['usuario']['id'] ?? 1);
+                $entregaModel->registrarEntrega([
+                    'reunion_id' => $reunionFinalId,
+                    'socio_id' => $socioDeudorId,
+                    'prestamo_id' => $prestamoId,
+                    'tipo_beneficio' => 'PRESTAMO',
+                    'monto_entregado' => $monto,
+                    'firma_digital_path' => $firmaPath,
+                    'foto_evidencia_path' => $fotoPath,
+                    'entregado_por_usuario_id' => $entregadoPor
+                ]);
+                $_SESSION['success'] = "Préstamo N° {$prestamoId} registrado exitosamente con firma y evidencia.";
+            } else {
+                $_SESSION['success'] = "Préstamo N° {$prestamoId} registrado exitosamente.";
+            }
         } else {
             $_SESSION['error'] = "No se pudo registrar el préstamo.";
         }

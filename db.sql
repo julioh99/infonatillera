@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS natillera_entregas_beneficios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     reunion_id INT NOT NULL,
     socio_id INT NOT NULL,
+    prestamo_id INT NULL,
     tipo_beneficio VARCHAR(10) NOT NULL, -- 'PRESTAMO', 'RONDA' o 'RIFA'
     monto_entregado DECIMAL(10,2) NOT NULL,
     fecha_entrega DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -172,6 +173,7 @@ CREATE TABLE IF NOT EXISTS natillera_entregas_beneficios (
     entregado_por_usuario_id INT NOT NULL,
     FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
     FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
+    FOREIGN KEY (prestamo_id) REFERENCES natillera_prestamos(id) ON DELETE SET NULL,
     FOREIGN KEY (entregado_por_usuario_id) REFERENCES natillera_usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

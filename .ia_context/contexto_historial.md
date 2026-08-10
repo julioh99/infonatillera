@@ -439,6 +439,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **URL Dinámica en Préstamos (`prestamos.php`):** Se incluyó `&reunion_id=...` en el botón **Firma/Foto** para enviar el identificador de la reunión del préstamo al módulo de entregas.
 - **Captura y Selección Automática (`EntregaController.php`, `entregas_beneficios.php`):** Se ajustó el controlador para procesar `reunion_id` desde la URL y preseleccionar automáticamente dicha reunión en el formulario modal del registro de entrega con firma digital y foto evidencia.
 
+---
+
+### 📌 Petición 38: Borrado de Constancias, Vinculación `prestamo_id` y Formulario Unificado de Préstamos con Firma/Foto
+**Requerimiento del Usuario:**
+`Quiero que en la constancia de entregas agregues un botón para borrar la constancia porque en algunas ocasiones se puede repetir. Por otro lado quiero que la constancia se relacione directamente a un préstamo_id para que sea mucho más directo. Los que ya existen no los obligues a relacionarlos, pero de ahí en adelante sí quiero que se relacionen automáticamente. Y al crear el préstamo agrega de una vez la opción del canvas para firmar y la foto, para que se cree automáticamente la relación del préstamo con la entrega y sea un solo formulario y no tengan que llenar dos.`
+
+**Solución Brindada:**
+- **Botón de Eliminación (`EntregaController.php`, `EntregaBeneficio.php`, `entregas_beneficios.php`):** Se implementó el botón y la acción de borrado en el historial de entregas para eliminar constancias duplicadas o erróneas.
+- **Relación por `prestamo_id` (`db.sql`, `alter_entregas_prestamo_id.php`):** Se añadió la columna nullable `prestamo_id` a la tabla `natillera_entregas_beneficios` en BD local y producción para vincular de forma directa y unívoca cada entrega a su préstamo respectivo.
+- **Formulario Unificado al Crear Préstamo (`prestamos.php`, `PrestamoController.php`, `firma_canvas.js`):** Se incorporaron el pad de firma táctil y la captura de foto evidencia dentro del modal de creación de préstamos, generando el préstamo y su constancia de entrega simultáneamente en una sola transacción.
+
+
 
 
 

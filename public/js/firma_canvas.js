@@ -117,12 +117,85 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Preparar firma al enviar formulario
+    // Preparar firma al enviar formulario de entrega
     if (formEntrega) {
         formEntrega.addEventListener('submit', (e) => {
             if (tieneFirma && inputFirmaBase64) {
                 inputFirmaBase64.value = canvas.toDataURL('image/png');
             }
         });
+    }
+
+    // Inicializar Canvas de Firma en Modal Nuevo Préstamo
+    const canvasP = document.getElementById('canvasFirmaPrestamo');
+    if (canvasP) {
+        const ctxP = canvasP.getContext('2d');
+        const btnLimpiarP = document.getElementById('btnLimpiarFirmaPrestamo');
+        const inputFirmaBase64P = document.getElementById('firma_base64_prestamo');
+        const formNuevoP = document.getElementById('formNuevoPrestamo');
+
+        let dibujandoP = false;
+        let tieneFirmaP = false;
+
+        ctxP.strokeStyle = '#0f172a';
+        ctxP.lineWidth = 2.5;
+        ctxP.lineCap = 'round';
+        ctxP.lineJoin = 'round';
+
+        function obtenerPosP(e) {
+            const rect = canvasP.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function iniciarP(e) {
+            dibujandoP = true;
+            tieneFirmaP = true;
+            const pos = obtenerPosP(e);
+            ctxP.beginPath();
+            ctxP.moveTo(pos.x, pos.y);
+            e.preventDefault();
+        }
+
+        function dibujarP(e) {
+            if (!dibujandoP) return;
+            const pos = obtenerPosP(e);
+            ctxP.lineTo(pos.x, pos.y);
+            ctxP.stroke();
+            e.preventDefault();
+        }
+
+        function detenerP() {
+            dibujandoP = false;
+        }
+
+        canvasP.addEventListener('mousedown', iniciarP);
+        canvasP.addEventListener('mousemove', dibujarP);
+        canvasP.addEventListener('mouseup', detenerP);
+        canvasP.addEventListener('mouseleave', detenerP);
+
+        canvasP.addEventListener('touchstart', iniciarP, { passive: false });
+        canvasP.addEventListener('touchmove', dibujarP, { passive: false });
+        canvasP.addEventListener('touchend', detenerP);
+
+        if (btnLimpiarP) {
+            btnLimpiarP.addEventListener('click', () => {
+                ctxP.clearRect(0, 0, canvasP.width, canvasP.height);
+                tieneFirmaP = false;
+                if (inputFirmaBase64P) inputFirmaBase64P.value = '';
+            });
+        }
+
+        if (formNuevoP) {
+            formNuevoP.addEventListener('submit', () => {
+                if (tieneFirmaP && inputFirmaBase64P) {
+                    inputFirmaBase64P.value = canvasP.toDataURL('image/png');
+                }
+            });
+        }
     }
 });

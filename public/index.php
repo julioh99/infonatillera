@@ -65,6 +65,7 @@ $router->post('/admin/actividades/abono/eliminar', [ActividadController::class, 
 // Rutas Admin - Entregas de Rondas y Rifas (Firma y Foto)
 $router->get('/admin/entregas', [EntregaController::class, 'index']);
 $router->post('/admin/entregas/guardar', [EntregaController::class, 'guardar']);
+$router->post('/admin/entregas/eliminar', [EntregaController::class, 'eliminar']);
 $router->get('/admin/entregas/socios-pendientes-json', [EntregaController::class, 'sociosPendientesJson']);
 
 // Rutas Admin - Notificaciones Push

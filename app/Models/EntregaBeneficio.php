@@ -10,12 +10,13 @@ class EntregaBeneficio extends Model {
         try {
             $stmt = $this->db->prepare("
                 INSERT INTO natillera_entregas_beneficios 
-                (reunion_id, socio_id, tipo_beneficio, monto_entregado, firma_digital_path, foto_evidencia_path, entregado_por_usuario_id)
-                VALUES (:reunion_id, :socio_id, :tipo_beneficio, :monto, :firma, :foto, :entregado_por)
+                (reunion_id, socio_id, prestamo_id, tipo_beneficio, monto_entregado, firma_digital_path, foto_evidencia_path, entregado_por_usuario_id)
+                VALUES (:reunion_id, :socio_id, :prestamo_id, :tipo_beneficio, :monto, :firma, :foto, :entregado_por)
             ");
             $stmt->execute([
                 ':reunion_id' => $datos['reunion_id'],
                 ':socio_id' => $datos['socio_id'],
+                ':prestamo_id' => !empty($datos['prestamo_id']) ? $datos['prestamo_id'] : null,
                 ':tipo_beneficio' => $datos['tipo_beneficio'],
                 ':monto' => $datos['monto_entregado'],
                 ':firma' => $datos['firma_digital_path'] ?? null,
@@ -44,6 +45,11 @@ class EntregaBeneficio extends Model {
             }
             throw $e;
         }
+    }
+
+    public function eliminarEntrega(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM natillera_entregas_beneficios WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
     }
 
     public function getTodasEntregas(): array {

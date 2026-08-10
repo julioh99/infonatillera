@@ -29,6 +29,7 @@ class EntregaController extends Controller {
         $socioIdQuery = (int)($_GET['socio_id'] ?? 0);
         $montoQuery = (float)($_GET['monto'] ?? 0);
         $reunionIdQuery = (int)($_GET['reunion_id'] ?? 0);
+        $prestamoIdQuery = !empty($_GET['prestamo_id']) ? (int)$_GET['prestamo_id'] : null;
 
         if ($reunionIdQuery <= 0) {
             $reunionAct = $reunionModel->getReunionActual();
@@ -48,7 +49,8 @@ class EntregaController extends Controller {
             'tipoQuery' => $tipoQuery,
             'socioIdQuery' => $socioIdQuery,
             'montoQuery' => $montoQuery,
-            'reunionIdQuery' => $reunionIdQuery
+            'reunionIdQuery' => $reunionIdQuery,
+            'prestamoIdQuery' => $prestamoIdQuery
         ]);
     }
 
@@ -57,6 +59,7 @@ class EntregaController extends Controller {
 
         $reunionId = (int)($_POST['reunion_id'] ?? 0);
         $socioId = (int)($_POST['socio_id'] ?? 0);
+        $prestamoId = !empty($_POST['prestamo_id']) ? (int)$_POST['prestamo_id'] : null;
         $tipoBeneficio = trim($_POST['tipo_beneficio'] ?? 'PRESTAMO');
         $montoStr = trim($_POST['monto_entregado'] ?? '0');
         $monto = (float)str_replace('.', '', $montoStr);
@@ -126,16 +129,13 @@ class EntregaController extends Controller {
             $userExist = $usuarioModel->getSocioById($entregadoPor);
 
             if (!$userExist) {
-                // Si el ID guardado en sesión previa no existe en la BD actual, asignar ID 1 o la primera persona
                 $todosSocios = $usuarioModel->getAllSocios();
                 $entregadoPor = !empty($todosSocios) ? (int)$todosSocios[0]['id'] : 1;
-                // Actualizar la sesión para sincronizarla
                 if (isset($_SESSION['usuario']) && !empty($todosSocios)) {
                     $_SESSION['usuario']['id'] = $entregadoPor;
                 }
             }
 
-            // Verificar que el socio beneficiario exista
             $socioBeneficiario = $usuarioModel->getSocioById($socioId);
             if (!$socioBeneficiario) {
                 $_SESSION['error'] = "El socio beneficiario seleccionado (ID {$socioId}) no existe en la base de datos.";
@@ -146,6 +146,7 @@ class EntregaController extends Controller {
             $ok = $entregaModel->registrarEntrega([
                 'reunion_id' => $reunionId,
                 'socio_id' => $socioId,
+                'prestamo_id' => $prestamoId,
                 'tipo_beneficio' => $tipoBeneficio,
                 'monto_entregado' => $monto,
                 'firma_digital_path' => $firmaPath,
@@ -160,6 +161,30 @@ class EntregaController extends Controller {
             }
         } catch (Throwable $e) {
             $_SESSION['error'] = "Error al registrar la entrega: " . $e->getMessage();
+        }
+
+        $this->redirect('/admin/entregas');
+    }
+
+    public function eliminar(): void {
+        $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
+
+        $id = (int)($_POST['entrega_id'] ?? 0);
+        if ($id <= 0) {
+            $_SESSION['error'] = "ID de constancia de entrega inválido.";
+            $this->redirect('/admin/entregas');
+        }
+
+        try {
+            $entregaModel = new EntregaBeneficio();
+            $ok = $entregaModel->eliminarEntrega($id);
+            if ($ok) {
+                $_SESSION['success'] = "Constancia de entrega N° {$id} eliminada exitosamente.";
+            } else {
+                $_SESSION['error'] = "No se pudo eliminar la constancia de entrega.";
+            }
+        } catch (Throwable $e) {
+            $_SESSION['error'] = "Error al eliminar constancia: " . $e->getMessage();
         }
 
         $this->redirect('/admin/entregas');
