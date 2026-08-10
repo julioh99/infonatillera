@@ -101,12 +101,14 @@
                             </td>
                             <td class="text-end pe-4">
                                 <?php if ($iny['estado'] === 'ACTIVA'): ?>
-                                    <form action="/admin/inyecciones/retirar" method="POST" class="d-inline" onsubmit="return confirm('¿Confirmas procesar la devolución/retiro de este capital?');">
-                                        <input type="hidden" name="inyeccion_id" value="<?= $iny['id'] ?>">
-                                        <button type="submit" class="btn btn-sm rounded-pill <?= $esEligible ? 'btn-success fw-bold' : 'btn-outline-secondary' ?>" <?= !$esEligible ? 'title="Aún no han transcurrido los 6 meses requeridos"' : '' ?>>
-                                            <i class="fa-solid fa-hand-holding-dollar me-1"></i>Procesar Retiro
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm rounded-pill btnRetirarInyeccion <?= $esEligible ? 'btn-success fw-bold' : 'btn-outline-secondary' ?>" 
+                                            data-id="<?= $iny['id'] ?>"
+                                            data-socio="<?= htmlspecialchars($iny['socio_nombre']) ?>"
+                                            data-monto="$<?= number_format($iny['monto_inyectado'] + $iny['monto_rendimiento_generado'], 0, ',', '.') ?> COP"
+                                            data-bs-toggle="modal" data-bs-target="#modalProcesarRetiro"
+                                            <?= !$esEligible ? 'title="Aún no han transcurrido los 6 meses requeridos"' : '' ?>>
+                                        <i class="fa-solid fa-hand-holding-dollar me-1"></i>Procesar Retiro
+                                    </button>
                                 <?php else: ?>
                                     <span class="text-muted fs-8"><i class="fa-solid fa-circle-check text-success me-1"></i>Completado</span>
                                 <?php endif; ?>
@@ -143,13 +145,16 @@
                         <div class="col-7">
                             <label for="iny_reunion_id" class="form-label fw-semibold fs-7">Reunión (Apertura)</label>
                             <select name="reunion_id" id="iny_reunion_id" class="form-select" required>
-                                <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>" <?= in_array($r['numero_quincena'], [1, 2]) ? 'class="fw-bold text-success"' : '' ?>>
-                                        Reunión R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?>
+                                <?php foreach ($reuniones as $r): 
+                                    $isActIny = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
+                                    $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
+                                ?>
+                                    <option value="<?= $r['id'] ?>" <?= $isActIny ?>>
+                                        Reunión R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                        </div>       </div>
+                        </div>
                         <div class="col-5">
                             <label for="iny_tasa" class="form-label fw-semibold fs-7">Tasa Rendimiento %</label>
                             <input type="number" step="0.01" name="tasa_rendimiento_porcentaje" id="iny_tasa" class="form-control fw-bold text-warning" value="5.00" readonly required>
@@ -179,6 +184,42 @@
     </div>
 </div>
 
+<!-- Modal Procesar Retiro de Capital -->
+<div class="modal fade" id="modalProcesarRetiro" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0">
+                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Procesar Retiro de Capital</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/admin/inyecciones/retirar" method="POST">
+                <input type="hidden" name="inyeccion_id" id="ret_inyeccion_id">
+                <div class="modal-body p-4 text-dark">
+                    <p class="mb-2">Socio Inversionista: <strong id="ret_socio_nombre" class="text-primary font-outfit"></strong></p>
+                    <p class="mb-3 text-muted fs-7">Monto a Devolver (Capital + Rendimiento): <strong id="ret_monto_total" class="text-success fs-6 font-outfit"></strong></p>
+
+                    <div class="mb-3">
+                        <label for="ret_reunion_id" class="form-label fw-semibold fs-7">Reunión en que se efectúa el Retiro / Salida de Caja</label>
+                        <select name="reunion_id_retiro" id="ret_reunion_id" class="form-select fw-bold border-warning" required>
+                            <?php foreach ($reuniones as $r): 
+                                $isActR = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
+                                $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
+                            ?>
+                                <option value="<?= $r['id'] ?>" <?= $isActR ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted fs-8">Esta salida se registrará directamente en el EGRESO (-) del cierre financiero de la reunión seleccionada.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill fw-bold px-4">Confirmar y Registrar Retiro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Formato de miles con puntos
@@ -191,6 +232,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 e.target.value = '';
             }
+        });
+    });
+
+    // Cargar datos en modal de retiro de inyección
+    document.querySelectorAll('.btnRetirarInyeccion').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('ret_inyeccion_id').value = btn.getAttribute('data-id');
+            document.getElementById('ret_socio_nombre').textContent = btn.getAttribute('data-socio');
+            document.getElementById('ret_monto_total').textContent = btn.getAttribute('data-monto');
         });
     });
 });

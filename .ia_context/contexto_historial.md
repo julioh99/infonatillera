@@ -460,6 +460,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Reajuste Canvas de Firma (`public/js/firma_canvas.js`):** Se creó la función `initCanvasSignature()` conectada al evento `shown.bs.modal` de Bootstrap para recalcular resolución y escala exacta (`scaleX`, `scaleY`) en pantallas táctiles y escritorio al abrir los modales de nuevo préstamo y entregas.
 - **Priorización de Reunión en `LLAMADO_CERRADO` (`Reunion.php`, `PrestamoController.php`, `prestamos.php`):** Se modificó `getReuniones()` y `getReunionActual()` para ubicar en primer lugar (`ORDER BY CASE WHEN estado = 'LLAMADO_CERRADO' THEN 1...`) la reunión en estado de llamado cerrado, preseleccionándola de forma predeterminada como la opción N° 1 en todos los menús desplegables.
 
+---
+
+### 📌 Petición 40: Asignación de Reunión al Procesar Retiros de Inyecciones para Cierre Financiero
+**Requerimiento del Usuario:**
+`Al procesar el retiro también debe preguntar en qué reunión fue para que al hacer el cierre me aparezca esa salida ya que debo procesar esa salida.`
+
+**Solución Brindada:**
+- **Columna `reunion_id_retiro` (`db.sql`, `alter_inyecciones_reunion_retiro.php`):** Se añadió la columna `reunion_id_retiro INT NULL` a `natillera_inyecciones_capital` en BD local y producción.
+- **Modal de Retiro (`inyecciones.php`, `InyeccionController.php`, `InyeccionCapital.php`):** Al procesar un retiro se despliega el modal `#modalProcesarRetiro` que solicita seleccionar la reunión en que se efectúa la salida de dinero, preseleccionando la reunión en `LLAMADO_CERRADO`.
+- **Cómputo en Cierre Financiero (`CierreReunion.php`):** Se ajustó la consulta de `inyeccionesDevueltas` para sumar los montos retirados (Capital + 5% Rendimiento) filtrados por `reunion_id_retiro`, reflejando la salida en los **EGRESOS A CAJA (-)** del arqueo.
+
+
 
 
 

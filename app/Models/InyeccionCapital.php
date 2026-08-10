@@ -58,7 +58,7 @@ class InyeccionCapital extends Model {
         ]);
     }
 
-    public function retirarInyeccion(int $id, int $usuarioId): bool {
+    public function retirarInyeccion(int $id, int $usuarioId, int $reunionIdRetiro = 0): bool {
         $stmtCheck = $this->db->prepare("SELECT * FROM natillera_inyecciones_capital WHERE id = :id AND estado = 'ACTIVA'");
         $stmtCheck->execute([':id' => $id]);
         $iny = $stmtCheck->fetch();
@@ -70,16 +70,19 @@ class InyeccionCapital extends Model {
         // Verificar si transcurrieron 6 meses
         $hoy = date('Y-m-d');
         if ($hoy < $iny['fecha_retiro_permitido']) {
-            $diasRestantes = (strtotime($iny['fecha_retiro_permitido']) - strtotime($hoy)) / 86400;
+            $diasRestantes = (int)((strtotime($iny['fecha_retiro_permitido']) - strtotime($hoy)) / 86400);
             throw new Exception("Esta inyección aún está congelada. Faltan {$diasRestantes} días para cumplir los 6 meses de permanencia requeridos (Fecha retiro permitido: {$iny['fecha_retiro_permitido']}).");
         }
 
         $stmtUpd = $this->db->prepare("
             UPDATE natillera_inyecciones_capital 
-            SET estado = 'RETIRADA', fecha_retiro = NOW() 
+            SET estado = 'RETIRADA', fecha_retiro = NOW(), reunion_id_retiro = :reunion_id_retiro 
             WHERE id = :id
         ");
-        return $stmtUpd->execute([':id' => $id]);
+        return $stmtUpd->execute([
+            ':id' => $id,
+            ':reunion_id_retiro' => ($reunionIdRetiro > 0) ? $reunionIdRetiro : null
+        ]);
     }
 
     public function getResumenInyecciones(): array {

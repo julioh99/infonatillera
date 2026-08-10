@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS natillera_inyecciones_capital (
     id INT AUTO_INCREMENT PRIMARY KEY,
     socio_id INT NOT NULL,
     reunion_id INT NOT NULL,
+    reunion_id_retiro INT NULL,
     monto_inyectado DECIMAL(10,2) NOT NULL,
     tasa_rendimiento_porcentaje DECIMAL(5,2) DEFAULT 5.00,
     monto_rendimiento_generado DECIMAL(10,2) DEFAULT 0.00,
@@ -193,6 +194,7 @@ CREATE TABLE IF NOT EXISTS natillera_inyecciones_capital (
     registrado_por_usuario_id INT NOT NULL,
     FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
     FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
+    FOREIGN KEY (reunion_id_retiro) REFERENCES natillera_reuniones(id),
     FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

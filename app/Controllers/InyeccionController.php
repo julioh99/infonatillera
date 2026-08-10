@@ -19,12 +19,14 @@ class InyeccionController extends Controller {
         $resumen = $inyeccionModel->getResumenInyecciones();
         $socios = $usuarioModel->getAllSocios();
         $reuniones = $reunionModel->getReuniones();
+        $reunionActual = $reunionModel->getReunionActual();
 
         $this->render('admin/inyecciones', [
             'inyecciones' => $inyecciones,
             'resumen' => $resumen,
             'socios' => $socios,
-            'reuniones' => $reuniones
+            'reuniones' => $reuniones,
+            'reunionActual' => $reunionActual
         ]);
     }
 
@@ -77,6 +79,7 @@ class InyeccionController extends Controller {
         $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $inyeccionId = (int)($_POST['inyeccion_id'] ?? 0);
+        $reunionIdRetiro = (int)($_POST['reunion_id_retiro'] ?? 0);
 
         if ($inyeccionId <= 0) {
             $_SESSION['error'] = "Inyección de capital no especificada.";
@@ -92,10 +95,10 @@ class InyeccionController extends Controller {
 
         try {
             $inyeccionModel = new InyeccionCapital();
-            $ok = $inyeccionModel->retirarInyeccion($inyeccionId, $usuarioId);
+            $ok = $inyeccionModel->retirarInyeccion($inyeccionId, $usuarioId, $reunionIdRetiro);
 
             if ($ok) {
-                $_SESSION['success'] = "Devolución / Retiro de inyección de capital procesado correctamente.";
+                $_SESSION['success'] = "Devolución / Retiro de inyección de capital procesado correctamente y registrado como salida de reunión.";
             } else {
                 $_SESSION['error'] = "No se pudo retirar la inyección de capital.";
             }

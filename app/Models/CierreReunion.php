@@ -111,11 +111,15 @@ class CierreReunion extends Model {
 
         // b) Inyecciones de capital devueltas/retiradas en esta reunión
         $stmtEgrInyDev = $this->db->prepare("
-            SELECT IFNULL(SUM(monto_inyectado), 0) as total_devueltas
+            SELECT IFNULL(SUM(monto_inyectado + monto_rendimiento_generado), 0) as total_devueltas
             FROM natillera_inyecciones_capital
-            WHERE estado = 'RETIRADA' AND DATE(fecha_retiro) = :fecha
+            WHERE estado = 'RETIRADA' 
+              AND (reunion_id_retiro = :reunion_id OR (reunion_id_retiro IS NULL AND DATE(fecha_retiro) = :fecha))
         ");
-        $stmtEgrInyDev->execute([':fecha' => $fechaReunion]);
+        $stmtEgrInyDev->execute([
+            ':reunion_id' => $reunionId,
+            ':fecha' => $fechaReunion
+        ]);
         $inyeccionesDevueltas = (float)$stmtEgrInyDev->fetch()['total_devueltas'];
 
         // c) Préstamos sin interés otorgados desde la Caja Mayor hacia la Caja de Actividades
