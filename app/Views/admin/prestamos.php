@@ -332,7 +332,10 @@
                         <h6 class="m-0 fw-bold font-outfit text-primary" id="cuotas_deudor_nombre">---</h6>
                         <small class="text-muted" id="cuotas_prestamo_resumen">---</small>
                     </div>
-                    <span class="badge bg-success font-outfit fs-7" id="cuotas_total_abonos">$0 COP</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span id="cuotas_estado_badge" class="badge bg-secondary font-outfit fs-7">---</span>
+                        <span class="badge bg-success font-outfit fs-7" id="cuotas_total_abonos">$0 COP</span>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0 fs-7">
@@ -345,7 +348,7 @@
                                 <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tbodyHistorialCuotas">
+                        <tbody id="tblCuotasBody">
                             <tr>
                                 <td colspan="5" class="text-center py-3 text-muted">Cargando historial...</td>
                             </tr>
@@ -548,32 +551,48 @@ document.addEventListener('DOMContentLoaded', () => {
     btnsVerCuotas.forEach(btn => {
         btn.addEventListener('click', () => {
             const prestamoId = btn.getAttribute('data-id');
-            const tbody = document.getElementById('tblCuotasBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando cuotas...</td></tr>';
+            const tbody = document.getElementById('tblCuotasBody') || document.getElementById('tbodyHistorialCuotas');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Cargando cuotas...</td></tr>';
+            }
 
             fetch(`/admin/prestamos/abonos-json?prestamo_id=${prestamoId}`)
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success || !data.prestamo) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error al cargar datos.</td></tr>';
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error al cargar datos.</td></tr>';
                         return;
                     }
 
                     const p = data.prestamo;
-                    document.getElementById('cuotas_deudor_nombre').innerText = p.deudor_nombre;
-                    document.getElementById('cuotas_prestamo_resumen').innerText = `Préstamo N° ${p.id} - Monto: $${new Intl.NumberFormat('es-CO').format(p.monto_prestado)} - Tasa: ${p.tasa_interes_mensual}%`;
-                    document.getElementById('cuotas_estado_badge').className = `badge bg-${p.estado === 'PAGADO' ? 'success' : 'danger'}`;
-                    document.getElementById('cuotas_estado_badge').innerText = p.estado;
+                    const elNombre = document.getElementById('cuotas_deudor_nombre');
+                    const elResumen = document.getElementById('cuotas_prestamo_resumen');
+                    const elBadge = document.getElementById('cuotas_estado_badge');
+                    const elTotal = document.getElementById('cuotas_total_abonos');
+
+                    if (elNombre) elNombre.innerText = p.deudor_nombre;
+                    if (elResumen) elResumen.innerText = `Préstamo N° ${p.id} - Monto: $${new Intl.NumberFormat('es-CO').format(p.monto_prestado)} - Tasa: ${p.tasa_interes_mensual}%`;
+                    if (elBadge) {
+                        elBadge.className = `badge bg-${p.estado === 'PAGADO' ? 'success' : 'danger'} font-outfit fs-7`;
+                        elBadge.innerText = p.estado;
+                    }
+
+                    let totalAbonado = 0;
 
                     if (!data.abonos || data.abonos.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Aún no se han registrado abonos a este préstamo.</td></tr>';
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">Aún no se han registrado abonos a este préstamo.</td></tr>';
+                        if (elTotal) elTotal.innerText = '$0 COP';
                         return;
                     }
 
                     let html = '';
                     data.abonos.forEach(a => {
-                        const capFormatted = new Intl.NumberFormat('es-CO').format(a.monto_capital_pagado);
-                        const intFormatted = new Intl.NumberFormat('es-CO').format(a.monto_interes_pagado);
+                        const cap = parseFloat(a.monto_capital_pagado || 0);
+                        const intM = parseFloat(a.monto_interes_pagado || 0);
+                        totalAbonado += (cap + intM);
+
+                        const capFormatted = new Intl.NumberFormat('es-CO').format(cap);
+                        const intFormatted = new Intl.NumberFormat('es-CO').format(intM);
                         const fecha = a.fecha_abono ? a.fecha_abono.substring(0, 16) : '';
                         const usuario = a.registrado_por_nombre || 'Sistema';
 
@@ -587,8 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="text-end">
                                         <button class="btn btn-xs btn-outline-primary me-1 btnEditCuotaItem"
                                                 data-id="${a.id}"
-                                                data-cap="${a.monto_capital_pagado}"
-                                                data-int="${a.monto_interes_pagado}"
+                                                data-cap="${cap}"
+                                                data-int="${intM}"
                                                 data-fecha="${fecha}">
                                             <i class="fa-solid fa-pen"></i>
                                         </button>
@@ -604,7 +623,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                     });
 
-                    tbody.innerHTML = html;
+                    if (elTotal) elTotal.innerText = `$${new Intl.NumberFormat('es-CO').format(totalAbonado)} COP`;
+                    if (tbody) tbody.innerHTML = html;
 
                     // Listener para los botones dinámicos de editar cuota
                     document.querySelectorAll('.btnEditCuotaItem').forEach(b => {
@@ -623,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 })
                 .catch(() => {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
                 });
         });
     });

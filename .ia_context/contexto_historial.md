@@ -471,6 +471,17 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Modal de Retiro (`inyecciones.php`, `InyeccionController.php`, `InyeccionCapital.php`):** Al procesar un retiro se despliega el modal `#modalProcesarRetiro` que solicita seleccionar la reunión en que se efectúa la salida de dinero, preseleccionando la reunión en `LLAMADO_CERRADO`.
 - **Cómputo en Cierre Financiero (`CierreReunion.php`):** Se ajustó la consulta de `inyeccionesDevueltas` para sumar los montos retirados (Capital + 5% Rendimiento) filtrados por `reunion_id_retiro`, reflejando la salida en los **EGRESOS A CAJA (-)** del arqueo.
 
+---
+
+### 📌 Petición 41: Corrección de TypeError en Modal Historial de Cuotas de Préstamos
+**Requerimiento del Usuario:**
+`prestamos:5927 Uncaught TypeError: Cannot set properties of null (setting 'innerHTML') at HTMLButtonElement.<anonymous> (prestamos:5927:29)`
+
+**Solución Brindada:**
+- **Alineación de IDs HTML/JS (`prestamos.php`):** Se actualizó el ID de la tabla en el HTML a `id="tblCuotasBody"` y se restauró el elemento `<span id="cuotas_estado_badge">` para coincidir con las referencias del script JS.
+- **Chequeo Nulo Preventivo (`prestamos.php`):** Se blindaron los accesos a `innerHTML` e `innerText` en el manipulador AJAX `btnVerCuotas` mediante condicionales `if (el)` previniendo bloqueos de ejecución en consola.
+
+
 
 
 
