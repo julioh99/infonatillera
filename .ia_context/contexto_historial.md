@@ -429,6 +429,17 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Corrección en Modelo (`CierreReunion.php`):** Se eliminó la suma de `$rondasRifas` de los `$totalIngresos` de la Caja Mayor y se fijó en 0.00 el rubro de rondas/rifas en el arqueo financiero.
 - **Limpieza de Interfaz (`cierre_reunion.php`):** Se retiró el ítem de *Aportes a Ronda y Rifa* del bloque visual de **INGRESOS A CAJA (+)**, dejando exclusivamente las cuotas base ($40k), ahorro extra, abonos a préstamos, intereses, inyecciones y devoluciones.
 
+---
+
+### 📌 Petición 37: Asignación Automática de Reunión al Registrar Firma/Foto de Préstamos
+**Requerimiento del Usuario:**
+`Voy a crear la firma desde un préstamo no está arrastrando el número de la reunión y me toca editarlo. Corrígelo para que sea automático y no tenga que cambiarlo.`
+
+**Solución Brindada:**
+- **URL Dinámica en Préstamos (`prestamos.php`):** Se incluyó `&reunion_id=...` en el botón **Firma/Foto** para enviar el identificador de la reunión del préstamo al módulo de entregas.
+- **Captura y Selección Automática (`EntregaController.php`, `entregas_beneficios.php`):** Se ajustó el controlador para procesar `reunion_id` desde la URL y preseleccionar automáticamente dicha reunión en el formulario modal del registro de entrega con firma digital y foto evidencia.
+
+
 
 
 

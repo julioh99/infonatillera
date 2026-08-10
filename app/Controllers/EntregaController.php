@@ -28,6 +28,14 @@ class EntregaController extends Controller {
         $tipoQuery = trim($_GET['tipo'] ?? 'PRESTAMO');
         $socioIdQuery = (int)($_GET['socio_id'] ?? 0);
         $montoQuery = (float)($_GET['monto'] ?? 0);
+        $reunionIdQuery = (int)($_GET['reunion_id'] ?? 0);
+
+        if ($reunionIdQuery <= 0) {
+            $reunionAct = $reunionModel->getReunionActual();
+            if ($reunionAct) {
+                $reunionIdQuery = (int)$reunionAct['id'];
+            }
+        }
 
         $this->render('admin/entregas_beneficios', [
             'resumenFondos' => $resumenFondos,
@@ -39,7 +47,8 @@ class EntregaController extends Controller {
             'sociosRifa' => $sociosRifa,
             'tipoQuery' => $tipoQuery,
             'socioIdQuery' => $socioIdQuery,
-            'montoQuery' => $montoQuery
+            'montoQuery' => $montoQuery,
+            'reunionIdQuery' => $reunionIdQuery
         ]);
     }
 

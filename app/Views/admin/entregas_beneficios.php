@@ -259,8 +259,10 @@
                         <div class="col-12 col-md-4">
                             <label for="entrega_reunion_id" class="form-label fw-semibold fs-7">Reunión</label>
                             <select name="reunion_id" id="entrega_reunion_id" class="form-select" required>
-                                <?php foreach ($reuniones as $r): ?>
-                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                <?php foreach ($reuniones as $r): 
+                                    $selR = (!empty($reunionIdQuery) && $reunionIdQuery == $r['id']) ? 'selected' : '';
+                                ?>
+                                    <option value="<?= $r['id'] ?>" <?= $selR ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
