@@ -152,10 +152,13 @@
                 </div>
             </div>
             <div class="d-flex gap-1 mt-2">
-                <button type="button" class="btn btn-xs btn-outline-light w-50 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+                <button type="button" class="btn btn-xs btn-outline-warning w-33 rounded-pill btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Centro de Notificaciones">
+                    <i class="fa-solid fa-bell me-1"></i>Avisos
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-light w-33 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
                     <i class="fa-solid fa-user-pen me-1"></i>Perfil
                 </button>
-                <a href="/logout" class="btn btn-xs btn-outline-danger w-50 rounded-pill text-decoration-none text-center">
+                <a href="/logout" class="btn btn-xs btn-outline-danger w-33 rounded-pill text-decoration-none text-center">
                     <i class="fa-solid fa-right-from-bracket me-1"></i>Salir
                 </a>
             </div>
@@ -168,9 +171,14 @@
             <i class="fa-solid fa-coins fs-4 text-warning"></i>
             <span class="font-outfit fs-5">InfoNatillera</span>
         </a>
-        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-warning rounded-circle position-relative btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Notificaciones y Comunicados">
+                <i class="fa-solid fa-bell"></i>
+            </button>
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </header>
 
     <!-- Offcanvas Mobile Sidebar -->
@@ -344,6 +352,91 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Centro de Notificaciones y Avisos (Socio / Directiva) -->
+    <div class="modal fade" id="modalMisNotificaciones" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h5 class="modal-title font-outfit fw-bold d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-bell text-warning"></i>
+                        Centro de Notificaciones y Avisos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-dark">
+                    <div id="contenedorMisNotificaciones">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-spinner fa-spin me-2 fs-5"></i>Cargando notificaciones...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnBells = document.querySelectorAll('.btnAbrirNotificaciones');
+        btnBells.forEach(btn => {
+            btn.addEventListener('click', cargarMisNotificaciones);
+        });
+
+        function cargarMisNotificaciones() {
+            const cont = document.getElementById('contenedorMisNotificaciones');
+            if (!cont) return;
+            cont.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2 fs-5"></i>Cargando notificaciones...</div>';
+
+            fetch('/socio/notificaciones-json')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.notificaciones || data.notificaciones.length === 0) {
+                        cont.innerHTML = `
+                            <div class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-bell-slash fs-2 d-block mb-2 text-secondary"></i>
+                                Aún no se han emitido notificaciones generales o personales.
+                            </div>`;
+                        return;
+                    }
+
+                    let html = '<div class="list-group list-group-flush">';
+                    data.notificaciones.forEach(n => {
+                        const fecha = n.fecha_envio ? n.fecha_envio.substring(0, 16) : '';
+                        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${n.titulo}*\n${n.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+                        const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
+
+                        html += `
+                            <div class="list-group-item p-3 border-0 bg-light rounded-3 mb-2 shadow-sm">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <h6 class="fw-bold font-outfit text-dark m-0 d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-bullhorn text-warning"></i>
+                                        ${n.titulo}
+                                    </h6>
+                                    <small class="text-muted fs-8"><i class="fa-solid fa-clock me-1"></i>${fecha}</small>
+                                </div>
+                                <p class="text-secondary fs-7 mb-2">${n.mensaje}</p>
+                                <div class="d-flex align-items-center justify-content-between fs-8">
+                                    <span class="text-muted">Emitido por: <strong>${n.remitente_nombre || 'Directiva'}</strong></span>
+                                    <a href="${urlWa}" target="_blank" class="btn btn-xs btn-outline-success rounded-pill fw-bold">
+                                        <i class="fa-brands fa-whatsapp me-1"></i>Compartir por WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    cont.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    cont.innerHTML = '<div class="text-center py-4 text-danger">No se pudieron cargar las notificaciones.</div>';
+                });
+        }
+    });
+    </script>
 <?php endif; ?>
 
 <!-- Contenedor Principal de la App (Offset para Sidebar en Desktop) -->

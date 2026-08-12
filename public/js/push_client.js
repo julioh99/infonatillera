@@ -37,10 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch(err => {
                     console.error(err);
-                    Swal.fire('Aviso', err.message || 'No se pudo activar las notificaciones.', 'info');
+                    Swal.fire({
+                        title: 'Aviso de Notificaciones',
+                        text: err.message || 'No se pudo activar la suscripción en este navegador. Recuerda que todas las notificaciones están disponibles dentro de la app en la Campanita 🔔 y las puedes compartir por WhatsApp.',
+                        icon: 'info'
+                    });
                 });
             } else {
-                Swal.fire('No soportado', 'Tu navegador no soporta Notificaciones Web Push.', 'warning');
+                Swal.fire({
+                    title: 'Notificaciones en la App',
+                    text: 'Este navegador o dispositivo no soporta Push nativo (como iOS Safari sin PWA o modo incógnito). ¡No te preocupes! Todas tus notificaciones están disponibles dentro de la plataforma en la Campanita 🔔 y las puedes compartir a WhatsApp.',
+                    icon: 'info'
+                });
             }
         });
     }

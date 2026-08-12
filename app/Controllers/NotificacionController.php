@@ -71,4 +71,11 @@ class NotificacionController extends Controller {
 
         $this->redirect('/admin/notificaciones');
     }
+
+    public function notificacionesJson(): void {
+        $user = $this->requireAuth();
+        $pushModel = new PushSubscription();
+        $notificaciones = $pushModel->getNotificacionesPorSocio((int)$user['id']);
+        $this->json(['success' => true, 'notificaciones' => $notificaciones]);
+    }
 }

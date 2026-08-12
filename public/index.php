@@ -72,6 +72,7 @@ $router->get('/admin/entregas/socios-pendientes-json', [EntregaController::class
 $router->get('/admin/notificaciones', [NotificacionController::class, 'index']);
 $router->post('/admin/notificaciones/enviar', [NotificacionController::class, 'enviar']);
 $router->post('/admin/notificaciones/suscribir', [NotificacionController::class, 'suscribir']);
+$router->get('/socio/notificaciones-json', [NotificacionController::class, 'notificacionesJson']);
 
 // Rutas Admin - Gestión de Reuniones y Cuotas
 $router->get('/admin/reuniones', [ReunionController::class, 'index']);

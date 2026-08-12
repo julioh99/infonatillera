@@ -45,4 +45,17 @@ class PushSubscription extends Model {
         ");
         return $stmt->fetchAll();
     }
+
+    public function getNotificacionesPorSocio(int $socioId): array {
+        $stmt = $this->db->prepare("
+            SELECT n.*, u_rem.nombre_completo as remitente_nombre
+            FROM natillera_notificaciones n
+            JOIN natillera_usuarios u_rem ON n.enviado_por_usuario_id = u_rem.id
+            WHERE n.destinatario_tipo = 'TODOS' OR n.socio_id = :socio_id
+            ORDER BY n.fecha_envio DESC
+            LIMIT 20
+        ");
+        $stmt->execute([':socio_id' => $socioId]);
+        return $stmt->fetchAll();
+    }
 }

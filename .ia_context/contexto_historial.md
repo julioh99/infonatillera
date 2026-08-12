@@ -499,6 +499,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 **Solución Brindada:**
 - **Inclusión de Módulos Faltantes (`header.php`):** Se agregaron los módulos **Cierre de Reunión**, **Transferencias entre Cajas** e **Inyecciones Capital** en el menú Offcanvas de móviles (`#offcanvasSidebar`), igualando las opciones con el menú lateral de escritorio.
 
+---
+
+### 📌 Petición 44: Centro de Notificaciones In-App y Difusión Directa por WhatsApp
+**Requerimiento del Usuario:**
+`El módulo de notificaciones no está funcionando... quiero que organices de otra forma e implementes algo para que funcione. Por otro lado vamos a agregarle una alternativa para que esa misma notificación se pueda darle en compartir y enviarla por WhatsApp, ya que tenemos un grupo de WhatsApp...`
+
+**Solución Brindada:**
+- **Centro de Notificaciones In-App (`header.php`, `index.php`, `NotificacionController.php`, `PushSubscription.php`):** Se creó la ruta `GET /socio/notificaciones-json` y el botón de Campanita 🔔 en el encabezado móvil y escritorio. Todos los socios pueden ver sus notificaciones en el modal `#modalMisNotificaciones` sin depender exclusivamente de Web Push.
+- **Difusión Directa por WhatsApp (`notificaciones.php`, `header.php`):** Se añadieron botones de **"Compartir por WhatsApp"** tanto en el modal de redacción como en el historial de mensajes emitidos y en el panel de notificaciones del socio, generando un mensaje enriquecido con título, descripción y link directo a la app.
+- **Tolerancia a Fallos Push (`push_client.js`):** Se amoldó la respuesta de `push_client.js` para ofrecer orientación clara cuando un dispositivo (como iOS Safari) no admite Push nativo VAPID.
+
+
 
 
 
