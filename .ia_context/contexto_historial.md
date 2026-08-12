@@ -490,6 +490,16 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 **Solución Brindada:**
 - **Creación e Instalación (`db.sql`, `create_sql_views.php`):** Se diseñaron e instalaron 6 vistas SQL (`v_resumen_consolidado_socios`, `v_estado_prestamos_detalle`, `v_arqueo_caja_reuniones`, `v_actividades_estado_socios`, `v_inyecciones_capital_detalle`, `v_constancias_entregas_evidencia`) tanto en la base de datos local de MySQL como en el servidor remoto de producción (`skylined_pruebas`).
 
+---
+
+### 📌 Petición 43: Sincronización de Opciones del Menú Lateral en Dispositivos Móviles
+**Requerimiento del Usuario:**
+`No me aparecen algunas opciones que sí puedo ver desde la parte de PC y en móvil no. Corrígelo y revisa para que aparezcan.`
+
+**Solución Brindada:**
+- **Inclusión de Módulos Faltantes (`header.php`):** Se agregaron los módulos **Cierre de Reunión**, **Transferencias entre Cajas** e **Inyecciones Capital** en el menú Offcanvas de móviles (`#offcanvasSidebar`), igualando las opciones con el menú lateral de escritorio.
+
+
 
 
 
