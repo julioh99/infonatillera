@@ -519,6 +519,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 **Solución Brindada:**
 - **Par de Claves VAPID RFC 8292 (`config/vapid_keys.php`, `generate_vapid_keys.php`):** Se reemplazó la clave pública de prueba previa por una clave P-256 válida de 65 bytes uncomprimida (`BEppX_3-qy0tA7TdhdkfhVvW8BeDSYYPt6I-4Iv7AZ2dL8V5-IdCRgm93YuelRBHx-G6zwPGVLwgRqwIfkNNc2Q`), superando la validación de la curva elíptica de Google Chrome.
 
+---
+
+### 📌 Petición 46: Cambio Obligatorio de Contraseña, Popups de Notificaciones (30s) y Buscador en Préstamos
+**Requerimiento del Usuario:**
+`Obligues a todos a cambiar la contraseña inicial. Agrega una columna en la base de datos en la tabla de usuarios que sea contraseña cambiada y por defecto todos en cero... Y luego de eso quiero que las notificaciones, si una persona tiene notificaciones pendientes, también le aparezcan al ingresar con un tiempo de 30 segundos... con SweetAlert2. También quiero que le agregues un buscador al modal de crear préstamos...`
+
+**Solución Brindada:**
+- **Cambio Obligatorio de Contraseña (`alter_password_changed_and_notifs.php`, `Usuario.php`, `Controller.php`, `AuthController.php`, `cambiar_password_inicial.php`):** Se añadió `password_changed TINYINT(1) DEFAULT 0` en local y servidor remoto. Todo usuario con `password_changed = 0` es redirigido obligatoriamente a la pantalla de cambio de contraseña inicial.
+- **Auto-Popup de Notificaciones Pendientes (SweetAlert2 - 30s) (`natillera_notificaciones_leidas`, `PushSubscription.php`, `NotificacionController.php`, `header.php`):** Se creó el seguimiento de notificaciones leídas. Al ingresar a la app, si hay mensajes pendientes por leer, SweetAlert2 los despliega automáticamente durante **30 segundos** con barra de progreso y botón de compartir a WhatsApp.
+- **Filtro Buscador en Modal de Préstamos (`prestamos.php`):** Se agregó un campo de búsqueda en tiempo real `#buscarSocioDeudorInput` para filtrar fácilmente los 50+ socios por nombre o cédula al registrar un préstamo.
+
+
 
 
 

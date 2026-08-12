@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS natillera_usuarios (
     tope_prestamo_personalizado DECIMAL(10,2) DEFAULT 2000000.00, -- Modificable por Sec. General
     interes_minimo_meta DECIMAL(10,2) DEFAULT 400000.00, -- Meta individual de $400k
     estado TINYINT(1) DEFAULT 1,
+    password_changed TINYINT(1) DEFAULT 0,
     FOREIGN KEY (rol_id) REFERENCES natillera_roles(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

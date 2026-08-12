@@ -78,4 +78,22 @@ class NotificacionController extends Controller {
         $notificaciones = $pushModel->getNotificacionesPorSocio((int)$user['id']);
         $this->json(['success' => true, 'notificaciones' => $notificaciones]);
     }
+
+    public function notificacionesPendientesJson(): void {
+        $user = $this->requireAuth();
+        $pushModel = new PushSubscription();
+        $pendientes = $pushModel->getNotificacionesPendientesPorSocio((int)$user['id']);
+        $this->json(['success' => true, 'pendientes' => $pendientes]);
+    }
+
+    public function marcarLeida(): void {
+        $user = $this->requireAuth();
+        $notificacionId = !empty($_POST['notificacion_id']) ? (int)$_POST['notificacion_id'] : 0;
+        if ($notificacionId <= 0) {
+            $this->json(['success' => false, 'message' => 'ID inválido.'], 400);
+        }
+        $pushModel = new PushSubscription();
+        $ok = $pushModel->marcarNotificacionComoLeida($notificacionId, (int)$user['id']);
+        $this->json(['success' => $ok]);
+    }
 }

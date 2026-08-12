@@ -102,12 +102,25 @@ class Usuario extends Model {
 
         if (!empty($datos['password'])) {
             $fields[] = 'password_hash = :password_hash';
+            $fields[] = 'password_changed = 1';
             $params[':password_hash'] = password_hash($datos['password'], PASSWORD_DEFAULT);
         }
 
         $sql = "UPDATE natillera_usuarios SET " . implode(', ', $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
+    }
+
+    public function cambiarPasswordInicial(int $id, string $newPassword): bool {
+        $stmt = $this->db->prepare("
+            UPDATE natillera_usuarios 
+            SET password_hash = :hash, password_changed = 1 
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':id' => $id,
+            ':hash' => password_hash($newPassword, PASSWORD_DEFAULT)
+        ]);
     }
 
     public function getProximosCumpleanos(): array {

@@ -173,12 +173,16 @@
                 <div class="modal-body p-4">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-7">
-                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7">Socio Deudor</label>
+                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7 mb-1">Socio Deudor</label>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="buscarSocioDeudorInput" class="form-control border-start-0" placeholder="🔍 Filtrar socio por nombre o cédula...">
+                            </div>
                             <select name="socio_deudor_id" id="socio_deudor_id" class="form-select border-primary" required>
                                 <option value="">-- Seleccionar Socio --</option>
                                 <?php foreach ($socios as $s): ?>
-                                    <option value="<?= $s['id'] ?>">
-                                        <?= htmlspecialchars($s['nombre_completo']) ?> (Tope: $<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?>)
+                                    <option value="<?= $s['id'] ?>" data-search="<?= strtolower(htmlspecialchars($s['nombre_completo'] . ' ' . $s['cedula'])) ?>">
+                                        <?= htmlspecialchars($s['nombre_completo']) ?> (C.C. <?= htmlspecialchars($s['cedula']) ?> - Tope: $<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -646,6 +650,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Error de conexión.</td></tr>';
                 });
         });
+    });
+
+    // Filtro buscador dinámico para selector de socio deudor en modal de préstamos
+    document.getElementById('buscarSocioDeudorInput')?.addEventListener('input', function() {
+        const term = this.value.toLowerCase().trim();
+        const select = document.getElementById('socio_deudor_id');
+        if (!select) return;
+        
+        let firstMatch = null;
+        const options = select.querySelectorAll('option');
+        options.forEach(opt => {
+            if (!opt.value) return; // Mantener opción por defecto
+            const text = (opt.getAttribute('data-search') || opt.textContent).toLowerCase();
+            if (text.includes(term)) {
+                opt.hidden = false;
+                opt.disabled = false;
+                if (!firstMatch) firstMatch = opt;
+            } else {
+                opt.hidden = true;
+                opt.disabled = true;
+            }
+        });
+
+        if (firstMatch && term.length > 0) {
+            select.value = firstMatch.value;
+        }
     });
 });
 </script>

@@ -43,6 +43,14 @@ abstract class Controller {
         if (!isset($_SESSION['usuario'])) {
             $this->redirect('/login');
         }
+
+        $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        if (empty($_SESSION['usuario']['password_changed']) 
+            && strpos($currentUri, '/cambiar-password-inicial') === false 
+            && strpos($currentUri, '/logout') === false) {
+            $this->redirect('/cambiar-password-inicial');
+        }
+
         return $_SESSION['usuario'];
     }
 

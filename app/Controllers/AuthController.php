@@ -29,6 +29,10 @@ class AuthController extends Controller {
             $_SESSION['usuario'] = $user;
             $_SESSION['active_mode'] = $user['rol_nombre']; // 'Presidente', 'Tesorera', 'Socio', etc.
 
+            if (empty($user['password_changed'])) {
+                $this->redirect('/cambiar-password-inicial');
+            }
+
             if (in_array($user['rol_nombre'], ['Presidente', 'Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
                 $this->redirect('/admin/llamado-lista');
             } else {
@@ -37,6 +41,53 @@ class AuthController extends Controller {
         } else {
             $_SESSION['error'] = "Credenciales incorrectas o usuario inactivo.";
             $this->redirect('/login');
+        }
+    }
+
+    public function showCambiarPasswordInicial(): void {
+        if (!isset($_SESSION['usuario'])) {
+            $this->redirect('/login');
+        }
+        if (!empty($_SESSION['usuario']['password_changed'])) {
+            $this->redirect('/socio/dashboard');
+        }
+        $this->render('auth/cambiar_password_inicial');
+    }
+
+    public function procesarCambiarPasswordInicial(): void {
+        if (!isset($_SESSION['usuario'])) {
+            $this->redirect('/login');
+        }
+
+        $passwordNuevo = trim($_POST['password_nuevo'] ?? '');
+        $passwordConfirmar = trim($_POST['password_confirmar'] ?? '');
+
+        if (strlen($passwordNuevo) < 6) {
+            $_SESSION['error'] = "La nueva contraseña debe tener al menos 6 caracteres.";
+            $this->redirect('/cambiar-password-inicial');
+        }
+
+        if ($passwordNuevo !== $passwordConfirmar) {
+            $_SESSION['error'] = "Las contraseñas ingresadas no coinciden.";
+            $this->redirect('/cambiar-password-inicial');
+        }
+
+        $usuarioModel = new Usuario();
+        $userId = (int)$_SESSION['usuario']['id'];
+        $ok = $usuarioModel->cambiarPasswordInicial($userId, $passwordNuevo);
+
+        if ($ok) {
+            $_SESSION['usuario']['password_changed'] = 1;
+            $_SESSION['success'] = "¡Tu contraseña ha sido actualizada con éxito! Bienvenido(a) a la plataforma.";
+            
+            if (in_array($_SESSION['usuario']['rol_nombre'], ['Presidente', 'Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
+                $this->redirect('/admin/llamado-lista');
+            } else {
+                $this->redirect('/socio/dashboard');
+            }
+        } else {
+            $_SESSION['error'] = "No se pudo actualizar la contraseña. Inténtalo nuevamente.";
+            $this->redirect('/cambiar-password-inicial');
         }
     }
 

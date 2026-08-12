@@ -435,6 +435,46 @@
                     cont.innerHTML = '<div class="text-center py-4 text-danger">No se pudieron cargar las notificaciones.</div>';
                 });
         }
+
+        // Auto-Popup SweetAlert2 con temporizador de 30 segundos para notificaciones pendientes al ingresar
+        fetch('/socio/notificaciones-pendientes-json')
+            .then(r => r.json())
+            .then(async data => {
+                if (data.success && data.pendientes && data.pendientes.length > 0) {
+                    for (const notif of data.pendientes) {
+                        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${notif.titulo}*\n${notif.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+                        const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
+
+                        await Swal.fire({
+                            title: `📢 ${notif.titulo}`,
+                            html: `
+                                <div class="text-start p-2">
+                                    <p class="fs-6 text-dark mb-3">${notif.mensaje}</p>
+                                    <hr class="my-2">
+                                    <div class="d-flex align-items-center justify-content-between fs-7 text-muted">
+                                        <span>Emitido por: <strong>${notif.remitente_nombre || 'Directiva'}</strong></span>
+                                        <a href="${urlWa}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill fw-bold">
+                                            <i class="fa-brands fa-whatsapp me-1"></i>WhatsApp
+                                        </a>
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'info',
+                            timer: 30000,
+                            timerProgressBar: true,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Entendido / Cerrar (30s)',
+                            confirmButtonColor: '#198754',
+                            allowOutsideClick: false
+                        });
+
+                        const formData = new FormData();
+                        formData.append('notificacion_id', notif.id);
+                        fetch('/socio/notificacion-marcar-leida', { method: 'POST', body: formData });
+                    }
+                }
+            })
+            .catch(err => console.error(err));
     });
     </script>
 <?php endif; ?>

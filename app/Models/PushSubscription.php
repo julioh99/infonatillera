@@ -58,4 +58,29 @@ class PushSubscription extends Model {
         $stmt->execute([':socio_id' => $socioId]);
         return $stmt->fetchAll();
     }
+
+    public function getNotificacionesPendientesPorSocio(int $socioId): array {
+        $stmt = $this->db->prepare("
+            SELECT n.*, u_rem.nombre_completo as remitente_nombre
+            FROM natillera_notificaciones n
+            JOIN natillera_usuarios u_rem ON n.enviado_por_usuario_id = u_rem.id
+            LEFT JOIN natillera_notificaciones_leidas nl ON (n.id = nl.notificacion_id AND nl.socio_id = :socio_id)
+            WHERE (n.destinatario_tipo = 'TODOS' OR n.socio_id = :socio_id)
+              AND nl.id IS NULL
+            ORDER BY n.fecha_envio ASC
+        ");
+        $stmt->execute([':socio_id' => $socioId]);
+        return $stmt->fetchAll();
+    }
+
+    public function marcarNotificacionComoLeida(int $notificacionId, int $socioId): bool {
+        $stmt = $this->db->prepare("
+            INSERT IGNORE INTO natillera_notificaciones_leidas (notificacion_id, socio_id)
+            VALUES (:notificacion_id, :socio_id)
+        ");
+        return $stmt->execute([
+            ':notificacion_id' => $notificacionId,
+            ':socio_id' => $socioId
+        ]);
+    }
 }

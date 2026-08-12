@@ -38,6 +38,8 @@ $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/toggle-mode', [AuthController::class, 'toggleMode']);
+$router->get('/cambiar-password-inicial', [AuthController::class, 'showCambiarPasswordInicial']);
+$router->post('/cambiar-password-inicial', [AuthController::class, 'procesarCambiarPasswordInicial']);
 
 // Rutas Admin - Llamado a Lista
 $router->get('/admin/llamado-lista', [LlamadoListaController::class, 'index']);
@@ -73,6 +75,8 @@ $router->get('/admin/notificaciones', [NotificacionController::class, 'index']);
 $router->post('/admin/notificaciones/enviar', [NotificacionController::class, 'enviar']);
 $router->post('/admin/notificaciones/suscribir', [NotificacionController::class, 'suscribir']);
 $router->get('/socio/notificaciones-json', [NotificacionController::class, 'notificacionesJson']);
+$router->get('/socio/notificaciones-pendientes-json', [NotificacionController::class, 'notificacionesPendientesJson']);
+$router->post('/socio/notificacion-marcar-leida', [NotificacionController::class, 'marcarLeida']);
 
 // Rutas Admin - Gestión de Reuniones y Cuotas
 $router->get('/admin/reuniones', [ReunionController::class, 'index']);
