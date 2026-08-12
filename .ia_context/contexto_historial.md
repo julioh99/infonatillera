@@ -510,6 +510,16 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Difusión Directa por WhatsApp (`notificaciones.php`, `header.php`):** Se añadieron botones de **"Compartir por WhatsApp"** tanto en el modal de redacción como en el historial de mensajes emitidos y en el panel de notificaciones del socio, generando un mensaje enriquecido con título, descripción y link directo a la app.
 - **Tolerancia a Fallos Push (`push_client.js`):** Se amoldó la respuesta de `push_client.js` para ofrecer orientación clara cuando un dispositivo (como iOS Safari) no admite Push nativo VAPID.
 
+---
+
+### 📌 Petición 45: Corrección de Clave VAPID applicationServerKey en Google Chrome
+**Requerimiento del Usuario:**
+`estoy en un navwegador con google chrme y me sale esto: Aviso de Notificaciones Failed to execute 'subscribe' on 'PushManager': The provided applicationServerKey is not valid.`
+
+**Solución Brindada:**
+- **Par de Claves VAPID RFC 8292 (`config/vapid_keys.php`, `generate_vapid_keys.php`):** Se reemplazó la clave pública de prueba previa por una clave P-256 válida de 65 bytes uncomprimida (`BEppX_3-qy0tA7TdhdkfhVvW8BeDSYYPt6I-4Iv7AZ2dL8V5-IdCRgm93YuelRBHx-G6zwPGVLwgRqwIfkNNc2Q`), superando la validación de la curva elíptica de Google Chrome.
+
+
 
 
 
