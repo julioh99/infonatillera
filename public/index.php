@@ -41,6 +41,9 @@ $router->post('/toggle-mode', [AuthController::class, 'toggleMode']);
 $router->get('/cambiar-password-inicial', [AuthController::class, 'showCambiarPasswordInicial']);
 $router->post('/cambiar-password-inicial', [AuthController::class, 'procesarCambiarPasswordInicial']);
 
+// Rutas Admin - Tablero Presidencia & Control Ejecutivo
+$router->get('/admin/dashboard-presidente', [PresidenteController::class, 'dashboard']);
+
 // Rutas Admin - Llamado a Lista
 $router->get('/admin/llamado-lista', [LlamadoListaController::class, 'index']);
 $router->post('/admin/llamado-lista/guardar-batch', [LlamadoListaController::class, 'guardarBatch']);

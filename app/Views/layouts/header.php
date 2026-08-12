@@ -53,7 +53,16 @@
             <?php if ($isAdminAccess): ?>
                 <li class="nav-header">Módulos Directiva</li>
 
-                <?php if (in_array($role, ['Presidente', 'Tesorera','Secretaria General'])): ?>
+                <?php if ($role === 'Presidente' && $activeMode === 'Presidente'): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/dashboard-presidente') === 0 ? 'active' : '' ?>" href="/admin/dashboard-presidente">
+                            <i class="fa-solid fa-crown text-warning"></i>
+                            <span>Tablero Presidencia</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
                     <li>
                         <a class="nav-link <?= strpos($currentUri, '/admin/llamado-lista') === 0 ? 'active' : '' ?>" href="/admin/llamado-lista">
                             <i class="fa-solid fa-clipboard-check text-success"></i>
@@ -136,7 +145,7 @@
             <li>
                 <a class="nav-link <?= strpos($currentUri, '/socio/dashboard') === 0 ? 'active' : '' ?>" href="/socio/dashboard">
                     <i class="fa-solid fa-chart-line text-primary"></i>
-                    <span>Mi Dashboard</span>
+                    <span>Mi Información</span>
                 </a>
             </li>
         </ul>
@@ -202,6 +211,15 @@
             <ul class="sidebar-nav">
                 <?php if ($isAdminAccess): ?>
                     <li class="nav-header">Módulos Directiva</li>
+
+                    <?php if ($role === 'Presidente' && $activeMode === 'Presidente'): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/dashboard-presidente') === 0 ? 'active' : '' ?>" href="/admin/dashboard-presidente">
+                                <i class="fa-solid fa-crown text-warning"></i>
+                                <span>Tablero Presidencia</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
 
                     <?php if (in_array($role, ['Presidente', 'Tesorera', 'Secretaria General'])): ?>
                         <li>
@@ -286,7 +304,7 @@
                 <li>
                     <a class="nav-link <?= strpos($currentUri, '/socio/dashboard') === 0 ? 'active' : '' ?>" href="/socio/dashboard">
                         <i class="fa-solid fa-chart-line text-primary"></i>
-                        <span>Mi Dashboard</span>
+                        <span>Mi Información</span>
                     </a>
                 </li>
             </ul>

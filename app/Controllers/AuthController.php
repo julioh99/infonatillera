@@ -33,7 +33,9 @@ class AuthController extends Controller {
                 $this->redirect('/cambiar-password-inicial');
             }
 
-            if (in_array($user['rol_nombre'], ['Presidente', 'Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
+            if ($user['rol_nombre'] === 'Presidente') {
+                $this->redirect('/admin/dashboard-presidente');
+            } elseif (in_array($user['rol_nombre'], ['Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
                 $this->redirect('/admin/llamado-lista');
             } else {
                 $this->redirect('/socio/dashboard');
@@ -80,7 +82,9 @@ class AuthController extends Controller {
             $_SESSION['usuario']['password_changed'] = 1;
             $_SESSION['success'] = "¡Tu contraseña ha sido actualizada con éxito! Bienvenido(a) a la plataforma.";
             
-            if (in_array($_SESSION['usuario']['rol_nombre'], ['Presidente', 'Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
+            if ($_SESSION['usuario']['rol_nombre'] === 'Presidente') {
+                $this->redirect('/admin/dashboard-presidente');
+            } elseif (in_array($_SESSION['usuario']['rol_nombre'], ['Tesorera', 'Secretaria General', 'Secretaria Actividades'])) {
                 $this->redirect('/admin/llamado-lista');
             } else {
                 $this->redirect('/socio/dashboard');
@@ -96,10 +100,17 @@ class AuthController extends Controller {
 
         if ($user['rol_nombre'] === 'Presidente') {
             $currentMode = $_SESSION['active_mode'] ?? 'Presidente';
-            $_SESSION['active_mode'] = ($currentMode === 'Presidente') ? 'Socio' : 'Presidente';
+            $newMode = ($currentMode === 'Presidente') ? 'Socio' : 'Presidente';
+            $_SESSION['active_mode'] = $newMode;
+
+            if ($newMode === 'Presidente') {
+                $this->redirect('/admin/dashboard-presidente');
+            } else {
+                $this->redirect('/socio/dashboard');
+            }
         }
 
-        $this->redirect($_SERVER['HTTP_REFERER'] ?? '/socio/dashboard');
+        $this->redirect('/socio/dashboard');
     }
 
     public function logout(): void {

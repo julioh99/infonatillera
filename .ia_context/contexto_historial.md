@@ -541,6 +541,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Sincronización en Vista (`header.php`):** Se confirmó la inclusión de `'Secretaria General'` tanto en el menú lateral de escritorio como en el Offcanvas móvil.
 - **Documentación Creada (`docs/permisos_roles_modulo_llamado_lista.md`):** Se generó el documento guiado sobre la arquitectura de permisos a 2 niveles (Vista + Controlador) y la matriz de acceso por módulos.
 
+---
+
+### 📌 Petición 50: Módulo "Tablero Presidencia & Control Ejecutivo", Prioridad de Menú y Redirección de Modos
+**Requerimiento del Usuario:**
+`Un módulo nuevo solo para el presidente donde se vean los saldos reales que hay en caja, todos los movimientos que se han hecho... quienes son las personas que no han participado en actividades, las personas que no tienen ningún préstamo... También quiero que el Dashboard aparezca siempre de primero y si el presidente cambia de modo socio a modo presidente o viceversa, siempre se vaya a la parte del Dashboard primero, y cambia de 'Mi Dashboard' a 'Mi Información'.`
+
+**Solución Brindada:**
+- **Módulo Exclusivo Tablero Presidencia (`PresidenteController.php`, `PresidenteDashboard.php`, `dashboard_presidente.php`, `index.php`):** Se construyó el módulo exclusivo `/admin/dashboard-presidente` que consolida saldos reales de caja, recaudos de cuotas ($36M COP), intereses cobrados ($20.9M COP), cartera prestada pendiente ($59.2M COP) e inyecciones, además de listas con buscadores en tiempo real de socios sin préstamos activos (9 socios), socios sin actividades (26 socios) y morosos.
+- **Redirección al Alternar Modos (`AuthController.php`):** Al cambiar de `Modo Presidente` ↔ `Modo Socio`, el sistema redirige automáticamente al Tablero Presidencia (`/admin/dashboard-presidente`) o al panel de socio (`/socio/dashboard`).
+- **Navegación Prioritaria y Renombrado (`header.php`):** Se ubicó **Tablero Presidencia** al inicio del menú de directiva en escritorio y móviles, y se renombró `"Mi Dashboard"` por **`"Mi Información"`**.
+
+
 
 
 
