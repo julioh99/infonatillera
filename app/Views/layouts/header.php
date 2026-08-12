@@ -53,7 +53,7 @@
             <?php if ($isAdminAccess): ?>
                 <li class="nav-header">Módulos Directiva</li>
 
-                <?php if (in_array($role, ['Presidente', 'Tesorera'])): ?>
+                <?php if (in_array($role, ['Presidente', 'Tesorera','Secretaria General'])): ?>
                     <li>
                         <a class="nav-link <?= strpos($currentUri, '/admin/llamado-lista') === 0 ? 'active' : '' ?>" href="/admin/llamado-lista">
                             <i class="fa-solid fa-clipboard-check text-success"></i>
