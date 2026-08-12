@@ -8,7 +8,7 @@ require_once __DIR__ . '/../Models/Usuario.php';
 class LlamadoListaController extends Controller {
 
     public function index(): void {
-        $this->requireRole(['Presidente', 'Tesorera']);
+        $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $reunionModel = new Reunion();
         $usuarioModel = new Usuario();
@@ -39,7 +39,7 @@ class LlamadoListaController extends Controller {
     }
 
     public function guardarBatch(): void {
-        $this->requireRole(['Presidente', 'Tesorera']);
+        $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $input = json_decode(file_get_contents('php://input'), true);
         $reunionId = isset($input['reunion_id']) ? (int)$input['reunion_id'] : 0;
@@ -63,7 +63,7 @@ class LlamadoListaController extends Controller {
     }
 
     public function anularAutoprestamo24H(): void {
-        $this->requireRole(['Presidente', 'Tesorera']);
+        $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
         $ahorroId = isset($_POST['ahorro_id']) ? (int)$_POST['ahorro_id'] : 0;
 
