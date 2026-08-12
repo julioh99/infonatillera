@@ -481,6 +481,16 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Alineación de IDs HTML/JS (`prestamos.php`):** Se actualizó el ID de la tabla en el HTML a `id="tblCuotasBody"` y se restauró el elemento `<span id="cuotas_estado_badge">` para coincidir con las referencias del script JS.
 - **Chequeo Nulo Preventivo (`prestamos.php`):** Se blindaron los accesos a `innerHTML` e `innerText` en el manipulador AJAX `btnVerCuotas` mediante condicionales `if (el)` previniendo bloqueos de ejecución en consola.
 
+---
+
+### 📌 Petición 42: Creación de Vistas SQL para Auditoría y Consultas Consolidadas
+**Requerimiento del Usuario:**
+`crea unas vistas sql para poder ver algunas consulta de mejora manera y revisar algunas cosas`
+
+**Solución Brindada:**
+- **Creación e Instalación (`db.sql`, `create_sql_views.php`):** Se diseñaron e instalaron 6 vistas SQL (`v_resumen_consolidado_socios`, `v_estado_prestamos_detalle`, `v_arqueo_caja_reuniones`, `v_actividades_estado_socios`, `v_inyecciones_capital_detalle`, `v_constancias_entregas_evidencia`) tanto en la base de datos local de MySQL como en el servidor remoto de producción (`skylined_pruebas`).
+
+
 
 
 
