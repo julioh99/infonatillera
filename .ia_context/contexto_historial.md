@@ -530,6 +530,18 @@ Notice: Undefined variable: valorCuotaBase in J:\www\infonatillera\app\Models\Re
 - **Auto-Popup de Notificaciones Pendientes (SweetAlert2 - 30s) (`natillera_notificaciones_leidas`, `PushSubscription.php`, `NotificacionController.php`, `header.php`):** Se creó el seguimiento de notificaciones leídas. Al ingresar a la app, si hay mensajes pendientes por leer, SweetAlert2 los despliega automáticamente durante **30 segundos** con barra de progreso y botón de compartir a WhatsApp.
 - **Filtro Buscador en Modal de Préstamos (`prestamos.php`):** Se agregó un campo de búsqueda en tiempo real `#buscarSocioDeudorInput` para filtrar fácilmente los 50+ socios por nombre o cédula al registrar un préstamo.
 
+---
+
+### 📌 Petición 49: Habilitación de Permisos de Llamado a Lista para la Secretaria General
+**Requerimiento del Usuario:**
+`Le habilité para que le apareciera el llamado a lista al rol Secretaria General y no le aparece. Dime qué más debo habilitarle para que le aparezca y crea una documentación con esa información.`
+
+**Solución Brindada:**
+- **Permisos en Controlador (`LlamadoListaController.php`):** Se incluyó `'Secretaria General'` en las llamadas de seguridad `$this->requireRole(['Presidente', 'Tesorera', 'Secretaria General'])` en los métodos `index()`, `guardarBatch()` y `anularAutoprestamo24H()`.
+- **Sincronización en Vista (`header.php`):** Se confirmó la inclusión de `'Secretaria General'` tanto en el menú lateral de escritorio como en el Offcanvas móvil.
+- **Documentación Creada (`docs/permisos_roles_modulo_llamado_lista.md`):** Se generó el documento guiado sobre la arquitectura de permisos a 2 niveles (Vista + Controlador) y la matriz de acceso por módulos.
+
+
 
 
 
