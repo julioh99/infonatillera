@@ -54,11 +54,13 @@ class PrestamoController extends Controller {
         }
 
         $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
+        $fechaPrestamo = !empty($_POST['fecha_prestamo']) ? trim($_POST['fecha_prestamo']) : date('Y-m-d');
 
         $prestamoModel = new Prestamo();
         $prestamoId = $prestamoModel->crearPrestamo([
             'socio_deudor_id' => $socioDeudorId,
             'reunion_id' => $reunionId,
+            'fecha_prestamo' => $fechaPrestamo,
             'nombre_referencia' => $nombreReferencia,
             'monto_prestado' => $monto,
             'tasa_interes_mensual' => $tasa,
@@ -139,17 +141,19 @@ class PrestamoController extends Controller {
         $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
+        $fechaPrestamo = !empty($_POST['fecha_prestamo']) ? trim($_POST['fecha_prestamo']) : date('Y-m-d');
         $estado = trim($_POST['estado'] ?? 'ACTIVO');
 
         if ($id <= 0 || $socioDeudorId <= 0 || $monto <= 0) {
             $_SESSION['error'] = "Datos de préstamo inválidos para actualizar.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $prestamoModel = new Prestamo();
         $ok = $prestamoModel->actualizarPrestamo($id, [
             'socio_deudor_id' => $socioDeudorId,
             'reunion_id' => $reunionId,
+            'fecha_prestamo' => $fechaPrestamo,
             'monto_prestado' => $monto,
             'tasa_interes_mensual' => $tasa,
             'nombre_referencia' => $nombreReferencia,

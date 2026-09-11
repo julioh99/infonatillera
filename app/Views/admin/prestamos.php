@@ -77,11 +77,12 @@
                                 <small class="text-muted">C.C. <?= htmlspecialchars($p['deudor_cedula']) ?></small>
                             </td>
                             <td>
+                                <?php $fechaPDisplay = !empty($p['fecha_prestamo']) ? $p['fecha_prestamo'] : (!empty($p['fecha_reunion']) ? $p['fecha_reunion'] : date('Y-m-d', strtotime($p['fecha_inicio']))); ?>
+                                <div class="fw-bold text-dark fs-7"><i class="fa-regular fa-calendar me-1 text-primary"></i><?= date('d/m/Y', strtotime($fechaPDisplay)) ?></div>
                                 <?php if (!empty($p['numero_quincena'])): ?>
-                                    <span class="badge bg-primary font-outfit fs-7">R<?= $p['numero_quincena'] ?></span>
-                                    <small class="d-block text-muted fs-8"><?= date('d/m/Y', strtotime($p['fecha_reunion'])) ?></small>
+                                    <span class="badge bg-primary font-outfit fs-8 mt-1">R<?= $p['numero_quincena'] ?></span>
                                 <?php else: ?>
-                                    <span class="text-muted fs-8">General / Sin R</span>
+                                    <small class="text-muted fs-8 d-block mt-1">Sin Reunión</small>
                                 <?php endif; ?>
                             </td>
                             <td>
@@ -142,6 +143,7 @@
                                                 data-id="<?= $p['id'] ?>"
                                                 data-deudor-id="<?= $p['socio_deudor_id'] ?>"
                                                 data-reunion-id="<?= $p['reunion_id'] ?? '' ?>"
+                                                data-fecha-prestamo="<?= htmlspecialchars($fechaPDisplay) ?>"
                                                 data-monto="<?= $p['monto_prestado'] ?>"
                                                 data-tasa="<?= $p['tasa_interes_mensual'] ?>"
                                                 data-ref="<?= htmlspecialchars($refText) ?>"
@@ -174,7 +176,7 @@
                 <div class="modal-body p-4">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-7">
-                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7 mb-1">Socio Deudor</label>
+                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7 mb-1">Socio Deudor <span class="text-danger">*</span></label>
                             <div class="input-group input-group-sm mb-1">
                                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="text" id="buscarSocioDeudorInput" class="form-control border-start-0" placeholder="🔍 Filtrar socio por nombre o cédula...">
@@ -189,17 +191,23 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-5">
-                            <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
-                            <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
-                                <option value="">-- General / Sin Reunión Específica --</option>
-                                <?php foreach ($reuniones as $r): 
-                                    $isAct = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
-                                    $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
-                                ?>
-                                    <option value="<?= $r['id'] ?>" <?= $isAct ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <label for="fecha_prestamo_nuevo" class="form-label fw-semibold fs-7 mb-1">Fecha del Préstamo <span class="text-danger">*</span></label>
+                            <input type="date" name="fecha_prestamo" id="fecha_prestamo_nuevo" class="form-control fw-bold" value="<?= date('Y-m-d') ?>" required>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
+                        <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
+                            <option value="">-- General / Sin Reunión Específica --</option>
+                            <?php foreach ($reuniones as $r): 
+                                $isAct = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
+                                $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
+                            ?>
+                                <option value="<?= $r['id'] ?>" <?= $isAct ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="text-muted fs-8 d-block mt-1">Asocia este préstamo al acta/reunión seleccionada (opcional).</small>
                     </div>
 
                     <div class="mb-3">
@@ -280,14 +288,20 @@
                         </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="edit_reunion_id" class="form-label fw-semibold fs-7">Reunión Asociada</label>
-                        <select name="reunion_id" id="edit_reunion_id" class="form-select">
-                            <option value="">-- Sin Reunión Específica --</option>
-                            <?php foreach ($reuniones as $r): ?>
-                                <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="edit_fecha_prestamo" class="form-label fw-semibold fs-7">Fecha del Préstamo <span class="text-danger">*</span></label>
+                            <input type="date" name="fecha_prestamo" id="edit_fecha_prestamo" class="form-control fw-bold" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="edit_reunion_id" class="form-label fw-semibold fs-7">Reunión Asociada</label>
+                            <select name="reunion_id" id="edit_reunion_id" class="form-select">
+                                <option value="">-- Sin Reunión Específica --</option>
+                                <?php foreach ($reuniones as $r): ?>
+                                    <option value="<?= $r['id'] ?>">R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -592,6 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('edit_socio_deudor_id').value = btn.getAttribute('data-deudor-id');
             const editReunionEl = document.getElementById('edit_reunion_id');
             if (editReunionEl) editReunionEl.value = btn.getAttribute('data-reunion-id') || '';
+            const editFechaEl = document.getElementById('edit_fecha_prestamo');
+            if (editFechaEl) editFechaEl.value = btn.getAttribute('data-fecha-prestamo') || '<?= date('Y-m-d') ?>';
             document.getElementById('edit_monto_prestado').value = btn.getAttribute('data-monto');
             document.getElementById('edit_tasa_interes_mensual').value = btn.getAttribute('data-tasa');
             document.getElementById('edit_nombre_referencia').value = btn.getAttribute('data-ref') || '';

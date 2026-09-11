@@ -55,9 +55,19 @@ class Database {
 
     public static function ensureSchemaUpdates($db) {
         self::addColumnIfNotExists($db, 'natillera_prestamos', 'nombre_referencia', 'VARCHAR(150)');
+        self::addColumnIfNotExists($db, 'natillera_prestamos', 'fecha_prestamo', 'DATE NULL');
         self::addColumnIfNotExists($db, 'natillera_actividades', 'cuota_por_socio', 'DECIMAL(10,2) DEFAULT 0.00');
         self::addColumnIfNotExists($db, 'natillera_ahorros_cuotas', 'monto_aporte_ronda', 'DECIMAL(10,2) DEFAULT 0.00');
         self::addColumnIfNotExists($db, 'natillera_ahorros_cuotas', 'monto_aporte_rifa', 'DECIMAL(10,2) DEFAULT 0.00');
+
+        try {
+            $db->exec("
+                UPDATE natillera_prestamos p
+                LEFT JOIN natillera_reuniones r ON p.reunion_id = r.id
+                SET p.fecha_prestamo = IFNULL(r.fecha_reunion, DATE(p.fecha_inicio))
+                WHERE p.fecha_prestamo IS NULL;
+            ");
+        } catch (Exception $e) {}
 
         try {
             $db->exec("

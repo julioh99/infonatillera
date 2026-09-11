@@ -43,12 +43,14 @@ class Prestamo extends Model {
     }
 
     public function crearPrestamo(array $datos) {
+        $fechaPrestamo = !empty($datos['fecha_prestamo']) ? $datos['fecha_prestamo'] : date('Y-m-d');
+
         $stmt = $this->db->prepare("
             INSERT INTO natillera_prestamos (
-                socio_deudor_id, reunion_id, nombre_referencia, monto_prestado, 
+                socio_deudor_id, reunion_id, fecha_prestamo, nombre_referencia, monto_prestado, 
                 tasa_interes_mensual, tipo_prestamo, es_autoprestamo, estado
             ) VALUES (
-                :socio_deudor_id, :reunion_id, :nombre_referencia, :monto_prestado, 
+                :socio_deudor_id, :reunion_id, :fecha_prestamo, :nombre_referencia, :monto_prestado, 
                 :tasa_interes_mensual, :tipo_prestamo, :es_autoprestamo, 'ACTIVO'
             )
         ");
@@ -56,6 +58,7 @@ class Prestamo extends Model {
         $ok = $stmt->execute([
             ':socio_deudor_id' => $datos['socio_deudor_id'],
             ':reunion_id' => !empty($datos['reunion_id']) ? $datos['reunion_id'] : null,
+            ':fecha_prestamo' => $fechaPrestamo,
             ':nombre_referencia' => !empty($datos['nombre_referencia']) ? $datos['nombre_referencia'] : null,
             ':monto_prestado' => $datos['monto_prestado'],
             ':tasa_interes_mensual' => $datos['tasa_interes_mensual'] ?? 10.00,
@@ -70,10 +73,13 @@ class Prestamo extends Model {
     }
 
     public function actualizarPrestamo(int $id, array $datos): bool {
+        $fechaPrestamo = !empty($datos['fecha_prestamo']) ? $datos['fecha_prestamo'] : date('Y-m-d');
+
         $stmt = $this->db->prepare("
             UPDATE natillera_prestamos SET
                 socio_deudor_id = :socio_deudor_id,
                 reunion_id = :reunion_id,
+                fecha_prestamo = :fecha_prestamo,
                 monto_prestado = :monto_prestado,
                 tasa_interes_mensual = :tasa_interes_mensual,
                 nombre_referencia = :nombre_referencia,
@@ -85,6 +91,7 @@ class Prestamo extends Model {
             ':id' => $id,
             ':socio_deudor_id' => $datos['socio_deudor_id'],
             ':reunion_id' => !empty($datos['reunion_id']) ? $datos['reunion_id'] : null,
+            ':fecha_prestamo' => $fechaPrestamo,
             ':monto_prestado' => $datos['monto_prestado'],
             ':tasa_interes_mensual' => $datos['tasa_interes_mensual'],
             ':nombre_referencia' => !empty($datos['nombre_referencia']) ? $datos['nombre_referencia'] : null,
