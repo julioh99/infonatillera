@@ -25,7 +25,7 @@
             <div class="col-12 col-md-8">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" id="buscarPrestamo" class="form-control border-start-0 ps-0" placeholder="Buscar por socio, cédula, referencia o reunión (ej: R1, R2, Juan)...">
+                    <input type="text" id="buscarPrestamo" class="form-control border-start-0 ps-0" value="<?= htmlspecialchars($_GET['search'] ?? ($_GET['search_query'] ?? '')) ?>" placeholder="Buscar por socio, cédula, referencia o reunión (ej: R1, R2, Juan)...">
                 </div>
             </div>
             <div class="col-12 col-md-4">
@@ -169,6 +169,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/prestamos/guardar" method="POST" enctype="multipart/form-data" id="formNuevoPrestamo">
+                <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="firma_base64" id="firma_base64_prestamo">
                 <div class="modal-body p-4">
                     <div class="row g-3 mb-3">
@@ -267,6 +268,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/prestamos/actualizar" method="POST">
+                <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="prestamo_id" id="edit_prestamo_id">
                 <div class="modal-body p-4">
                     <div class="mb-3">
@@ -376,6 +378,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/prestamos/abono" method="POST">
+                <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="prestamo_id" id="abono_prestamo_id">
                 <div class="modal-body p-4">
                     <p class="mb-2">Socio: <strong id="abono_deudor_nombre" class="text-primary font-outfit"></strong></p>
@@ -425,6 +428,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/prestamos/abono/actualizar" method="POST">
+                <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="abono_id" id="edit_abono_id">
                 <div class="modal-body p-4">
                     <div class="mb-3">
@@ -460,6 +464,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/prestamos/actualizar-tope" method="POST">
+                <input type="hidden" name="search_query" class="search-query-hidden">
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label for="socio_id_tope" class="form-label fw-semibold fs-7">Seleccionar Socio</label>
@@ -503,10 +508,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Buscador y Filtro Dinámico de Préstamos
+    // Buscador y Filtro Dinámico de Préstamos con Persistencia
     const inputBuscarPrestamo = document.getElementById('buscarPrestamo');
     const selectFiltrarEstado = document.getElementById('filtrarEstadoPrestamo');
     const prestamoRows = document.querySelectorAll('.prestamo-row');
+
+    // Recuperación y sincronización de estado de búsqueda
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchFromUrl = urlParams.get('search') || urlParams.get('search_query');
+
+    if (searchFromUrl !== null && searchFromUrl !== '') {
+        if (inputBuscarPrestamo) inputBuscarPrestamo.value = searchFromUrl;
+        localStorage.setItem('prestamos_search_query', searchFromUrl);
+    } else if (localStorage.getItem('prestamos_search_query')) {
+        const savedSearch = localStorage.getItem('prestamos_search_query');
+        if (inputBuscarPrestamo && savedSearch) {
+            inputBuscarPrestamo.value = savedSearch;
+        }
+    }
+
+    if (localStorage.getItem('prestamos_estado_filter')) {
+        const savedEstado = localStorage.getItem('prestamos_estado_filter');
+        if (selectFiltrarEstado && savedEstado) {
+            selectFiltrarEstado.value = savedEstado;
+        }
+    }
+
+    function syncSearchQueryInputs() {
+        const val = inputBuscarPrestamo ? inputBuscarPrestamo.value.trim() : '';
+        document.querySelectorAll('.search-query-hidden').forEach(inp => {
+            inp.value = val;
+        });
+    }
 
     function filterPrestamosTable() {
         const query = inputBuscarPrestamo ? inputBuscarPrestamo.value.toLowerCase().trim() : '';
@@ -532,8 +565,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (inputBuscarPrestamo) inputBuscarPrestamo.addEventListener('input', filterPrestamosTable);
-    if (selectFiltrarEstado) selectFiltrarEstado.addEventListener('change', filterPrestamosTable);
+    if (inputBuscarPrestamo) {
+        inputBuscarPrestamo.addEventListener('input', () => {
+            localStorage.setItem('prestamos_search_query', inputBuscarPrestamo.value.trim());
+            syncSearchQueryInputs();
+            filterPrestamosTable();
+        });
+    }
+
+    if (selectFiltrarEstado) {
+        selectFiltrarEstado.addEventListener('change', () => {
+            localStorage.setItem('prestamos_estado_filter', selectFiltrarEstado.value);
+            filterPrestamosTable();
+        });
+    }
+
+    // Sincronizar e iniciar filtrado
+    syncSearchQueryInputs();
+    filterPrestamosTable();
 
     // Abrir Modal de Editar Préstamo
     const btnsEditarPrestamo = document.querySelectorAll('.btnEditarPrestamo');
@@ -617,6 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </button>
                                         <form action="/admin/prestamos/abono/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta cuota/abono?')">
                                             <input type="hidden" name="abono_id" value="${a.id}">
+                                            <input type="hidden" name="search_query" value="${encodeURIComponent(inputBuscarPrestamo ? inputBuscarPrestamo.value.trim() : '')}">
                                             <button type="submit" class="btn btn-xs btn-outline-danger">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>

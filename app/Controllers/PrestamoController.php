@@ -40,7 +40,7 @@ class PrestamoController extends Controller {
 
         if ($socioDeudorId <= 0 || $monto <= 0) {
             $_SESSION['error'] = "Por favor selecciona un socio deudor y un monto válido.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         // Validación de tope si no es Secretaria General o Presidente
@@ -50,7 +50,7 @@ class PrestamoController extends Controller {
 
         if ($monto > $tope && !in_array($_SESSION['usuario']['rol_nombre'], ['Presidente', 'Secretaria General'])) {
             $_SESSION['error'] = "El monto solicitado excede el tope permitido del socio ($" . number_format($tope, 0, ',', '.') . "). Requiere autorización de Secretaria General o Presidente.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
@@ -162,7 +162,7 @@ class PrestamoController extends Controller {
             $_SESSION['error'] = "No se pudo actualizar el préstamo.";
         }
 
-        $this->redirect('/admin/prestamos');
+        $this->redirectConBusqueda();
     }
 
     public function abono(): void {
@@ -175,7 +175,7 @@ class PrestamoController extends Controller {
 
         if ($prestamoId <= 0 || ($montoCapital <= 0 && $montoInteres <= 0)) {
             $_SESSION['error'] = "Ingresa al menos un valor a abonar en capital o interés.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $usuarioModel = new Usuario();
@@ -194,7 +194,7 @@ class PrestamoController extends Controller {
             $_SESSION['error'] = "No se pudo registrar el abono.";
         }
 
-        $this->redirect('/admin/prestamos');
+        $this->redirectConBusqueda();
     }
 
     public function obtenerAbonos(): void {
@@ -228,7 +228,7 @@ class PrestamoController extends Controller {
 
         if ($abonoId <= 0) {
             $_SESSION['error'] = "Abono no válido.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $prestamoModel = new Prestamo();
@@ -240,7 +240,7 @@ class PrestamoController extends Controller {
             $_SESSION['error'] = "No se pudo actualizar el abono.";
         }
 
-        $this->redirect('/admin/prestamos');
+        $this->redirectConBusqueda();
     }
 
     public function eliminarAbono(): void {
@@ -250,7 +250,7 @@ class PrestamoController extends Controller {
 
         if ($abonoId <= 0) {
             $_SESSION['error'] = "Abono no válido.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $prestamoModel = new Prestamo();
@@ -262,7 +262,7 @@ class PrestamoController extends Controller {
             $_SESSION['error'] = "No se pudo eliminar el abono.";
         }
 
-        $this->redirect('/admin/prestamos');
+        $this->redirectConBusqueda();
     }
 
     public function actualizarTope(): void {
@@ -273,7 +273,7 @@ class PrestamoController extends Controller {
 
         if ($socioId <= 0 || $nuevoTope <= 0) {
             $_SESSION['error'] = "Datos de tope de crédito no válidos.";
-            $this->redirect('/admin/prestamos');
+            $this->redirectConBusqueda();
         }
 
         $usuarioModel = new Usuario();
@@ -285,6 +285,15 @@ class PrestamoController extends Controller {
             $_SESSION['error'] = "Error al actualizar el tope del socio.";
         }
 
-        $this->redirect('/admin/prestamos');
+        $this->redirectConBusqueda();
+    }
+
+    private function redirectConBusqueda(string $defaultPath = '/admin/prestamos'): void {
+        $search = trim($_POST['search_query'] ?? ($_GET['search_query'] ?? ($_GET['search'] ?? '')));
+        if ($search !== '') {
+            $this->redirect($defaultPath . '?search=' . urlencode($search));
+        } else {
+            $this->redirect($defaultPath);
+        }
     }
 }
