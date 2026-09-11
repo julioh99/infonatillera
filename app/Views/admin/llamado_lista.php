@@ -124,9 +124,9 @@
 
                     <?php foreach ($socios as $socio): 
                         $regActual = $ahorrosMap[$socio['id']] ?? null;
-                        $pagoCuota = $regActual ? ($regActual['cuota_pagada'] == 1) : true;
-                        $ahorroExtra = $regActual ? (float)$regActual['monto_ahorro_extra'] : 0.0;
                         $autoPrestamo = $regActual ? ($regActual['autoprestamo_generado'] == 1) : false;
+                        $pagoCuota = $regActual ? ($regActual['cuota_pagada'] == 1 && !$autoPrestamo) : true;
+                        $ahorroExtra = $regActual ? (float)$regActual['monto_ahorro_extra'] : 0.0;
                         $anulado24h = $regActual ? ($regActual['anulado_sin_interes'] == 1) : false;
                     ?>
                         <tr class="socio-row" data-socio-id="<?= $socio['id'] ?>" data-search="<?= strtolower(htmlspecialchars($socio['nombre_completo'] . ' ' . $socio['cedula'])) ?>">

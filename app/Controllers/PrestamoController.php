@@ -292,6 +292,28 @@ class PrestamoController extends Controller {
         $this->redirectConBusqueda();
     }
 
+    public function eliminar(): void {
+        $this->requireRole(['Presidente']);
+
+        $id = (int)($_POST['prestamo_id'] ?? 0);
+
+        if ($id <= 0) {
+            $_SESSION['error'] = "Identificador de préstamo no válido para eliminar.";
+            $this->redirectConBusqueda();
+        }
+
+        $prestamoModel = new Prestamo();
+        $ok = $prestamoModel->eliminarPrestamo($id);
+
+        if ($ok) {
+            $_SESSION['success'] = "Préstamo N° {$id} eliminado correctamente de la natillera.";
+        } else {
+            $_SESSION['error'] = "No se pudo eliminar el préstamo.";
+        }
+
+        $this->redirectConBusqueda();
+    }
+
     private function redirectConBusqueda(string $defaultPath = '/admin/prestamos'): void {
         $search = trim($_POST['search_query'] ?? ($_GET['search_query'] ?? ($_GET['search'] ?? '')));
         if ($search !== '') {

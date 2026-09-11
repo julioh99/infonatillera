@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const chkAutos = document.querySelectorAll('.chk-autoprestamo');
+    chkAutos.forEach(chk => {
+        chk.addEventListener('change', (e) => {
+            const socioId = e.target.getAttribute('data-socio-id');
+            const chkPago = document.getElementById(`pago_${socioId}`);
+            if (e.target.checked && chkPago) {
+                chkPago.checked = false;
+            }
+        });
+    });
+
     // Filtro de Búsqueda Rápida en Vivo
     if (inputBuscar) {
         inputBuscar.addEventListener('input', (e) => {

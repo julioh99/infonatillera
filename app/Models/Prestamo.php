@@ -215,4 +215,35 @@ class Prestamo extends Model {
             $stmtUpdate->execute([':estado' => $nuevoEstado, ':id' => $prestamoId]);
         }
     }
+
+    public function eliminarPrestamo(int $id): bool {
+        $this->db->beginTransaction();
+        try {
+            // 1. Eliminar abonos a capital/intereses asociados
+            $stmtDelAbonos = $this->db->prepare("DELETE FROM natillera_abonos_prestamos WHERE prestamo_id = :id");
+            $stmtDelAbonos->execute([':id' => $id]);
+
+            // 2. Eliminar evidencias/firmas asociadas en entregas de beneficios
+            $stmtDelEntregas = $this->db->prepare("DELETE FROM natillera_entregas_beneficios WHERE prestamo_id = :id");
+            $stmtDelEntregas->execute([':id' => $id]);
+
+            // 3. Desvincular del registro de ahorro si fue autopréstamo
+            $stmtUnlinkAhorro = $this->db->prepare("
+                UPDATE natillera_ahorros_cuotas 
+                SET autoprestamo_generado = 0, prestamo_id_asociado = NULL 
+                WHERE prestamo_id_asociado = :id
+            ");
+            $stmtUnlinkAhorro->execute([':id' => $id]);
+
+            // 4. Eliminar el registro del préstamo
+            $stmtDelP = $this->db->prepare("DELETE FROM natillera_prestamos WHERE id = :id");
+            $stmtDelP->execute([':id' => $id]);
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
 }

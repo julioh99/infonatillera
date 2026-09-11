@@ -148,6 +148,19 @@ class Reunion extends Model {
             }
             $ahorroNetoConstante = 40000.00; // Ahorro neto acreditado al socio es SIEMPRE $40.000 COP
 
+            // Consultar autopréstamos previamente registrados en esta reunión para no duplicar
+            $stmtPrevP = $this->db->prepare("
+                SELECT id, socio_deudor_id 
+                FROM natillera_prestamos 
+                WHERE reunion_id = :reunion_id AND es_autoprestamo = 1 AND (anulado_sin_interes = 0 OR anulado_sin_interes IS NULL)
+            ");
+            $stmtPrevP->execute([':reunion_id' => $reunionId]);
+            $existingP = $stmtPrevP->fetchAll();
+            $existingPMap = [];
+            foreach ($existingP as $ep) {
+                $existingPMap[(int)$ep['socio_deudor_id']] = (int)$ep['id'];
+            }
+
             // Eliminar registros anteriores de esta reunión si se está re-procesando
             $stmtDelAhorros = $this->db->prepare("DELETE FROM natillera_ahorros_cuotas WHERE reunion_id = :reunion_id");
             $stmtDelAhorros->execute([':reunion_id' => $reunionId]);
@@ -171,12 +184,32 @@ class Reunion extends Model {
                 $prestamoId = null;
 
                 if (!$pagouCuota && $generarAutoprestamo) {
-                    $stmtInsertPrestamo->execute([
-                        ':socio_deudor_id' => $socioId,
-                        ':reunion_id' => $reunionId,
-                        ':monto_prestado' => $valorCuotaBase
-                    ]);
-                    $prestamoId = (int)$this->db->lastInsertId();
+                    if (isset($existingPMap[$socioId])) {
+                        // Reutilizar el autopréstamo existente para evitar duplicidad
+                        $prestamoId = $existingPMap[$socioId];
+                        $stmtUpdateP = $this->db->prepare("UPDATE natillera_prestamos SET monto_prestado = :monto WHERE id = :id");
+                        $stmtUpdateP->execute([':monto' => $valorCuotaBase, ':id' => $prestamoId]);
+                    } else {
+                        // Crear nuevo autopréstamo si no existía
+                        $stmtInsertPrestamo->execute([
+                            ':socio_deudor_id' => $socioId,
+                            ':reunion_id' => $reunionId,
+                            ':monto_prestado' => $valorCuotaBase
+                        ]);
+                        $prestamoId = (int)$this->db->lastInsertId();
+                    }
+                } else {
+                    // Si ya tenía un autopréstamo pero ahora no se generó (o se pagó la cuota directamente)
+                    if (isset($existingPMap[$socioId])) {
+                        $oldPId = $existingPMap[$socioId];
+                        // Eliminarlo solo si no tiene abonos o entregas asociadas
+                        $stmtCheckAb = $this->db->prepare("SELECT COUNT(*) FROM natillera_abonos_prestamos WHERE prestamo_id = :pid");
+                        $stmtCheckAb->execute([':pid' => $oldPId]);
+                        if ((int)$stmtCheckAb->fetchColumn() === 0) {
+                            $stmtDelP = $this->db->prepare("DELETE FROM natillera_prestamos WHERE id = :pid");
+                            $stmtDelP->execute([':pid' => $oldPId]);
+                        }
+                    }
                 }
 
                 // El dinero de la cuotas base ($40k, $10k ronda, $5k rifa) ingresa a la natillera por pago directo o por desembolso de autopréstamo

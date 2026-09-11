@@ -57,6 +57,7 @@ $router->post('/admin/prestamos/abono', [PrestamoController::class, 'abono']);
 $router->get('/admin/prestamos/abonos-json', [PrestamoController::class, 'obtenerAbonos']);
 $router->post('/admin/prestamos/abono/actualizar', [PrestamoController::class, 'actualizarAbono']);
 $router->post('/admin/prestamos/abono/eliminar', [PrestamoController::class, 'eliminarAbono']);
+$router->post('/admin/prestamos/eliminar', [PrestamoController::class, 'eliminar']);
 $router->post('/admin/prestamos/actualizar-tope', [PrestamoController::class, 'actualizarTope']);
 
 // Rutas Admin - Actividades

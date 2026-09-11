@@ -152,6 +152,17 @@
                                             <i class="fa-solid fa-pen me-1"></i>Editar
                                         </button>
                                     <?php endif; ?>
+
+                                    <!-- Eliminar Préstamo (SOLO Presidente) -->
+                                    <?php if ($userRole === 'Presidente'): ?>
+                                        <form action="/admin/prestamos/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿⚠️ ATENCIÓN: Estás seguro de eliminar el Préstamo N° <?= $p['id'] ?> de <?= htmlspecialchars($p['deudor_nombre']) ?>?\n\nEsta acción eliminará el registro y sus cuotas asociadas permanentemente.')">
+                                            <input type="hidden" name="prestamo_id" value="<?= $p['id'] ?>">
+                                            <input type="hidden" name="search_query" value="<?= htmlspecialchars($_GET['search'] ?? ($_GET['search_query'] ?? '')) ?>">
+                                            <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" title="Borrar préstamo (Permiso exclusivo de Presidente)">
+                                                <i class="fa-solid fa-trash me-1"></i>Borrar
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
