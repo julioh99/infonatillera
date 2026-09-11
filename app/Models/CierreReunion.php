@@ -133,10 +133,168 @@ class CierreReunion extends Model {
 
         $totalEgresos = $prestamosOtorgados + $inyeccionesDevueltas + $prestamosAActividades;
 
-        // 4. Saldo Neto de la Reunión
+        // 4. DESGLOSE DETALLADO POR RUBRO (Detalle por socio / movimiento)
+        // a) Cuotas Base ($40.000)
+        $stmtDetCuotas = $this->db->prepare("
+            SELECT ac.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula
+            FROM natillera_ahorros_cuotas ac
+            JOIN natillera_usuarios u ON ac.socio_id = u.id
+            WHERE ac.reunion_id = :reunion_id AND ac.cuota_pagada = 1
+            ORDER BY u.nombre_completo ASC
+        ");
+        $stmtDetCuotas->execute([':reunion_id' => $reunionId]);
+        $detCuotasBase = $stmtDetCuotas->fetchAll();
+
+        // b) Ahorro Voluntario Extra
+        $stmtDetExtra = $this->db->prepare("
+            SELECT ac.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula
+            FROM natillera_ahorros_cuotas ac
+            JOIN natillera_usuarios u ON ac.socio_id = u.id
+            WHERE ac.reunion_id = :reunion_id AND ac.monto_ahorro_extra > 0
+            ORDER BY u.nombre_completo ASC
+        ");
+        $stmtDetExtra->execute([':reunion_id' => $reunionId]);
+        $detAhorroExtra = $stmtDetExtra->fetchAll();
+
+        // c) Abonos a Capital de Préstamos
+        $stmtDetCap = $this->db->prepare("
+            SELECT ap.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula,
+                   p.nombre_referencia, p.monto_prestado, p.tasa_interes_mensual, p.tipo_prestamo,
+                   u_reg.nombre_completo as registrado_por_nombre
+            FROM natillera_abonos_prestamos ap
+            JOIN natillera_prestamos p ON ap.prestamo_id = p.id
+            JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
+            LEFT JOIN natillera_usuarios u_reg ON ap.registrado_por_usuario_id = u_reg.id
+            WHERE ap.monto_capital_pagado > 0
+              AND (
+                  ap.reunion_id = :reunion_id
+                  OR (
+                      ap.reunion_id IS NULL AND (
+                          DATE(ap.fecha_abono) = :fecha
+                          OR (
+                              DATE(ap.fecha_abono) <= :fecha
+                              AND DATE(ap.fecha_abono) > IFNULL((SELECT fecha_reunion FROM natillera_reuniones WHERE numero_quincena = :quincena_prev LIMIT 1), '2000-01-01')
+                          )
+                      )
+                  )
+              )
+            ORDER BY ap.fecha_abono DESC, u.nombre_completo ASC
+        ");
+        $stmtDetCap->execute([
+            ':reunion_id' => $reunionId,
+            ':fecha' => $fechaReunion,
+            ':quincena_prev' => $quincenaPrevNum
+        ]);
+        $detAbonoCapital = $stmtDetCap->fetchAll();
+
+        // d) Intereses Cobrados de Préstamos
+        $stmtDetInt = $this->db->prepare("
+            SELECT ap.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula,
+                   p.nombre_referencia, p.monto_prestado, p.tasa_interes_mensual, p.tipo_prestamo,
+                   u_reg.nombre_completo as registrado_por_nombre
+            FROM natillera_abonos_prestamos ap
+            JOIN natillera_prestamos p ON ap.prestamo_id = p.id
+            JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
+            LEFT JOIN natillera_usuarios u_reg ON ap.registrado_por_usuario_id = u_reg.id
+            WHERE ap.monto_interes_pagado > 0
+              AND (
+                  ap.reunion_id = :reunion_id
+                  OR (
+                      ap.reunion_id IS NULL AND (
+                          DATE(ap.fecha_abono) = :fecha
+                          OR (
+                              DATE(ap.fecha_abono) <= :fecha
+                              AND DATE(ap.fecha_abono) > IFNULL((SELECT fecha_reunion FROM natillera_reuniones WHERE numero_quincena = :quincena_prev LIMIT 1), '2000-01-01')
+                          )
+                      )
+                  )
+              )
+            ORDER BY ap.fecha_abono DESC, u.nombre_completo ASC
+        ");
+        $stmtDetInt->execute([
+            ':reunion_id' => $reunionId,
+            ':fecha' => $fechaReunion,
+            ':quincena_prev' => $quincenaPrevNum
+        ]);
+        $detInteresesPrestamos = $stmtDetInt->fetchAll();
+
+        // e) Devoluciones de Actividades
+        $stmtDetDev = $this->db->prepare("
+            SELECT tc.*, u.nombre_completo as registrado_por_nombre
+            FROM natillera_transferencias_cajas tc
+            LEFT JOIN natillera_usuarios u ON tc.registrado_por_usuario_id = u.id
+            WHERE tc.reunion_id = :reunion_id AND tc.tipo_movimiento = 'DEVOLUCION_A_CAJA_MAYOR'
+            ORDER BY tc.fecha_transferencia DESC
+        ");
+        $stmtDetDev->execute([':reunion_id' => $reunionId]);
+        $detDevolucionesActividades = $stmtDetDev->fetchAll();
+
+        // f) Inyecciones Ingresadas
+        $stmtDetIny = $this->db->prepare("
+            SELECT ic.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula
+            FROM natillera_inyecciones_capital ic
+            JOIN natillera_usuarios u ON ic.socio_id = u.id
+            WHERE ic.reunion_id = :reunion_id
+            ORDER BY ic.fecha_inyeccion DESC
+        ");
+        $stmtDetIny->execute([':reunion_id' => $reunionId]);
+        $detInyecciones = $stmtDetIny->fetchAll();
+
+        // g) Préstamos Otorgados / Desembolsados (Egresos)
+        $stmtDetEgrP = $this->db->prepare("
+            SELECT eb.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula,
+                   p.monto_prestado, p.tasa_interes_mensual, p.nombre_referencia, p.tipo_prestamo
+            FROM natillera_entregas_beneficios eb
+            JOIN natillera_usuarios u ON eb.socio_id = u.id
+            LEFT JOIN natillera_prestamos p ON eb.prestamo_id = p.id
+            WHERE eb.reunion_id = :reunion_id AND eb.tipo_beneficio = 'PRESTAMO'
+            ORDER BY eb.fecha_entrega DESC
+        ");
+        $stmtDetEgrP->execute([':reunion_id' => $reunionId]);
+        $detPrestamosOtorgados = $stmtDetEgrP->fetchAll();
+
+        if (empty($detPrestamosOtorgados)) {
+            $stmtAltP = $this->db->prepare("
+                SELECT p.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula, p.monto_prestado as monto_entregado, p.created_at as fecha_entrega
+                FROM natillera_prestamos p
+                JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
+                WHERE p.reunion_id = :reunion_id
+                ORDER BY p.id DESC
+            ");
+            $stmtAltP->execute([':reunion_id' => $reunionId]);
+            $detPrestamosOtorgados = $stmtAltP->fetchAll();
+        }
+
+        // h) Inyecciones Devueltas (Egresos)
+        $stmtDetInyDev = $this->db->prepare("
+            SELECT ic.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula
+            FROM natillera_inyecciones_capital ic
+            JOIN natillera_usuarios u ON ic.socio_id = u.id
+            WHERE ic.estado = 'RETIRADA'
+              AND (ic.reunion_id_retiro = :reunion_id OR (ic.reunion_id_retiro IS NULL AND DATE(ic.fecha_retiro) = :fecha))
+            ORDER BY ic.fecha_retiro DESC
+        ");
+        $stmtDetInyDev->execute([
+            ':reunion_id' => $reunionId,
+            ':fecha' => $fechaReunion
+        ]);
+        $detInyeccionesDevueltas = $stmtDetInyDev->fetchAll();
+
+        // i) Préstamos a Caja de Actividades (Egresos)
+        $stmtDetPrestAct = $this->db->prepare("
+            SELECT tc.*, u.nombre_completo as registrado_por_nombre
+            FROM natillera_transferencias_cajas tc
+            LEFT JOIN natillera_usuarios u ON tc.registrado_por_usuario_id = u.id
+            WHERE tc.reunion_id = :reunion_id AND tc.tipo_movimiento = 'PRESTAMO_A_ACTIVIDAD'
+            ORDER BY tc.fecha_transferencia DESC
+        ");
+        $stmtDetPrestAct->execute([':reunion_id' => $reunionId]);
+        $detPrestamosActividades = $stmtDetPrestAct->fetchAll();
+
+        // 5. Saldo Neto de la Reunión
         $saldoNetoReunion = $totalIngresos - $totalEgresos;
 
-        // 5. Saldo Acumulado Global en Caja (Sumatoria de todas las reuniones hasta la actual)
+        // 6. Saldo Acumulado Global en Caja (Sumatoria de todas las reuniones hasta la actual)
         $stmtAcum = $this->db->prepare("
             SELECT IFNULL(SUM(saldo_neto_reunion), 0) as acumulado_previo
             FROM natillera_cierres_reunion cr
@@ -166,6 +324,17 @@ class CierreReunion extends Model {
                 'prestamos_actividades' => $prestamosAActividades,
                 'premios_entregados' => 0.00,
                 'total' => $totalEgresos
+            ],
+            'detalles' => [
+                'cuotas_base' => $detCuotasBase,
+                'ahorro_extra' => $detAhorroExtra,
+                'abono_capital' => $detAbonoCapital,
+                'intereses_prestamos' => $detInteresesPrestamos,
+                'devoluciones_actividades' => $detDevolucionesActividades,
+                'inyecciones' => $detInyecciones,
+                'prestamos_otorgados' => $detPrestamosOtorgados,
+                'inyecciones_devueltas' => $detInyeccionesDevueltas,
+                'prestamos_actividades' => $detPrestamosActividades
             ],
             'saldo_inicial_caja' => $acumuladoPrevio,
             'saldo_neto_reunion' => $saldoNetoReunion,
