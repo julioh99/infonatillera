@@ -141,7 +141,7 @@
                         <label for="trans_monto" class="form-label fw-semibold fs-7">Monto Transferido (COP)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white fw-bold text-dark">$</span>
-                            <input type="text" name="monto" id="trans_monto" class="form-control money-input fw-bold text-dark fs-5" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 300.000" required>
+                            <input type="text" name="monto" id="trans_monto" class="form-control money-input fw-bold text-dark fs-5" inputmode="numeric" placeholder="Ej: 300.000" required>
                         </div>
                     </div>
 

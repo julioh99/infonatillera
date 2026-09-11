@@ -175,6 +175,28 @@ class Reunion extends Model {
                 VALUES (:socio_deudor_id, :reunion_id, :monto_prestado, 10.00, 'AUTOPRESTAMO', 1)
             ");
 
+            $entregadoPor = (int)($_SESSION['usuario']['id'] ?? 1);
+
+            $stmtCheckEntrega = $this->db->prepare("
+                SELECT id FROM natillera_entregas_beneficios 
+                WHERE reunion_id = :reunion_id AND socio_id = :socio_id AND tipo_beneficio = 'PRESTAMO'
+            ");
+            $stmtInsertEntrega = $this->db->prepare("
+                INSERT INTO natillera_entregas_beneficios (reunion_id, socio_id, tipo_beneficio, monto_entregado, entregado_por_usuario_id)
+                VALUES (:reunion_id, :socio_id, 'PRESTAMO', :monto, :entregado_por)
+            ");
+            $stmtUpdateEntrega = $this->db->prepare("
+                UPDATE natillera_entregas_beneficios 
+                SET monto_entregado = :monto 
+                WHERE id = :id
+            ");
+            $stmtDelEntrega = $this->db->prepare("
+                DELETE FROM natillera_entregas_beneficios 
+                WHERE reunion_id = :reunion_id AND socio_id = :socio_id AND tipo_beneficio = 'PRESTAMO'
+                  AND (firma_digital_path IS NULL OR firma_digital_path = '') 
+                  AND (foto_evidencia_path IS NULL OR foto_evidencia_path = '')
+            ");
+
             foreach ($registros as $reg) {
                 $socioId = (int)$reg['socio_id'];
                 $pagouCuota = isset($reg['pagou_cuota']) && ($reg['pagou_cuota'] == 1 || $reg['pagou_cuota'] === 'true');
@@ -198,16 +220,31 @@ class Reunion extends Model {
                         ]);
                         $prestamoId = (int)$this->db->lastInsertId();
                     }
+
+                    // Registrar o actualizar automáticamente la constancia de entrega para el autopréstamo
+                    $stmtCheckEntrega->execute([':reunion_id' => $reunionId, ':socio_id' => $socioId]);
+                    $entId = $stmtCheckEntrega->fetchColumn();
+                    if ($entId) {
+                        $stmtUpdateEntrega->execute([':monto' => $valorCuotaBase, ':id' => $entId]);
+                    } else {
+                        $stmtInsertEntrega->execute([
+                            ':reunion_id' => $reunionId,
+                            ':socio_id' => $socioId,
+                            ':monto' => $valorCuotaBase,
+                            ':entregado_por' => $entregadoPor
+                        ]);
+                    }
                 } else {
                     // Si ya tenía un autopréstamo pero ahora no se generó (o se pagó la cuota directamente)
                     if (isset($existingPMap[$socioId])) {
                         $oldPId = $existingPMap[$socioId];
-                        // Eliminarlo solo si no tiene abonos o entregas asociadas
+                        // Eliminarlo solo si no tiene abonos asociados
                         $stmtCheckAb = $this->db->prepare("SELECT COUNT(*) FROM natillera_abonos_prestamos WHERE prestamo_id = :pid");
                         $stmtCheckAb->execute([':pid' => $oldPId]);
                         if ((int)$stmtCheckAb->fetchColumn() === 0) {
                             $stmtDelP = $this->db->prepare("DELETE FROM natillera_prestamos WHERE id = :pid");
                             $stmtDelP->execute([':pid' => $oldPId]);
+                            $stmtDelEntrega->execute([':reunion_id' => $reunionId, ':socio_id' => $socioId]);
                         }
                     }
                 }
