@@ -278,7 +278,7 @@
                         <div class="col-12 col-md-3">
                             <label for="entrega_monto_entregado" class="form-label fw-semibold fs-7">Monto Entregado (COP)</label>
                             <?php $valMonto = ($montoQuery > 0) ? number_format($montoQuery, 0, ',', '.') : (($tipoQuery === 'RONDA') ? '300.000' : (($tipoQuery === 'RIFA') ? '150.000' : '500.000')); ?>
-                            <input type="text" name="monto_entregado" id="entrega_monto_entregado" class="form-control money-input fw-bold text-success" value="<?= $valMonto ?>" required>
+                            <input type="text" name="monto_entregado" id="entrega_monto_entregado" class="form-control money-input fw-bold text-success" inputmode="numeric" pattern="[0-9]*" value="<?= $valMonto ?>" required>
                         </div>
                     </div>
 

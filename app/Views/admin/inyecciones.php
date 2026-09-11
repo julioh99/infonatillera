@@ -165,7 +165,7 @@
                         <label for="iny_monto_inyectado" class="form-label fw-semibold fs-7">Monto Inyectado (COP)</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white fw-bold text-success">$</span>
-                            <input type="text" name="monto_inyectado" id="iny_monto_inyectado" class="form-control money-input fw-bold text-success fs-5" placeholder="Ej: 1.000.000" required>
+                            <input type="text" name="monto_inyectado" id="iny_monto_inyectado" class="form-control money-input fw-bold text-success fs-5" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 1.000.000" required>
                         </div>
                         <small class="text-muted fs-8 mt-1 d-block">Rendimiento asignado del 5%. Retiro permitido automáticamente en 6 meses.</small>
                     </div>

@@ -20,8 +20,9 @@ function initMoneyInputs(container = document) {
     inputs.forEach(inp => {
         if (inp.type === 'number') {
             inp.type = 'text';
-            inp.setAttribute('inputmode', 'numeric');
         }
+        inp.setAttribute('inputmode', 'numeric');
+        inp.setAttribute('pattern', '[0-9]*');
 
         if (inp.value) {
             inp.value = formatMoneyString(inp.value);

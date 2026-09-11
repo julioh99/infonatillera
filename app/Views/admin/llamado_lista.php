@@ -147,6 +147,7 @@
                                     <span class="input-group-text fw-bold text-dark">$</span>
                                     <input type="text" class="form-control input-ahorro-extra money-input fw-bold text-end text-primary fs-6" 
                                            id="ahorro_<?= $socio['id'] ?>" 
+                                           inputmode="numeric" pattern="[0-9]*"
                                            value="<?= $ahorroExtra > 0 ? number_format($ahorroExtra, 0, ',', '.') : '' ?>" 
                                            placeholder="0">
                                 </div>

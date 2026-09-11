@@ -219,11 +219,11 @@
                     <div class="row g-2 mb-3">
                         <div class="col-7">
                             <label for="monto_prestado" class="form-label fw-semibold fs-7">Monto a Prestar (COP)</label>
-                            <input type="text" name="monto_prestado" id="monto_prestado" class="form-control money-input fw-bold" placeholder="Ej: 500.000" required>
+                            <input type="text" name="monto_prestado" id="monto_prestado" class="form-control money-input fw-bold" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 500.000" required>
                         </div>
                         <div class="col-5">
                             <label for="tasa_interes_mensual" class="form-label fw-semibold fs-7">Tasa Interés (%)</label>
-                            <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="tasa_interes_mensual" class="form-control fw-bold" value="10.0">
+                            <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="tasa_interes_mensual" class="form-control fw-bold" inputmode="decimal" value="10.0">
                         </div>
                     </div>
 
@@ -312,11 +312,11 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label for="edit_monto_prestado" class="form-label fw-semibold fs-7">Monto Prestado (COP)</label>
-                            <input type="text" name="monto_prestado" id="edit_monto_prestado" class="form-control money-input fw-bold" required>
+                            <input type="text" name="monto_prestado" id="edit_monto_prestado" class="form-control money-input fw-bold" inputmode="numeric" pattern="[0-9]*" required>
                         </div>
                         <div class="col-6">
                             <label for="edit_tasa_interes_mensual" class="form-label fw-semibold fs-7">Tasa Interés (%)</label>
-                            <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="edit_tasa_interes_mensual" class="form-control fw-bold" required>
+                            <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="edit_tasa_interes_mensual" class="form-control fw-bold" inputmode="decimal" required>
                         </div>
                     </div>
 
@@ -416,11 +416,11 @@
 
                     <div class="mb-3">
                         <label for="monto_interes_pagado" class="form-label fw-semibold fs-7">Abono a Intereses (COP)</label>
-                        <input type="text" name="monto_interes_pagado" id="monto_interes_pagado" class="form-control money-input text-warning fw-bold" placeholder="0">
+                        <input type="text" name="monto_interes_pagado" id="monto_interes_pagado" class="form-control money-input text-warning fw-bold" inputmode="numeric" pattern="[0-9]*" placeholder="0">
                     </div>
                     <div class="mb-3">
                         <label for="monto_capital_pagado" class="form-label fw-semibold fs-7">Abono a Capital (COP)</label>
-                        <input type="text" name="monto_capital_pagado" id="monto_capital_pagado" class="form-control money-input text-success fw-bold" placeholder="0">
+                        <input type="text" name="monto_capital_pagado" id="monto_capital_pagado" class="form-control money-input text-success fw-bold" inputmode="numeric" pattern="[0-9]*" placeholder="0">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -451,11 +451,11 @@
                     </div>
                     <div class="mb-3">
                         <label for="edit_monto_capital_pagado" class="form-label fw-semibold fs-7">Monto Capital (COP)</label>
-                        <input type="text" name="monto_capital_pagado" id="edit_monto_capital_pagado" class="form-control money-input text-success fw-bold" required>
+                        <input type="text" name="monto_capital_pagado" id="edit_monto_capital_pagado" class="form-control money-input text-success fw-bold" inputmode="numeric" pattern="[0-9]*" required>
                     </div>
                     <div class="mb-3">
                         <label for="edit_monto_interes_pagado" class="form-label fw-semibold fs-7">Monto Interés (COP)</label>
-                        <input type="text" name="monto_interes_pagado" id="edit_monto_interes_pagado" class="form-control money-input text-warning fw-bold" required>
+                        <input type="text" name="monto_interes_pagado" id="edit_monto_interes_pagado" class="form-control money-input text-warning fw-bold" inputmode="numeric" pattern="[0-9]*" required>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
@@ -491,7 +491,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="nuevo_tope" class="form-label fw-semibold fs-7">Nuevo Tope Personalizado (COP)</label>
-                        <input type="text" name="nuevo_tope" id="nuevo_tope" class="form-control money-input fw-bold" placeholder="Ej: 3.000.000" required>
+                        <input type="text" name="nuevo_tope" id="nuevo_tope" class="form-control money-input fw-bold" inputmode="numeric" pattern="[0-9]*" placeholder="Ej: 3.000.000" required>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
