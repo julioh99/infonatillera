@@ -119,6 +119,27 @@ class Actividad extends Model {
 
             $this->recalcularMontoPagado($participanteId);
 
+            // Registrar notificación de pago para el socio participante
+            $stmtAct = $this->db->prepare("
+                SELECT ap.socio_id, a.id as actividad_id, a.nombre_actividad 
+                FROM natillera_actividad_participantes ap 
+                JOIN natillera_actividades a ON ap.actividad_id = a.id 
+                WHERE ap.id = :id
+            ");
+            $stmtAct->execute([':id' => $participanteId]);
+            $actData = $stmtAct->fetch();
+            if ($actData) {
+                require_once __DIR__ . '/PagoNotificacion.php';
+                $pagoNotif = new PagoNotificacion();
+                $pagoNotif->registrarNotificacionAbonoActividad(
+                    (int)$actData['socio_id'],
+                    (int)$actData['actividad_id'],
+                    $montoAbono,
+                    $actData['nombre_actividad'],
+                    $registradoPorId
+                );
+            }
+
             $this->db->commit();
             return true;
         } catch (Exception $e) {

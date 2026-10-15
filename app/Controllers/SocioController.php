@@ -6,6 +6,7 @@ require_once __DIR__ . '/../Models/Usuario.php';
 require_once __DIR__ . '/../Models/Reunion.php';
 require_once __DIR__ . '/../Models/Prestamo.php';
 require_once __DIR__ . '/../Models/Actividad.php';
+require_once __DIR__ . '/../Models/PagoNotificacion.php';
 
 class SocioController extends Controller {
 
@@ -373,5 +374,48 @@ class SocioController extends Controller {
             'entregas' => $entregas,
             'inyecciones' => $inyecciones
         ]);
+    }
+
+    public function pagosPendientesModal(): void {
+        $user = $this->requireAuth();
+        $pagoNotifModel = new PagoNotificacion();
+
+        $pagos = $pagoNotifModel->getPagosPendientesPorSocio((int)$user['id']);
+        $totalAbonadoGeneral = 0.0;
+        foreach ($pagos as $p) {
+            $totalAbonadoGeneral += (float)$p['monto_total'];
+        }
+
+        $saldoAhorroActual = $pagoNotifModel->getSaldoAhorradoActualSocio((int)$user['id']);
+
+        $this->json([
+            'success' => true,
+            'total_pendientes' => count($pagos),
+            'total_abonado_general' => $totalAbonadoGeneral,
+            'saldo_ahorro_actual' => $saldoAhorroActual,
+            'socio_nombre' => $user['nombre_completo'],
+            'socio_cedula' => $user['cedula'],
+            'pagos' => $pagos
+        ]);
+    }
+
+    public function marcarPagosLeidos(): void {
+        $user = $this->requireAuth();
+        $input = json_decode(file_get_contents('php://input'), true);
+        $ids = $input['ids'] ?? ($_POST['ids'] ?? []);
+
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+
+        if (empty($ids) || !is_array($ids)) {
+            $this->json(['success' => false, 'message' => 'IDs de notificación no proporcionados.'], 400);
+            return;
+        }
+
+        $pagoNotifModel = new PagoNotificacion();
+        $ok = $pagoNotifModel->marcarPagosComoLeidos($ids, (int)$user['id']);
+
+        $this->json(['success' => $ok]);
     }
 }

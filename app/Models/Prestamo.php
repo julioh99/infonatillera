@@ -132,6 +132,27 @@ class Prestamo extends Model {
                 ':registrado_por' => $usuarioId
             ]);
 
+            // Registrar notificación de pago para el socio deudor
+            $stmtP = $this->db->prepare("SELECT socio_deudor_id, nombre_referencia, monto_prestado FROM natillera_prestamos WHERE id = :id");
+            $stmtP->execute([':id' => $prestamoId]);
+            $prestamo = $stmtP->fetch();
+            if ($prestamo) {
+                require_once __DIR__ . '/PagoNotificacion.php';
+                $pagoNotif = new PagoNotificacion();
+                $pagoNotif->registrarNotificacionAbonoPrestamo(
+                    (int)$prestamo['socio_deudor_id'],
+                    $prestamoId,
+                    $reunionId,
+                    $montoCapital,
+                    $montoInteres,
+                    $usuarioId,
+                    [
+                        'nombre_referencia' => $prestamo['nombre_referencia'] ?? '',
+                        'monto_prestado' => (float)$prestamo['monto_prestado']
+                    ]
+                );
+            }
+
             $this->db->commit();
             $this->recalcularEstadoPrestamo($prestamoId);
             return true;

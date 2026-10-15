@@ -10,9 +10,6 @@
         <button type="button" class="btn btn-outline-primary rounded-pill fw-semibold btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
             <i class="fa-solid fa-user-pen me-1"></i>Editar Mis Datos
         </button>
-        <button type="button" class="btn btn-dark rounded-pill fw-bold btn-sm px-3 shadow-sm" id="btnSimularLiquidacion">
-            <i class="fa-solid fa-calculator text-warning me-1"></i>Simulador Liquidación
-        </button>
     </div>
 </div>
 

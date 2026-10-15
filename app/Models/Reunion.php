@@ -2,6 +2,7 @@
 // app/Models/Reunion.php
 
 require_once __DIR__ . '/../../core/Model.php';
+require_once __DIR__ . '/PagoNotificacion.php';
 
 class Reunion extends Model {
 
@@ -131,7 +132,7 @@ class Reunion extends Model {
         $this->db->beginTransaction();
 
         try {
-            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM natillera_reuniones WHERE id = :id");
+            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
             $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
@@ -263,6 +264,39 @@ class Reunion extends Model {
                     ':autoprestamo_generado' => $prestamoId ? 1 : 0,
                     ':prestamo_id_asociado' => $prestamoId
                 ]);
+
+                // Registrar o actualizar notificación de pago para el socio si pagó cuota o aportó ahorro extra
+                $pagoNotifModel = new PagoNotificacion();
+                if ($pagouCuota || $ahorroExtra > 0) {
+                    $montoTotalPagado = ($pagouCuota ? $valorCuotaBase : 0.00) + $ahorroExtra;
+                    $pagoNotifModel->registrarNotificacionCuotaReunion(
+                        $socioId,
+                        $reunionId,
+                        "Pago de Cuota - Reunión Quincenal #{$reunion['numero_quincena']}",
+                        "Cuota Quincenal #{$reunion['numero_quincena']} (" . date('d/m/Y', strtotime($reunion['fecha_reunion'])) . ")",
+                        $pagouCuota ? $ahorroNetoConstante : 0.00,
+                        $pagouCuota ? $aporteRondaBase : 0.00,
+                        $pagouCuota ? $aporteRifaBase : 0.00,
+                        $ahorroExtra,
+                        $montoTotalPagado,
+                        [
+                            'reunion_id' => $reunionId,
+                            'numero_quincena' => $reunion['numero_quincena'],
+                            'fecha_reunion' => $reunion['fecha_reunion'],
+                            'cuota_base' => $valorCuotaBase,
+                            'ahorro_cuota' => $pagouCuota ? $ahorroNetoConstante : 0.00,
+                            'aporte_ronda' => $pagouCuota ? $aporteRondaBase : 0.00,
+                            'aporte_rifa' => $pagouCuota ? $aporteRifaBase : 0.00,
+                            'ahorro_extra' => $ahorroExtra,
+                            'total_pagado' => $montoTotalPagado,
+                            'pagou_cuota' => $pagouCuota ? 1 : 0
+                        ],
+                        $entregadoPor
+                    );
+                } else {
+                    // Si no pagó cuota y no hay ahorro extra, anular notificación pendiente si existía
+                    $pagoNotifModel->eliminarNotificacionCuotaReunionSiPendiente($socioId, $reunionId);
+                }
             }
 
             // Marcar el llamado a lista de la reunión como realizado (LLAMADO_CERRADO)
@@ -288,7 +322,7 @@ class Reunion extends Model {
                 $prestamoId = (int)$ahorro['prestamo_id_asociado'];
 
                 // Consultar cuota base de la reunión para calcular desgloses
-                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base FROM natillera_reuniones WHERE id = :id");
+                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
                 $stmtReunion->execute([':id' => $ahorro['reunion_id']]);
                 $rInfo = $stmtReunion->fetch();
                 $vBase = (float)($rInfo['valor_cuota_base'] ?? 55000);
@@ -327,6 +361,38 @@ class Reunion extends Model {
                     ':ap_ronda' => $apRonda,
                     ':ap_rifa' => $apRifa
                 ]);
+
+                // Registrar notificación de pago acreditado por regla de 24 horas
+                $socioId = (int)$ahorro['socio_id'];
+                $reunionId = (int)$ahorro['reunion_id'];
+                $numQuincena = $rInfo['numero_quincena'] ?? $reunionId;
+                $ahorroExtraActual = (float)($ahorro['monto_ahorro_extra'] ?? 0.0);
+                $totalPagado24h = $vBase + $ahorroExtraActual;
+
+                $pagoNotifModel = new PagoNotificacion();
+                $pagoNotifModel->registrarNotificacionAnulacion24h(
+                    $socioId,
+                    $reunionId,
+                    "Pago de Cuota Acreditado (Plazo 24 Horas)",
+                    "Cuota Reunión Nº {$numQuincena} pagada en plazo de 24 horas - Autopréstamo anulado",
+                    40000.00,
+                    $apRonda,
+                    $apRifa,
+                    $totalPagado24h,
+                    [
+                        'reunion_id' => $reunionId,
+                        'numero_quincena' => $numQuincena,
+                        'fecha_reunion' => $rInfo['fecha_reunion'] ?? '',
+                        'cuota_base' => $vBase,
+                        'ahorro_cuota' => 40000.00,
+                        'aporte_ronda' => $apRonda,
+                        'aporte_rifa' => $apRifa,
+                        'ahorro_extra' => $ahorroExtraActual,
+                        'total_pagado' => $totalPagado24h,
+                        'regla_24h' => true
+                    ],
+                    (int)($_SESSION['usuario']['id'] ?? 1)
+                );
             }
 
             $this->db->commit();

@@ -110,6 +110,8 @@ $router->post('/admin/transferencias-cajas/crear', [TransferenciaCajaController:
 $router->get('/socio/dashboard', [SocioController::class, 'dashboard']);
 $router->get('/socio/liquidacion-anual', [SocioController::class, 'liquidacionAnual']);
 $router->post('/socio/actualizar-mi-perfil', [SocioController::class, 'actualizarMiPerfil']);
+$router->get('/socio/pagos-pendientes-modal', [SocioController::class, 'pagosPendientesModal']);
+$router->post('/socio/marcar-pagos-leidos', [SocioController::class, 'marcarPagosLeidos']);
 
 // Despachar la Petición
 $uri = $_SERVER['REQUEST_URI'] ?? '/';

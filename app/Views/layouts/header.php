@@ -396,6 +396,94 @@
         </div>
     </div>
 
+    <!-- Modal Notificación de Pagos Recibidos y Saldo Acreditado -->
+    <div class="modal fade" id="modalNotificacionPagosRecibidos" tabindex="-1" aria-labelledby="modalNotificacionPagosLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <!-- Header con gradiente premium, branding y badge -->
+                <div class="modal-header bg-gradient-navy text-white p-4 border-0 position-relative">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-3 bg-white bg-opacity-10 rounded-circle text-warning fs-3 shadow-sm border border-white border-opacity-20 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-3 py-1 fs-8 fw-bold text-uppercase mb-1">
+                                <i class="fa-solid fa-circle-check me-1"></i> Comprobante Oficial de Ingreso
+                            </span>
+                            <h4 class="font-outfit fw-bold text-white m-0" id="modalNotificacionPagosLabel">
+                                ¡Nuevo Saldo Acreditado a tu Cuenta!
+                            </h4>
+                            <p class="text-white-50 fs-7 m-0">La administración ha registrado y confirmado tus pagos en el sistema.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del Modal -->
+                <div class="modal-body p-4 bg-light bg-opacity-50">
+                    <!-- Tarjeta Principal: Total General Pagado -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4 text-center p-3 p-md-4 bg-white border-top border-4 border-success">
+                        <span class="text-muted text-uppercase fw-semibold fs-8 letter-spacing d-block mb-1">
+                            Total Pagado y Acreditado en esta Notificación
+                        </span>
+                        <h2 class="display-6 font-outfit fw-bold text-success mb-2" id="modalPagoTotalMonto">
+                            $0 COP
+                        </h2>
+                        <p class="text-muted fs-7 mb-0" id="modalPagoSubtituloSocio">
+                            Socio(a): <strong class="text-dark">...</strong>
+                        </p>
+                    </div>
+
+                    <!-- Desglose de Pagos ("con todo lo que haya pagado") -->
+                    <div class="mb-3">
+                        <h6 class="font-outfit fw-bold text-dark d-flex align-items-center gap-2 mb-3 fs-6">
+                            <i class="fa-solid fa-list-check text-primary"></i>
+                            Detalle de Pagos Recibidos:
+                        </h6>
+                        <div id="contenedorListaPagosModal" class="d-flex flex-column gap-3">
+                            <!-- Se insertan dinámicamente los comprobantes -->
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Saldo Acumulado Actualizado -->
+                    <div class="card border-0 rounded-4 bg-gradient-navy text-white p-3 p-md-4 shadow-sm mb-3">
+                        <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-warning fs-3">
+                                    <i class="fa-solid fa-vault"></i>
+                                </div>
+                                <div>
+                                    <span class="text-white-50 fs-8 d-block">Nuevo Saldo Total Ahorrado Acumulado</span>
+                                    <h3 class="font-outfit fw-bold text-warning m-0" id="modalPagoSaldoAhorroActual">
+                                        $0 COP
+                                    </h3>
+                                </div>
+                            </div>
+                            <div class="text-sm-end">
+                                <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fs-8">
+                                <i class="fa-solid fa-shield-halved me-1 text-success"></i> Fondos Seguros y Registrados
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Compartir por WhatsApp -->
+                    <div class="text-center pt-2">
+                        <a href="#" target="_blank" class="btn btn-outline-success rounded-pill fw-bold btn-sm px-4 shadow-sm" id="btnCompartirPagoWa">
+                            <i class="fa-brands fa-whatsapp me-2 fs-6"></i>Compartir Comprobante por WhatsApp
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer con Botón de Confirmación -->
+                <div class="modal-footer bg-white border-0 p-3 p-md-4">
+                    <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold w-100 shadow py-3 font-outfit" id="btnAceptarComprobantePago">
+                        <i class="fa-solid fa-circle-check me-2"></i>¡Entendido, Confirmar Recibido!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const btnBells = document.querySelectorAll('.btnAbrirNotificaciones');
@@ -454,45 +542,207 @@
                 });
         }
 
-        // Auto-Popup SweetAlert2 con temporizador de 30 segundos para notificaciones pendientes al ingresar
-        fetch('/socio/notificaciones-pendientes-json')
+        function formatMoney(amount) {
+            return '$' + Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' COP';
+        }
+
+        // Consultar comprobantes de pago pendientes de mostrar al socio
+        fetch('/socio/pagos-pendientes-modal')
             .then(r => r.json())
-            .then(async data => {
-                if (data.success && data.pendientes && data.pendientes.length > 0) {
-                    for (const notif of data.pendientes) {
-                        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${notif.titulo}*\n${notif.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
-                        const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
-
-                        await Swal.fire({
-                            title: `📢 ${notif.titulo}`,
-                            html: `
-                                <div class="text-start p-2">
-                                    <p class="fs-6 text-dark mb-3">${notif.mensaje}</p>
-                                    <hr class="my-2">
-                                    <div class="d-flex align-items-center justify-content-between fs-7 text-muted">
-                                        <span>Emitido por: <strong>${notif.remitente_nombre || 'Directiva'}</strong></span>
-                                        <a href="${urlWa}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill fw-bold">
-                                            <i class="fa-brands fa-whatsapp me-1"></i>WhatsApp
-                                        </a>
-                                    </div>
-                                </div>
-                            `,
-                            icon: 'info',
-                            timer: 30000,
-                            timerProgressBar: true,
-                            showConfirmButton: true,
-                            confirmButtonText: 'Entendido / Cerrar (30s)',
-                            confirmButtonColor: '#198754',
-                            allowOutsideClick: false
-                        });
-
-                        const formData = new FormData();
-                        formData.append('notificacion_id', notif.id);
-                        fetch('/socio/notificacion-marcar-leida', { method: 'POST', body: formData });
-                    }
+            .then(data => {
+                if (data.success && data.pagos && data.pagos.length > 0) {
+                    mostrarModalComprobantePagos(data);
+                } else {
+                    verificarNotificacionesGeneralesPendientes();
                 }
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error('Error al consultar comprobantes de pago:', err);
+                verificarNotificacionesGeneralesPendientes();
+            });
+
+        function mostrarModalComprobantePagos(data) {
+            const modalEl = document.getElementById('modalNotificacionPagosRecibidos');
+            if (!modalEl) return;
+
+            document.getElementById('modalPagoTotalMonto').textContent = formatMoney(data.total_abonado_general);
+            document.getElementById('modalPagoSubtituloSocio').innerHTML = `Socio(a): <strong class="text-dark">${data.socio_nombre}</strong> (C.C. ${data.socio_cedula})`;
+            document.getElementById('modalPagoSaldoAhorroActual').textContent = formatMoney(data.saldo_ahorro_actual);
+
+            const cont = document.getElementById('contenedorListaPagosModal');
+            let itemsHtml = '';
+            let waDetalle = '';
+
+            data.pagos.forEach((p) => {
+                const fecha = p.fecha_pago ? p.fecha_pago.substring(0, 16) : '';
+                const d = p.detalles || {};
+                let badgeTipo = '<span class="badge bg-primary rounded-pill">Cuota de Reunión</span>';
+                let badgeIcon = 'fa-calendar-check';
+
+                if (p.tipo_pago === 'ANULACION_24H') {
+                    badgeTipo = '<span class="badge bg-warning text-dark rounded-pill">Regla 24h (Sin Interés)</span>';
+                    badgeIcon = 'fa-clock-rotate-left';
+                } else if (p.tipo_pago === 'ABONO_PRESTAMO') {
+                    badgeTipo = '<span class="badge bg-info text-dark rounded-pill">Abono a Préstamo</span>';
+                    badgeIcon = 'fa-file-invoice-dollar';
+                } else if (p.tipo_pago === 'ABONO_ACTIVIDAD') {
+                    badgeTipo = '<span class="badge bg-secondary rounded-pill">Actividad Comunitaria</span>';
+                    badgeIcon = 'fa-utensils';
+                }
+
+                let desgloseHtml = '';
+                if (p.tipo_pago === 'CUOTA_REUNION' || p.tipo_pago === 'ANULACION_24H') {
+                    desgloseHtml = `
+                        <div class="row g-2 mt-2 pt-2 border-top fs-8 text-secondary">
+                            <div class="col-6 col-sm-3">
+                                <span class="d-block text-muted">Ahorro Cuota:</span>
+                                <strong class="text-dark">${formatMoney(parseFloat(p.monto_cuota) || 0)}</strong>
+                            </div>
+                            ${(parseFloat(p.monto_aporte_ronda) > 0 || parseFloat(p.monto_aporte_rifa) > 0) ? `
+                            <div class="col-6 col-sm-3">
+                                <span class="d-block text-muted">Pasarela (Ronda/Rifa):</span>
+                                <strong class="text-dark">${formatMoney((parseFloat(p.monto_aporte_ronda)||0) + (parseFloat(p.monto_aporte_rifa)||0))}</strong>
+                            </div>` : ''}
+                            ${parseFloat(p.monto_ahorro_extra) > 0 ? `
+                            <div class="col-6 col-sm-3">
+                                <span class="d-block text-muted">Ahorro Extra:</span>
+                                <strong class="text-success">${formatMoney(p.monto_ahorro_extra)}</strong>
+                            </div>` : ''}
+                            <div class="col-6 col-sm-3">
+                                <span class="d-block text-muted">Total Acreditado:</span>
+                                <strong class="text-primary font-outfit fs-7">${formatMoney(p.monto_total)}</strong>
+                            </div>
+                        </div>
+                    `;
+                    waDetalle += `📌 *${p.titulo}*\n- Monto: ${formatMoney(p.monto_total)}\n`;
+                } else if (p.tipo_pago === 'ABONO_PRESTAMO') {
+                    desgloseHtml = `
+                        <div class="row g-2 mt-2 pt-2 border-top fs-8 text-secondary">
+                            <div class="col-6">
+                                <span class="d-block text-muted">Abono Capital:</span>
+                                <strong class="text-success">${formatMoney(d.capital_pagado || 0)}</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block text-muted">Abono Interés:</span>
+                                <strong class="text-warning">${formatMoney(d.interes_pagado || 0)}</strong>
+                            </div>
+                        </div>
+                    `;
+                    waDetalle += `📌 *${p.titulo}*\n- Capital: ${formatMoney(d.capital_pagado || 0)} | Interés: ${formatMoney(d.interes_pagado || 0)}\n`;
+                } else {
+                    desgloseHtml = `
+                        <div class="mt-2 pt-2 border-top fs-8 text-secondary">
+                            <span>${p.concepto}</span>
+                        </div>
+                    `;
+                    waDetalle += `📌 *${p.titulo}*\n- Monto: ${formatMoney(p.monto_total)}\n`;
+                }
+
+                itemsHtml += `
+                    <div class="card border-0 bg-white rounded-3 p-3 shadow-sm">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid ${badgeIcon} text-primary fs-6"></i>
+                                <h6 class="font-outfit fw-bold text-dark m-0">${p.titulo}</h6>
+                            </div>
+                            ${badgeTipo}
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between text-muted fs-8">
+                            <span><i class="fa-solid fa-user-check text-primary me-1"></i>Registrado por: <strong>${p.registrado_por_nombre || 'Directiva'}</strong></span>
+                            <span><i class="fa-regular fa-clock me-1"></i>${fecha}</span>
+                        </div>
+                        ${desgloseHtml}
+                    </div>
+                `;
+            });
+
+            cont.innerHTML = itemsHtml;
+
+            // Formatear texto para WhatsApp
+            const waText = `🧾 *INFONATILLERA - COMPROBANTE DE PAGO OFICIAL*\n\n` +
+                `👤 *Socio:* ${data.socio_nombre} (C.C. ${data.socio_cedula})\n` +
+                `💰 *Total Acreditado:* ${formatMoney(data.total_abonado_general)}\n\n` +
+                `📋 *Detalle de Pagos:*\n${waDetalle}\n` +
+                `🏦 *Nuevo Saldo Total Ahorrado:* ${formatMoney(data.saldo_ahorro_actual)}\n\n` +
+                `🌐 *Verificado en InfoNatillera:*\nhttps://natillera.skylinedev.top/`;
+            const btnWa = document.getElementById('btnCompartirPagoWa');
+            if (btnWa) {
+                btnWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+            }
+
+            const bsModal = new bootstrap.Modal(modalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            bsModal.show();
+
+            const btnAceptar = document.getElementById('btnAceptarComprobantePago');
+            if (btnAceptar) {
+                btnAceptar.onclick = function() {
+                    btnAceptar.disabled = true;
+                    btnAceptar.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Guardando confirmación...';
+
+                    const ids = data.pagos.map(p => p.id);
+                    fetch('/socio/marcar-pagos-leidos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: ids })
+                    })
+                    .then(r => r.json())
+                    .then(() => {
+                        bsModal.hide();
+                        verificarNotificacionesGeneralesPendientes();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        bsModal.hide();
+                        verificarNotificacionesGeneralesPendientes();
+                    });
+                };
+            }
+        }
+
+        // Auto-Popup SweetAlert2 con temporizador de 30 segundos para notificaciones pendientes al ingresar
+        function verificarNotificacionesGeneralesPendientes() {
+            fetch('/socio/notificaciones-pendientes-json')
+                .then(r => r.json())
+                .then(async data => {
+                    if (data.success && data.pendientes && data.pendientes.length > 0) {
+                        for (const notif of data.pendientes) {
+                            const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${notif.titulo}*\n${notif.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+                            const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
+
+                            await Swal.fire({
+                                title: `📢 ${notif.titulo}`,
+                                html: `
+                                    <div class="text-start p-2">
+                                        <p class="fs-6 text-dark mb-3">${notif.mensaje}</p>
+                                        <hr class="my-2">
+                                        <div class="d-flex align-items-center justify-content-between fs-7 text-muted">
+                                            <span>Emitido por: <strong>${notif.remitente_nombre || 'Directiva'}</strong></span>
+                                            <a href="${urlWa}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill fw-bold">
+                                                <i class="fa-brands fa-whatsapp me-1"></i>WhatsApp
+                                            </a>
+                                        </div>
+                                    </div>
+                                `,
+                                icon: 'info',
+                                timer: 30000,
+                                timerProgressBar: true,
+                                showConfirmButton: true,
+                                confirmButtonText: 'Entendido / Cerrar (30s)',
+                                confirmButtonColor: '#198754',
+                                allowOutsideClick: false
+                            });
+
+                            const formData = new FormData();
+                            formData.append('notificacion_id', notif.id);
+                            fetch('/socio/notificacion-marcar-leida', { method: 'POST', body: formData });
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
     });
     </script>
 <?php endif; ?>
