@@ -8,9 +8,48 @@ require_once __DIR__ . '/../Models/Usuario.php';
 
 class CierreController extends Controller {
 
+    /**
+     * Registra un error en logs/cierre_reunion.log y en el error_log de PHP.
+     */
+    private function logError(Throwable $e): void {
+        $linea = sprintf(
+            "[%s] %s: %s en %s:%d | uri=%s | usuario=%s\n%s\n\n",
+            date('Y-m-d H:i:s'),
+            get_class($e),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine(),
+            $_SERVER['REQUEST_URI'] ?? '',
+            $_SESSION['usuario']['cedula'] ?? '?',
+            $e->getTraceAsString()
+        );
+        error_log($linea);
+        $dir = __DIR__ . '/../../logs';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        @file_put_contents($dir . '/cierre_reunion.log', $linea, FILE_APPEND);
+    }
+
     public function index(): void {
         $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
+        ob_start();
+        try {
+            $this->renderIndex();
+            ob_end_flush();
+        } catch (Throwable $e) {
+            ob_end_clean();
+            $this->logError($e);
+            http_response_code(500);
+            // Diagnóstico temporal: solo visible para usuarios con acceso a este módulo.
+            echo '<pre style="padding:16px;white-space:pre-wrap">Error en Cierre de Reunión: '
+                . htmlspecialchars($e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')')
+                . '</pre>';
+        }
+    }
+
+    private function renderIndex(): void {
         $cierreModel = new CierreReunion();
         $reunionModel = new Reunion();
 
