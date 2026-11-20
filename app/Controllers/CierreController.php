@@ -42,10 +42,8 @@ class CierreController extends Controller {
             ob_end_clean();
             $this->logError($e);
             http_response_code(500);
-            // Diagnóstico temporal: solo visible para usuarios con acceso a este módulo.
-            echo '<pre style="padding:16px;white-space:pre-wrap">Error en Cierre de Reunión: '
-                . htmlspecialchars($e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')')
-                . '</pre>';
+            echo '<pre style="padding:16px;white-space:pre-wrap">Ocurrió un error al cargar el Cierre de Reunión. '
+                . 'Revisa logs/cierre_reunion.log en el servidor.</pre>';
         }
     }
 

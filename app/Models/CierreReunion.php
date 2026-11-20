@@ -255,7 +255,7 @@ class CierreReunion extends Model {
 
         if (empty($detPrestamosOtorgados)) {
             $stmtAltP = $this->db->prepare("
-                SELECT p.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula, p.monto_prestado as monto_entregado, p.created_at as fecha_entrega
+                SELECT p.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula, p.monto_prestado as monto_entregado, COALESCE(p.fecha_prestamo, p.fecha_inicio) as fecha_entrega
                 FROM natillera_prestamos p
                 JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
                 WHERE p.reunion_id = :reunion_id
