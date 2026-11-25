@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/_bootstrap.php';
 // scripts/create_sql_views.php
 
 require_once __DIR__ . '/../config/database.php';
@@ -187,10 +188,11 @@ try {
         echo " [OK] Vista creada: {$name}\n";
     }
 
-    $host = '184.107.184.74';
-    $dbName = 'skylined_pruebas';
-    $user = 'skylined_natillera';
-    $pass = 'mImwIZY)W)%YOYl+';
+    $remote = remote_db_config();
+    $host = $remote['host'];
+    $dbName = $remote['dbName'];
+    $user = $remote['user'];
+    $pass = $remote['pass'];
 
     echo "\n=== CREANDO VISTAS EN SERVIDOR REMOTO ({$host} - {$dbName}) ===\n";
     $remotePdo = new PDO("mysql:host={$host};dbname={$dbName};charset=utf8mb4", $user, $pass, [

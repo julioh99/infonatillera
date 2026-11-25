@@ -4,5 +4,11 @@
 .DS_Store
 Thumbs.db
 /AI Contest/
-uploads/
 .env
+*.sqlite
+public/uploads/*
+!public/uploads/.htaccess
+storage/
+config/vapid_keys.php
+logs/
+node_modules/

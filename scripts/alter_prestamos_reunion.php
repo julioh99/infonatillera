@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/_bootstrap.php';
 // scripts/alter_prestamos_reunion.php
 
 require_once __DIR__ . '/../config/database.php';
@@ -15,10 +16,11 @@ try {
         echo "Nota local: " . $e1->getMessage() . "\n";
     }
 
-    $host = '184.107.184.74';
-    $dbName = 'skylined_pruebas';
-    $user = 'skylined_natillera';
-    $pass = 'mImwIZY)W)%YOYl+';
+    $remote = remote_db_config();
+    $host = $remote['host'];
+    $dbName = $remote['dbName'];
+    $user = $remote['user'];
+    $pass = $remote['pass'];
 
     echo "Agregando columna en servidor remoto {$host}...\n";
     $remotePdo = new PDO("mysql:host={$host};dbname={$dbName};charset=utf8mb4", $user, $pass, [
