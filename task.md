@@ -194,3 +194,29 @@ Hecho: capa de diseño `public/css/theme.css` (colores, tipografía, tarjetas, b
 - [ ] La URL `natillera.skylinedev.top` está escrita en los mensajes de WhatsApp de `header.php`.
 - [ ] Varios archivos quedaron con saltos de línea LF; Git avisa de la conversión a CRLF y el diff puede traer ruido.
 - [ ] Cuenta de prueba 104050: se marcó `password_changed = 0` para que al próximo ingreso obligue a cambiar la clave. La clave temporal que se usó para probar debe cambiarse en ese momento.
+
+---
+
+## 8. Estado al 25/11/2026 (después del trabajo con agentes)
+
+**Hecho y commiteado** (cada punto tiene su commit; las pruebas están en `tests/`, ejecutables con `php tests/run.php` contra una copia local):
+- [x] 1.1 Interés mensual progresivo · 1.2 Histórico de años · 1.3 Orden de socios (también en Gestión de Socios).
+- [x] 2.1, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9 (auditoría con instantánea restaurable), 2.10 (índice único), 2.11, 2.12, 2.13, 2.14 y 2.2 (caja real con ronda y rifa; liquidez $92.446.000).
+- [x] 3.1, 3.2, 3.3 (CSRF central), 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12.
+- [x] 4.1 Web Push real · 4.2 recordatorios 8:00/12:00/13:00 · 4.3 `Reunion::generarCiclo`.
+- [x] 5.1 `.gitignore` · 5.2 migraciones numeradas · 5.3 pruebas (`tests/run.php`, sin PHPUnit) · 5.4 documentación y `seed.php`.
+- [x] Rediseño 2027 de 2 colores, compacto y con transiciones. Tres propuestas de logo en `/logos.html`.
+- [x] Migraciones aplicadas en la base remota `skylined_pruebas` (con respaldo previo en `J:\www\infonatillera_backups\2026-11-25_antes_migraciones_remotas\`).
+
+**Pendiente (requiere decisión o acción tuya)**
+- [ ] **Rotar la clave de la BD remota** (estuvo en git) y **las llaves VAPID** (`config/vapid_keys.php` sigue rastreado): `php scripts/generate_vapid_keys.php mailto:...`, pegar en `.env` y que los socios reactiven las notificaciones.
+- [ ] **Cierres con movimientos posteriores:** el tablero cuadra con los cierres salvo -$2.755.000 por movimientos registrados después de cerrar (R13, R14, R15, R18). `php scripts/reconciliar_cierres.php` los lista; `--aplicar` los reescribe (solo con respaldo y tu OK).
+- [ ] **Datos:** la reunión R23 tiene `valor_cuota_base` = 5.500.000 (error de dato); corregirla.
+- [ ] **Listas de socios activos:** llamado a lista, préstamos, actividades y entregas aún muestran a todos los socios; al crear un año con socios que no continúan deben usar solo los activos (`getAllSocios(true)` o `getSociosActivos()`).
+- [ ] **Valores aún escritos a mano:** `Usuario.php` (400000 de meta), `socio/dashboard.php` y `auth/login.php` (meta $400.000, "50 Socios", "2026"), `public/js/firma_canvas.js` (300000/150000/500000) y `reuniones.php` (cuotas 60000/65000 en el JS).
+- [ ] **Firma y foto de préstamos:** `PrestamoController` guarda con decodificación débil; usar el helper seguro de `EntregaController` (mover a una clase común). Código repetido de abonos por fechas en `CierreReunion` (3 consultas).
+- [ ] **Llamado a lista:** deduplicar por `socio_id` o usar `ON DUPLICATE KEY UPDATE` (el índice único dejaría de aceptar un socio repetido).
+- [ ] **Despliegue:** `php scripts/migrate.php --status`, `--dry-run`, luego sin opciones; apuntar el DocumentRoot a `public/`; crear el cron o las tareas programadas (`docs/06`); `NT_NO_AUTOMIGRATE=1` está activo en el `.env` local.
+- [ ] 5.5 partir vistas grandes y mover JS a `public/js/` · 5.7 columna de ciclo en las tablas (no se hicieron: chocan con el rediseño).
+- [ ] **Cierre del año (sección 0):** respaldo, copiar al servidor, guardar el año `Dic 2025 - Nov 2026`, descargar la copia JSON y crear el año nuevo el 1 de diciembre. Probar antes el histórico en una copia de la base real.
+- [ ] **Logo:** elegir ganador entre las propuestas de `/logos.html` y las de Gemini; luego convertir el nombre a trazos y cambiar el ícono del aviso push (`ICONO` en `sw.js`).
