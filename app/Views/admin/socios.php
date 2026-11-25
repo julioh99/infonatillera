@@ -13,6 +13,9 @@
         <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#collapseCumpleanos">
             <i class="fa-solid fa-cake-candles me-1"></i>Ver Cumpleaños
         </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalOrdenSocios">
+            <i class="fa-solid fa-arrow-down-1-9 me-1"></i>Orden de Socios
+        </button>
         <button type="button" class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoSocio">
             <i class="fa-solid fa-user-plus me-1"></i>Nuevo Socio
         </button>
@@ -238,9 +241,8 @@
                     </div>
 
                     <div class="mb-3 border-top pt-3">
-                        <label for="new_password" class="form-label fw-semibold fs-7 text-muted">Contraseña Inicial</label>
-                        <input type="password" name="password" id="new_password" class="form-control" value="123456" required>
-                        <small class="text-muted fs-8">Por defecto es '123456'</small>
+                        <span class="form-label fw-semibold fs-7 text-muted d-block">Contraseña Inicial</span>
+                        <small class="text-muted fs-8">Se genera una clave temporal que se muestra una sola vez al crear el socio.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -641,3 +643,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+
+<!-- Modal Orden de Socios (arrastrar, flechas, A-Z). Solo guarda el orden: no cambia datos ni estados. -->
+<div class="modal fade" id="modalOrdenSocios" tabindex="-1" aria-labelledby="tituloOrdenSocios" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form action="/admin/socios/ordenar" method="POST">
+                <input type="hidden" name="volver" value="socios">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloOrdenSocios"><i class="fa-solid fa-arrow-down-1-9 me-2"></i>Orden de Socios</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="nt-page-sub mb-3">Este orden se usa en el llamado a lista, préstamos, actividades y entregas. Arrastra con el ícono, usa las flechas u ordena A-Z.</p>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-nt-orden-az="#listaOrdenSocios"><i class="fa-solid fa-arrow-down-a-z me-1"></i>A-Z</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-nt-orden-reset="#listaOrdenSocios"><i class="fa-solid fa-rotate-left me-1"></i>Volver al orden actual</button>
+                    </div>
+                    <ul class="nt-orden" id="listaOrdenSocios" data-nt-orden>
+                        <?php foreach ($socios as $s): ?>
+                            <li class="nt-orden__item" data-id="<?= (int)$s['id'] ?>" data-nombre="<?= htmlspecialchars($s['nombre_completo']) ?>">
+                                <button type="button" class="nt-orden__handle" aria-label="Arrastrar a <?= htmlspecialchars($s['nombre_completo']) ?>"><i class="fa-solid fa-grip-vertical"></i></button>
+                                <span class="nt-orden__pos"></span>
+                                <span class="nt-orden__name"><?= htmlspecialchars($s['nombre_completo']) ?><span class="nt-orden__sub">C.C. <?= htmlspecialchars($s['cedula']) ?><?= isset($s['estado']) && (int)$s['estado'] === 0 ? ' · inactivo' : '' ?></span></span>
+                                <span class="nt-orden__btns">
+                                    <button type="button" class="nt-orden__up" aria-label="Subir"><i class="fa-solid fa-chevron-up"></i></button>
+                                    <button type="button" class="nt-orden__down" aria-label="Bajar"><i class="fa-solid fa-chevron-down"></i></button>
+                                </span>
+                                <input type="hidden" name="orden[]" value="<?= (int)$s['id'] ?>">
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Guardar solo el orden</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/js/orden_socios.js"></script>

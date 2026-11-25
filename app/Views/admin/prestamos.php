@@ -99,7 +99,14 @@
                             <td class="gd-num fw-bold font-outfit" data-label="Monto prestado">$<?= number_format($p['monto_prestado'], 0, ',', '.') ?></td>
                             <td class="gd-num" data-label="Tasa"><span class="badge bg-info"><?= number_format($p['tasa_interes_mensual'], 1) ?>%</span></td>
                             <td class="gd-num fw-semibold gd-pos" data-label="Capital pagado">$<?= number_format($p['total_capital_pagado'], 0, ',', '.') ?></td>
-                            <td class="gd-num fw-semibold gd-gold" data-label="Interés pagado">$<?= number_format($p['total_interes_pagado'], 0, ',', '.') ?></td>
+                            <td class="gd-num fw-semibold gd-gold" data-label="Interés pagado">$<?= number_format($p['total_interes_pagado'], 0, ',', '.') ?>
+                                <?php $mesesCob = (int)($p['meses_cobrados'] ?? 0); $mesTxt = $mesesCob === 1 ? 'mes' : 'meses'; ?>
+                                <?php if (!$p['anulado_sin_interes'] && (float)($p['interes_pendiente'] ?? 0) > 0): ?>
+                                    <small class="gd-sub d-block" title="Interés mensual progresivo sobre el capital pendiente">Pendiente: $<?= number_format($p['interes_pendiente'], 0, ',', '.') ?> · <?= $mesesCob ?> <?= $mesTxt ?></small>
+                                <?php elseif (!$p['anulado_sin_interes'] && $mesesCob > 0): ?>
+                                    <small class="gd-sub d-block">Al día · <?= $mesesCob ?> <?= $mesTxt ?></small>
+                                <?php endif; ?>
+                            </td>
                             <td class="gd-cell-state" data-label="Estado">
                                 <div class="text-md-start">
                                     <?php if ($p['anulado_sin_interes']): ?>
@@ -121,6 +128,8 @@
                                                 data-id="<?= $p['id'] ?>"
                                                 data-deudor="<?= htmlspecialchars($p['deudor_nombre']) ?>"
                                                 data-saldo="<?= $saldoCapital ?>"
+                                                data-interes-pendiente="<?= round((float)($p['interes_pendiente'] ?? 0)) ?>"
+                                                data-meses-interes="<?= (int)($p['meses_cobrados'] ?? 0) ?>"
                                                 data-bs-toggle="modal" data-bs-target="#modalAbono">
                                             <i class="fa-solid fa-coins"></i>Abonar
                                         </button>
@@ -441,6 +450,7 @@
                         <div class="col-12 col-sm-6">
                             <label for="monto_interes_pagado" class="form-label">Abono a Intereses (COP)</label>
                             <input type="text" name="monto_interes_pagado" id="monto_interes_pagado" class="form-control money-input gd-gold fw-bold" inputmode="numeric" placeholder="0">
+                            <small class="gd-field-hint" id="abono_interes_hint"></small>
                         </div>
                         <div class="col-12 col-sm-6">
                             <label for="monto_capital_pagado" class="form-label">Abono a Capital (COP)</label>
@@ -546,6 +556,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('abono_prestamo_id').value = id;
             document.getElementById('abono_deudor_nombre').innerText = deudor;
             document.getElementById('abono_saldo_capital').innerText = '$' + new Intl.NumberFormat('es-CO').format(saldo);
+
+            // Interés mensual progresivo: el campo se precarga con lo pendiente (el servidor valida los topes)
+            const interesPend = Math.round(parseFloat(btn.getAttribute('data-interes-pendiente') || '0')) || 0;
+            const meses = parseInt(btn.getAttribute('data-meses-interes') || '0', 10) || 0;
+            const inputInteres = document.getElementById('monto_interes_pagado');
+            const hintInteres = document.getElementById('abono_interes_hint');
+            if (inputInteres) inputInteres.value = interesPend > 0 ? new Intl.NumberFormat('es-CO').format(interesPend) : '';
+            if (hintInteres) hintInteres.innerText = interesPend > 0 ? `Interés pendiente: $${new Intl.NumberFormat('es-CO').format(interesPend)} (${meses} ${meses === 1 ? 'mes cobrado' : 'meses cobrados'}). Puedes cambiarlo.` : 'Sin interés pendiente.';
         });
     });
 
@@ -667,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const elTotal = document.getElementById('cuotas_total_abonos');
 
                     if (elNombre) elNombre.innerText = p.deudor_nombre;
-                    if (elResumen) elResumen.innerText = `Préstamo N° ${p.id} - Monto: $${new Intl.NumberFormat('es-CO').format(p.monto_prestado)} - Tasa: ${p.tasa_interes_mensual}%`;
+                    if (elResumen) elResumen.innerText = `Préstamo N° ${p.id} - Monto: $${new Intl.NumberFormat('es-CO').format(p.monto_prestado)} - Tasa: ${p.tasa_interes_mensual}%` + (data.interes ? ` - Interés pendiente: $${new Intl.NumberFormat('es-CO').format(Math.round(data.interes.interes_pendiente))} (${data.interes.meses_cobrados} meses cobrados)` : '');
                     if (elBadge) {
                         elBadge.className = `badge bg-${p.estado === 'PAGADO' ? 'success' : 'danger'} font-outfit fs-7`;
                         elBadge.innerText = p.estado;

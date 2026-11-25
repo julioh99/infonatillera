@@ -29,7 +29,7 @@ class Actividad extends Model {
             FROM natillera_actividad_participantes ap
             JOIN natillera_usuarios u ON ap.socio_id = u.id
             WHERE ap.actividad_id = :actividad_id
-            ORDER BY u.id ASC
+            ORDER BY u.orden ASC, u.id ASC
         ");
         $stmt->execute([':actividad_id' => $actividadId]);
         $participantes = $stmt->fetchAll();

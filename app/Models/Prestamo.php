@@ -2,6 +2,7 @@
 // app/Models/Prestamo.php
 
 require_once __DIR__ . '/../../core/Model.php';
+require_once __DIR__ . '/InteresPrestamo.php';
 
 class Prestamo extends Model {
 
@@ -27,7 +28,89 @@ class Prestamo extends Model {
             GROUP BY p.id
             ORDER BY p.fecha_inicio DESC
         ");
-        return $stmt->fetchAll();
+        return $this->adjuntarIntereses($stmt->fetchAll());
+    }
+
+    /** Fecha desde la que corre el interes: fecha del prestamo, o de su reunion, o de creacion. */
+    public static function fechaBaseInteres(array $p): string {
+        foreach (['fecha_prestamo', 'fecha_reunion', 'fecha_inicio'] as $campo) {
+            if (!empty($p[$campo])) {
+                $f = InteresPrestamo::soloFecha($p[$campo]);
+                if ($f !== '') return $f;
+            }
+        }
+        return date('Y-m-d');
+    }
+
+    /** Abonos agrupados por prestamo (para calcular el interes de muchos prestamos con una sola consulta). */
+    private function abonosAgrupados(?array $prestamoIds = null): array {
+        $sql = "SELECT prestamo_id, fecha_abono, monto_capital_pagado, monto_interes_pagado FROM natillera_abonos_prestamos";
+        if ($prestamoIds !== null) {
+            if (empty($prestamoIds)) return [];
+            $sql .= " WHERE prestamo_id IN (" . implode(',', array_map('intval', $prestamoIds)) . ")";
+        }
+        $porPrestamo = [];
+        foreach ($this->db->query($sql)->fetchAll() as $a) {
+            $porPrestamo[(int)$a['prestamo_id']][] = $a;
+        }
+        return $porPrestamo;
+    }
+
+    /**
+     * Agrega a cada prestamo: interes_causado, interes_pendiente, interes_a_favor, meses_cobrados y
+     * interes_proximo_mes (InteresPrestamo, segun config interes.modo).
+     */
+    public function adjuntarIntereses(array $prestamos, ?string $hoy = null): array {
+        if (empty($prestamos)) return $prestamos;
+        $abonos = $this->abonosAgrupados();
+        foreach ($prestamos as $i => $p) {
+            $calc = $this->calcularInteresDe($p, $abonos[(int)$p['id']] ?? [], $hoy);
+            $prestamos[$i]['interes_causado'] = $calc['interes_causado'];
+            $prestamos[$i]['interes_pendiente'] = $calc['interes_pendiente'];
+            $prestamos[$i]['interes_a_favor'] = $calc['interes_a_favor'];
+            $prestamos[$i]['meses_cobrados'] = $calc['meses_cobrados'];
+            $prestamos[$i]['interes_proximo_mes'] = $calc['proximo_mes'];
+        }
+        return $prestamos;
+    }
+
+    private function calcularInteresDe(array $p, array $abonos, ?string $hoy = null): array {
+        return InteresPrestamo::calcular([
+            'monto_prestado' => $p['monto_prestado'],
+            'tasa_interes_mensual' => $p['tasa_interes_mensual'] ?? 0,
+            'fecha_inicio' => self::fechaBaseInteres($p),
+            'anulado_sin_interes' => !empty($p['anulado_sin_interes'])
+        ], $abonos, $hoy);
+    }
+
+    /** Detalle completo del interes de un prestamo (incluye `meses` mes a mes). null si no existe. */
+    public function calcularInteresPrestamo(int $prestamoId, ?string $hoy = null): ?array {
+        $p = $this->getPrestamoById($prestamoId);
+        if (!$p) return null;
+        $abonos = $this->abonosAgrupados([$prestamoId]);
+        return $this->calcularInteresDe($p, $abonos[$prestamoId] ?? [], $hoy);
+    }
+
+    /** Interes pendiente y capital pendiente de los prestamos ACTIVOS de un socio. */
+    public function resumenInteresSocio(int $socioId): array {
+        $stmt = $this->db->prepare("
+            SELECT p.*, r.fecha_reunion FROM natillera_prestamos p
+            LEFT JOIN natillera_reuniones r ON p.reunion_id = r.id
+            WHERE p.socio_deudor_id = :id AND p.estado = 'ACTIVO'
+        ");
+        $stmt->execute([':id' => $socioId]);
+        $prestamos = $stmt->fetchAll();
+        $abonos = $this->abonosAgrupados(array_map(function ($p) { return (int)$p['id']; }, $prestamos));
+        $interes = 0.0;
+        $capital = 0.0;
+        $meses = 0;
+        foreach ($prestamos as $p) {
+            $calc = $this->calcularInteresDe($p, $abonos[(int)$p['id']] ?? []);
+            $interes += $calc['interes_pendiente'];
+            $capital += $calc['saldo_capital'];
+            $meses += $calc['meses_cobrados'];
+        }
+        return ['interes_pendiente' => round($interes, 2), 'capital_pendiente' => round($capital, 2), 'meses_cobrados' => $meses, 'prestamos_activos' => count($prestamos)];
     }
 
     public function getPrestamoById(int $id) {
