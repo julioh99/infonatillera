@@ -1,24 +1,27 @@
-<div class="row mb-4 align-items-center">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-utensils text-info"></i>
-            Actividades Especiales (Tamales / Rifas)
+<link rel="stylesheet" href="/css/pages/gestion-general.css">
+
+<header class="gg-head">
+    <div class="gg-head__text">
+        <span class="nt-eyebrow">Comunidad</span>
+        <h2 class="nt-page-title gg-head__title">
+            <i class="fa-solid fa-utensils gg-head__icon gg-head__icon--gold"></i>
+            <span>Actividades Especiales (Tamales / Rifas)</span>
         </h2>
-        <p class="text-muted m-0 fs-7">Gestión contable, asignación de cuotas individuales por socio y recaudo.</p>
+        <p class="nt-page-sub m-0">Gestión contable, asignación de cuotas individuales por socio y recaudo.</p>
     </div>
-    <div class="col-12 col-md-6 text-md-end">
-        <button type="button" class="btn btn-info text-white rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaActividad">
+    <div class="gg-head__actions">
+        <button type="button" class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaActividad">
             <i class="fa-solid fa-plus me-1"></i>Nueva Actividad
         </button>
     </div>
-</div>
+</header>
 
 <!-- Lista de Actividades -->
-<div class="row g-4">
+<div class="row g-4 nt-stagger">
     <?php if (empty($actividades)): ?>
         <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
-                <i class="fa-solid fa-cookie-bite fs-1 text-secondary mb-3"></i>
+            <div class="gg-emptycard">
+                <i class="fa-solid fa-cookie-bite"></i>
                 <h5 class="font-outfit">No hay actividades registradas</h5>
                 <p class="m-0 fs-7">Crea eventos comunitarios para registrar cuotas individuales y fondos repartibles.</p>
             </div>
@@ -26,41 +29,40 @@
     <?php else: ?>
         <?php foreach ($actividades as $act): ?>
             <div class="col-12 col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-                    <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-                        <h5 class="card-title font-outfit fw-bold m-0 text-truncate" style="max-width: 200px;"><?= htmlspecialchars($act['nombre_actividad']) ?></h5>
-                        <span class="badge bg-primary fs-7"><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span>
+                <div class="gg-act">
+                    <div class="gg-act__head">
+                        <h5 class="gg-act__title" title="<?= htmlspecialchars($act['nombre_actividad']) ?>"><?= htmlspecialchars($act['nombre_actividad']) ?></h5>
+                        <span class="gg-act__date"><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span>
                     </div>
-                    <div class="card-body p-4 d-flex flex-column">
-                        <p class="text-muted fs-7 mb-3"><?= htmlspecialchars($act['descripcion'] ?: 'Sin descripción adicional.') ?></p>
-                        
-                        <div class="border rounded-3 p-3 bg-light mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fs-7 text-muted">Cuota Referencial Socio:</span>
-                                <strong class="text-primary">$<?= number_format($act['cuota_por_socio'] ?? 0, 0, ',', '.') ?></strong>
+                    <div class="gg-act__body">
+                        <p class="gg-act__desc mb-3"><?= htmlspecialchars($act['descripcion'] ?: 'Sin descripción adicional.') ?></p>
+
+                        <div class="gg-ledger">
+                            <div class="gg-ledger__row">
+                                <span>Cuota Referencial Socio:</span>
+                                <strong class="gg-t-pine nt-money">$<?= number_format($act['cuota_por_socio'] ?? 0, 0, ',', '.') ?></strong>
                             </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fs-7 text-muted">Ingresos Totales:</span>
-                                <strong class="text-success">$<?= number_format($act['ingresos_totales'], 0, ',', '.') ?></strong>
+                            <div class="gg-ledger__row">
+                                <span>Ingresos Totales:</span>
+                                <strong class="gg-t-pine nt-money">$<?= number_format($act['ingresos_totales'], 0, ',', '.') ?></strong>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fs-7 text-muted">Gastos Totales:</span>
-                                <strong class="text-danger">$<?= number_format($act['gastos_totales'], 0, ',', '.') ?></strong>
+                            <div class="gg-ledger__row">
+                                <span>Gastos Totales:</span>
+                                <strong class="gg-t-danger nt-money">$<?= number_format($act['gastos_totales'], 0, ',', '.') ?></strong>
                             </div>
-                            <hr class="my-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-bold font-outfit">Ganancia Neta:</span>
-                                <strong class="fs-5 text-primary font-outfit">$<?= number_format($act['ganancia_neta'], 0, ',', '.') ?></strong>
+                            <div class="gg-ledger__row gg-ledger__total">
+                                <span>Ganancia Neta:</span>
+                                <strong class="nt-money">$<?= number_format($act['ganancia_neta'], 0, ',', '.') ?></strong>
                             </div>
                         </div>
 
-                        <div class="d-flex align-items-center justify-content-between text-muted fs-7 mb-3">
-                            <span><i class="fa-solid fa-users text-info me-1"></i> <strong><?= $act['total_participantes'] ?> socios</strong></span>
+                        <div class="gg-act__meta">
+                            <span><i class="fa-solid fa-users gg-t-pine me-1"></i> <strong><?= $act['total_participantes'] ?> socios</strong></span>
                             <span>Creado por: <?= htmlspecialchars($act['creador_nombre']) ?></span>
                         </div>
 
                         <div class="mt-auto">
-                            <button type="button" class="btn btn-sm btn-outline-info rounded-pill w-100 fw-bold btnVerParticipantes"
+                            <button type="button" class="btn btn-outline-primary w-100 btnVerParticipantes"
                                     data-id="<?= $act['id'] ?>"
                                     data-bs-toggle="modal" data-bs-target="#modalVerParticipantesActividad">
                                 <i class="fa-solid fa-list-check me-1"></i>Ver Participantes y Pagos
@@ -75,14 +77,14 @@
 
 <!-- Modal Nueva Actividad -->
 <div class="modal fade" id="modalNuevaActividad" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-info text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-utensils me-2"></i>Registrar Actividad Especial</h5>
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable modal-fullscreen-sm-down">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-utensils me-2"></i>Registrar Actividad Especial</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/actividades/guardar" method="POST">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-8">
                             <label for="nombre_actividad" class="form-label fw-semibold fs-7">Nombre de la Actividad</label>
@@ -116,43 +118,43 @@
                     </div>
 
                     <!-- Asignación de Cuotas Individuales por Socio -->
-                    <div class="border rounded-3 p-3 bg-light mb-3">
+                    <div class="gg-soft gg-soft--bordered mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                             <div>
                                 <label class="form-label fw-bold font-outfit fs-7 mb-0 text-dark">
-                                    <i class="fa-solid fa-users me-1 text-info"></i>Socios Participantes y Cuotas Individuales:
+                                    <i class="fa-solid fa-users me-1 gg-t-pine"></i>Socios Participantes y Cuotas Individuales:
                                 </label>
                                 <span class="d-block text-muted fs-8">Asigna el valor individual a pagar por cada socio seleccionado.</span>
                             </div>
                             <div class="d-flex gap-1">
-                                <button type="button" class="btn btn-xs btn-outline-info py-1 px-2 fw-semibold" onclick="aplicarCuotaBaseASocios()">
+                                <button type="button" class="btn btn-xs btn-outline-primary px-2 fw-semibold" onclick="aplicarCuotaBaseASocios()">
                                     <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Aplicar Cuota Base
                                 </button>
-                                <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="marcarTodosSociosAct(true)">Todos</button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" onclick="marcarTodosSociosAct(false)">Ninguno</button>
+                                <button type="button" class="btn btn-xs btn-outline-primary px-2" onclick="marcarTodosSociosAct(true)">Todos</button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary px-2" onclick="marcarTodosSociosAct(false)">Ninguno</button>
                             </div>
                         </div>
 
                         <div class="mb-2">
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-white text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <span class="input-group-text text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
                                 <input type="text" id="searchCrearActividadSocio" class="form-control" placeholder="Buscar socio por # ID o Nombre para asignar cuota..." onkeyup="filtrarSociosNuevaActividad()">
                             </div>
                         </div>
 
-                        <div class="row g-2 overflow-auto" style="max-height: 280px;" id="containerSociosNuevaAct">
+                        <div class="row g-2 gg-picker" id="containerSociosNuevaAct">
                             <?php foreach ($socios as $s): ?>
                                 <div class="col-12 col-md-6 item-socio-nueva-act" data-id="<?= $s['id'] ?>" data-nombre="<?= strtolower(htmlspecialchars($s['nombre_completo'])) ?>">
-                                    <div class="card p-2 border shadow-none bg-white">
-                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                    <div class="gg-member">
+                                        <div class="d-flex align-items-center justify-content-between gap-2 w-100">
                                             <div class="form-check m-0 d-flex align-items-center gap-1">
                                                 <input class="form-check-input chk-socio-act" type="checkbox" name="participantes[]" value="<?= $s['id'] ?>" id="part_<?= $s['id'] ?>" onchange="toggleSocioCuotaInput(this, <?= $s['id'] ?>)" checked>
-                                                <span class="badge bg-secondary font-outfit fs-8">#<?= $s['id'] ?></span>
+                                                <span class="gg-id">#<?= $s['id'] ?></span>
                                                 <label class="form-check-label fs-7 fw-semibold text-dark text-truncate" for="part_<?= $s['id'] ?>" style="max-width: 150px;" title="<?= htmlspecialchars($s['nombre_completo']) ?>">
                                                     <?= htmlspecialchars($s['nombre_completo']) ?>
                                                 </label>
                                             </div>
-                                            <div class="input-group input-group-sm" style="width: 130px;">
+                                            <div class="input-group input-group-sm flex-nowrap" style="width: 140px;">
                                                 <span class="input-group-text">$</span>
                                                 <input type="text" name="cuotas_individuales[<?= $s['id'] ?>]" id="cuota_socio_<?= $s['id'] ?>" class="form-control form-control-sm text-end fw-bold input-cuota-socio money-input" inputmode="numeric" value="20.000" placeholder="0">
                                             </div>
@@ -163,9 +165,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-info text-white rounded-pill fw-bold px-4">Crear Actividad</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Crear Actividad</button>
                 </div>
             </form>
         </div>
@@ -174,33 +176,33 @@
 
 <!-- Modal Ver / Actualizar Participantes y Saldos de la Actividad -->
 <div class="modal fade" id="modalVerParticipantesActividad" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-list-check me-2 text-warning"></i>Participantes y Recaudo de la Actividad</h5>
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-list-check me-2"></i>Participantes y Recaudo de la Actividad</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4 text-dark">
+            <div class="modal-body text-dark">
                 <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
                     <div>
-                        <h6 class="m-0 fw-bold font-outfit text-primary" id="act_modal_nombre">---</h6>
+                        <h6 class="m-0 fw-bold font-outfit gg-t-pine" id="act_modal_nombre">---</h6>
                         <small class="text-muted" id="act_modal_fecha">---</small>
                     </div>
-                    <span id="cntParticipantesVisibles" class="badge bg-light text-dark border fs-7 font-outfit">---</span>
+                    <span id="cntParticipantesVisibles" class="nt-chip font-outfit">---</span>
                 </div>
 
                 <!-- Buscador por # ID o Nombre -->
                 <div class="mb-3">
                     <div class="input-group">
-                        <span class="input-group-text bg-white text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <span class="input-group-text text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
                         <input type="text" id="searchParticipanteAct" class="form-control" placeholder="Buscar por # ID (1 a 50) o Nombre de socio..." onkeyup="filtrarParticipantesActividad()">
                         <button class="btn btn-outline-secondary" type="button" onclick="limpiarBuscadorParticipantesAct()"><i class="fa-solid fa-xmark"></i> Limpiar</button>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
-                        <thead class="table-dark font-outfit">
+                <div class="table-responsive gg-inner-card">
+                    <table class="table table-sm align-middle fs-7 mb-0">
+                        <thead>
                             <tr class="align-middle">
                                 <th class="text-center" style="width: 55px;"># ID</th>
                                 <th>Socio</th>
@@ -219,8 +221,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -333,7 +335,7 @@ function filtrarParticipantesActividad() {
                 abonosHtml += `
                     <tr>
                         <td>${fStr}</td>
-                        <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} COP</td>
+                        <td class="fw-bold gg-t-pine">$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} COP</td>
                         <td>${ab.registrado_por_nombre || 'Sistema'}</td>
                         <td>${ab.observacion || '-'}</td>
                         <td class="text-center">
@@ -366,7 +368,7 @@ function filtrarParticipantesActividad() {
                     </button>
                 </td>
                 <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
-                <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
+                <td class="gg-t-pine fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
                 <td>${saldo > 0 ? `<span class="badge bg-danger">$${new Intl.NumberFormat('es-CO').format(saldo)}</span>` : '<span class="text-muted">$0</span>'}</td>
                 <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
                 <td class="text-end pe-3">

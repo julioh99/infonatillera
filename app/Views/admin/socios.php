@@ -1,46 +1,49 @@
-<div class="row mb-4 align-items-center">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-users-gear text-primary"></i>
-            Gestión de Socios e Información Personal
+<link rel="stylesheet" href="/css/pages/gestion-general.css">
+
+<header class="gg-head">
+    <div class="gg-head__text">
+        <span class="nt-eyebrow">Administración</span>
+        <h2 class="nt-page-title gg-head__title">
+            <i class="fa-solid fa-users-gear gg-head__icon"></i>
+            <span>Gestión de Socios e Información Personal</span>
         </h2>
-        <p class="text-muted m-0 fs-7">Consulta y actualización de datos personales, teléfonos, fechas de cumpleaños y roles.</p>
+        <p class="nt-page-sub m-0">Consulta y actualización de datos personales, teléfonos, fechas de cumpleaños y roles.</p>
     </div>
-    <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2">
-        <button type="button" class="btn btn-outline-dark rounded-pill fw-semibold btn-sm shadow-sm" data-bs-toggle="collapse" data-bs-target="#collapseCumpleanos">
-            <i class="fa-solid fa-cake-candles text-danger me-1"></i>Ver Cumpleaños
+    <div class="gg-head__actions">
+        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#collapseCumpleanos">
+            <i class="fa-solid fa-cake-candles me-1"></i>Ver Cumpleaños
         </button>
-        <button type="button" class="btn btn-primary rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoSocio">
+        <button type="button" class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#modalNuevoSocio">
             <i class="fa-solid fa-user-plus me-1"></i>Nuevo Socio
         </button>
     </div>
-</div>
+</header>
 
 <!-- Widget de Cumpleaños Colapsable -->
 <div class="collapse mb-4" id="collapseCumpleanos">
-    <div class="card border-0 shadow-sm rounded-4 bg-gradient-navy text-white p-4">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="font-outfit fw-bold m-0 text-warning d-flex align-items-center gap-2">
+    <div class="nt-hero gg-bday">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <h5 class="font-outfit fw-bold m-0 d-flex align-items-center gap-2" style="color: var(--nt-gold-500);">
                 <i class="fa-solid fa-cake-candles fs-4"></i>
                 Calendario de Cumpleaños de los Socios
             </h5>
-            <span class="badge bg-white bg-opacity-20 rounded-pill">Total: <?= count($cumpleanos) ?> socios</span>
+            <span class="gg-bday__count">Total: <?= count($cumpleanos) ?> socios</span>
         </div>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 overflow-auto" style="max-height: 250px;">
-            <?php 
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-2 overflow-auto" style="max-height: 250px;">
+            <?php
             $mesesEs = [1=>'Ene', 2=>'Feb', 3=>'Mar', 4=>'Abr', 5=>'May', 6=>'Jun', 7=>'Jul', 8=>'Ago', 9=>'Sep', 10=>'Oct', 11=>'Nov', 12=>'Dic'];
-            foreach ($cumpleanos as $c): 
+            foreach ($cumpleanos as $c):
                 $f = strtotime($c['fecha_nacimiento']);
                 $mes = (int)date('m', $f);
                 $dia = date('d', $f);
             ?>
                 <div class="col">
-                    <div class="p-2.5 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10 d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="fw-bold font-outfit text-white fs-7"><?= htmlspecialchars($c['nombre_completo']) ?></div>
-                            <small class="text-white-50 fs-8"><i class="fa-solid fa-phone me-1"></i><?= htmlspecialchars($c['telefono'] ?: 'Sin tel') ?></small>
+                    <div class="gg-bday__item">
+                        <div class="min-w-0">
+                            <div class="gg-bday__name"><?= htmlspecialchars($c['nombre_completo']) ?></div>
+                            <small class="gg-bday__tel"><i class="fa-solid fa-phone me-1"></i><?= htmlspecialchars($c['telefono'] ?: 'Sin tel') ?></small>
                         </div>
-                        <span class="badge bg-warning text-dark font-outfit fw-bold fs-7">
+                        <span class="gg-bday__date">
                             <?= $dia ?> <?= $mesesEs[$mes] ?>
                         </span>
                     </div>
@@ -51,20 +54,18 @@
 </div>
 
 <!-- Filtro de Búsqueda Rápida -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-3">
-        <div class="input-group">
-            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" id="buscarSocioAdmin" class="form-control border-start-0 ps-0" placeholder="Buscar socio por nombre, cédula o teléfono...">
-        </div>
+<div class="gg-filter">
+    <div class="input-group">
+        <span class="input-group-text text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input type="text" id="buscarSocioAdmin" class="form-control ps-0" placeholder="Buscar socio por nombre, cédula o teléfono..." autocomplete="off">
     </div>
 </div>
 
 <!-- Tabla Principal de Socios -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+<div class="gg-panel">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="tablaSocios">
-            <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
+        <table class="table table-hover align-middle gg-table gg-stack" id="tablaSocios">
+            <thead>
                 <tr>
                     <th class="ps-4">Socio / Cédula</th>
                     <th>Teléfono</th>
@@ -75,59 +76,62 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($socios as $s): 
+                <?php foreach ($socios as $s):
                     $fNac = !empty($s['fecha_nacimiento']) ? date('d/m/Y', strtotime($s['fecha_nacimiento'])) : 'No registrada';
+                    $iniciales = mb_strtoupper(mb_substr(trim((string)$s['nombre_completo']), 0, 1));
                 ?>
                     <tr class="socio-admin-row" data-search="<?= strtolower(htmlspecialchars($s['nombre_completo'] . ' ' . $s['cedula'] . ' ' . $s['telefono'])) ?>">
-                        <td class="ps-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-secondary font-outfit fs-7">#<?= $s['id'] ?></span>
-                                <div>
-                                    <a href="#" class="fw-bold text-dark font-outfit text-decoration-none btnVerExpediente" data-id="<?= $s['id'] ?>" data-bs-toggle="modal" data-bs-target="#modalExpedienteSocio" title="Ver Expediente de <?= htmlspecialchars($s['nombre_completo']) ?>">
+                        <td class="ps-4 gg-cell-main">
+                            <div class="d-flex align-items-center gap-3 min-w-0">
+                                <span class="gg-avatar" aria-hidden="true"><?= htmlspecialchars($iniciales) ?></span>
+                                <div class="min-w-0">
+                                    <a href="#" class="gg-name text-decoration-none btnVerExpediente" data-id="<?= $s['id'] ?>" data-bs-toggle="modal" data-bs-target="#modalExpedienteSocio" title="Ver Expediente de <?= htmlspecialchars($s['nombre_completo']) ?>">
                                         <?= htmlspecialchars($s['nombre_completo']) ?>
                                     </a>
-                                    <small class="d-block text-muted">C.C. <?= htmlspecialchars($s['cedula']) ?></small>
+                                    <small class="d-block text-muted">#<?= $s['id'] ?> · C.C. <?= htmlspecialchars($s['cedula']) ?></small>
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Teléfono">
                             <?php if (!empty($s['telefono'])): ?>
-                                <a href="tel:<?= htmlspecialchars($s['telefono']) ?>" class="text-decoration-none text-dark">
-                                    <i class="fa-solid fa-phone text-success me-1"></i><?= htmlspecialchars($s['telefono']) ?>
+                                <a href="tel:<?= htmlspecialchars($s['telefono']) ?>" class="text-decoration-none" style="color: var(--nt-ink);">
+                                    <i class="fa-solid fa-phone gg-t-pine me-1"></i><?= htmlspecialchars($s['telefono']) ?>
                                 </a>
                             <?php else: ?>
                                 <span class="text-muted fs-7">No registrado</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Nacimiento">
                             <?php if (!empty($s['fecha_nacimiento'])): ?>
-                                <span class="badge bg-light text-dark border">
-                                    <i class="fa-solid fa-cake-candles text-danger me-1"></i><?= $fNac ?>
+                                <span class="nt-chip nt-chip--gold">
+                                    <i class="fa-solid fa-cake-candles me-1"></i><?= $fNac ?>
                                 </span>
                             <?php else: ?>
                                 <span class="text-muted fs-7">Pendiente</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Rol">
                             <span class="badge bg-primary text-uppercase"><?= htmlspecialchars($s['rol_nombre']) ?></span>
                         </td>
-                        <td class="fw-bold font-outfit text-dark">$<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?></td>
-                        <td class="text-end pe-4">
-                            <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1 btnVerExpediente me-1"
-                                    data-id="<?= $s['id'] ?>"
-                                    data-bs-toggle="modal" data-bs-target="#modalExpedienteSocio">
-                                <i class="fa-solid fa-folder-open me-1"></i>Ver Hoja del Socio
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 btnEditarSocio"
-                                    data-id="<?= $s['id'] ?>"
-                                    data-nombre="<?= htmlspecialchars($s['nombre_completo']) ?>"
-                                    data-cedula="<?= htmlspecialchars($s['cedula']) ?>"
-                                    data-telefono="<?= htmlspecialchars($s['telefono']) ?>"
-                                    data-nacimiento="<?= htmlspecialchars($s['fecha_nacimiento']) ?>"
-                                    data-rol="<?= $s['rol_id'] ?>"
-                                    data-bs-toggle="modal" data-bs-target="#modalEditarSocio">
-                                <i class="fa-solid fa-user-pen me-1"></i>Editar Datos
-                            </button>
+                        <td data-label="Tope de crédito" class="fw-bold font-outfit nt-money">$<?= number_format($s['tope_prestamo_personalizado'], 0, ',', '.') ?></td>
+                        <td class="text-end pe-4 gg-cell-actions">
+                            <div class="gg-actions">
+                                <button type="button" class="btn btn-sm btn-outline-primary btnVerExpediente"
+                                        data-id="<?= $s['id'] ?>"
+                                        data-bs-toggle="modal" data-bs-target="#modalExpedienteSocio">
+                                    <i class="fa-solid fa-folder-open me-1"></i>Ver Hoja del Socio
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary btnEditarSocio"
+                                        data-id="<?= $s['id'] ?>"
+                                        data-nombre="<?= htmlspecialchars($s['nombre_completo']) ?>"
+                                        data-cedula="<?= htmlspecialchars($s['cedula']) ?>"
+                                        data-telefono="<?= htmlspecialchars($s['telefono']) ?>"
+                                        data-nacimiento="<?= htmlspecialchars($s['fecha_nacimiento']) ?>"
+                                        data-rol="<?= $s['rol_id'] ?>"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarSocio">
+                                    <i class="fa-solid fa-user-pen me-1"></i>Editar Datos
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -138,15 +142,15 @@
 
 <!-- Modal Editar Datos del Socio -->
 <div class="modal fade" id="modalEditarSocio" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-user-pen me-2 text-warning"></i>Editar Información del Socio</h5>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-user-pen me-2 text-warning"></i>Editar Información del Socio</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/socios/actualizar" method="POST">
                 <input type="hidden" name="socio_id" id="edit_socio_id">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
                         <label for="edit_nombre_completo" class="form-label fw-semibold fs-7">Nombre Completo</label>
                         <input type="text" name="nombre_completo" id="edit_nombre_completo" class="form-control fw-bold" required>
@@ -183,9 +187,9 @@
                         <input type="password" name="password" id="edit_password" class="form-control" placeholder="Dejar en blanco para mantener la actual">
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning text-dark rounded-pill fw-bold px-4">Actualizar Socio</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Actualizar Socio</button>
                 </div>
             </form>
         </div>
@@ -194,14 +198,14 @@
 
 <!-- Modal Registrar Nuevo Socio -->
 <div class="modal fade" id="modalNuevoSocio" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Socio</h5>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Socio</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/socios/crear" method="POST">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
                         <label for="new_nombre_completo" class="form-label fw-semibold fs-7">Nombre Completo</label>
                         <input type="text" name="nombre_completo" id="new_nombre_completo" class="form-control fw-bold" placeholder="Ej: Juan Pérez" required>
@@ -239,9 +243,9 @@
                         <small class="text-muted fs-8">Por defecto es '123456'</small>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Crear Socio</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Crear Socio</button>
                 </div>
             </form>
         </div>
@@ -250,21 +254,21 @@
 
 <!-- Modal Hoja del Socio / Expediente Financiero Completo -->
 <div class="modal fade" id="modalExpedienteSocio" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0 py-3">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary font-outfit fs-6 px-3 py-2" id="exp_socio_id_badge">#--</span>
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3 min-w-0">
+                    <span class="gg-modal__badge" id="exp_socio_id_badge">#--</span>
                     <div>
-                        <h5 class="modal-title font-outfit fw-bold m-0" id="exp_socio_nombre">Cargando Hoja del Socio...</h5>
-                        <small class="text-white-50 fs-8 d-block" id="exp_socio_detalles">---</small>
+                        <h5 class="modal-title m-0" id="exp_socio_nombre">Cargando Hoja del Socio...</h5>
+                        <small class="gg-modal__sub" id="exp_socio_detalles">---</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4 bg-light">
+            <div class="modal-body gg-modal-grey">
                 <div id="expedienteSpinner" class="text-center py-5">
-                    <i class="fa-solid fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                    <i class="fa-solid fa-spinner fa-spin fa-3x gg-t-pine mb-3"></i>
                     <h5 class="font-outfit text-muted">Cargando expediente e historial financiero completo...</h5>
                 </div>
 
@@ -272,55 +276,55 @@
                     <!-- Resumen KPIs Rápidos -->
                     <div class="row g-3 mb-4">
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-success">
-                                <span class="fs-8 text-muted fw-semibold">Total Ahorrado (Cuotas + Extras)</span>
-                                <h4 class="font-outfit fw-bold text-success m-0 mt-1" id="exp_kpi_ahorro">$0</h4>
-                                <small class="text-muted fs-8 d-block mt-1" id="exp_kpi_ahorro_det">Cuotas: $0 | Extra: $0</small>
+                            <div class="nt-stat gg-kpi ">
+                                <span class="nt-stat__label">Total Ahorrado (Cuotas + Extras)</span>
+                                <h4 class="nt-stat__value nt-money gg-t-pine m-0" id="exp_kpi_ahorro">$0</h4>
+                                <small class="gg-kpi__hint" id="exp_kpi_ahorro_det">Cuotas: $0 | Extra: $0</small>
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-warning">
-                                <span class="fs-8 text-muted fw-semibold">Intereses Generados / Aportados</span>
-                                <h4 class="font-outfit fw-bold text-warning m-0 mt-1" id="exp_kpi_interes">$0</h4>
-                                <small class="text-muted fs-8 d-block mt-1" id="exp_kpi_interes_det">Meta $400.000 (0%)</small>
+                            <div class="nt-stat gg-kpi gg-kpi--gold">
+                                <span class="nt-stat__label">Intereses Generados / Aportados</span>
+                                <h4 class="nt-stat__value nt-money gg-t-gold m-0" id="exp_kpi_interes">$0</h4>
+                                <small class="gg-kpi__hint" id="exp_kpi_interes_det">Meta $400.000 (0%)</small>
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-danger">
-                                <span class="fs-8 text-muted fw-semibold">Deudas Activas Totales</span>
-                                <h4 class="font-outfit fw-bold text-danger m-0 mt-1" id="exp_kpi_deuda">$0</h4>
-                                <small class="text-muted fs-8 d-block mt-1" id="exp_kpi_deuda_det">Préstamos: $0 | Actividades: $0</small>
+                            <div class="nt-stat gg-kpi gg-kpi--danger">
+                                <span class="nt-stat__label">Deudas Activas Totales</span>
+                                <h4 class="nt-stat__value nt-money gg-t-danger m-0" id="exp_kpi_deuda">$0</h4>
+                                <small class="gg-kpi__hint" id="exp_kpi_deuda_det">Préstamos: $0 | Actividades: $0</small>
                             </div>
                         </div>
                         <div class="col-12 col-sm-6 col-md-3">
-                            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-info">
-                                <span class="fs-8 text-muted fw-semibold">Entregas / Beneficios Recibidos</span>
-                                <h4 class="font-outfit fw-bold text-info m-0 mt-1" id="exp_kpi_entregas">$0</h4>
-                                <small class="text-muted fs-8 d-block mt-1" id="exp_kpi_entregas_det">0 entregas registradas</small>
+                            <div class="nt-stat gg-kpi gg-kpi--info">
+                                <span class="nt-stat__label">Entregas / Beneficios Recibidos</span>
+                                <h4 class="nt-stat__value nt-money gg-t-info m-0" id="exp_kpi_entregas">$0</h4>
+                                <small class="gg-kpi__hint" id="exp_kpi_entregas_det">0 entregas registradas</small>
                             </div>
                         </div>
                     </div>
 
                     <!-- Tabs de Navegación de Contenido -->
-                    <ul class="nav nav-pills font-outfit mb-3 bg-white p-2 rounded-4 shadow-sm" id="tabExpediente" role="tablist">
+                    <ul class="nav nav-pills gg-tabs gg-tabs--inner" id="tabExpediente" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill px-3 py-1.5 fw-semibold" id="tab-cuotas-tab" data-bs-toggle="pill" data-bs-target="#tab-cuotas" type="button">
-                                <i class="fa-solid fa-sack-dollar me-1 text-success"></i>Cuotas y Ahorros
+                            <button class="nav-link active px-3" id="tab-cuotas-tab" data-bs-toggle="pill" data-bs-target="#tab-cuotas" type="button">
+                                <i class="fa-solid fa-sack-dollar me-1 gg-t-pine"></i>Cuotas y Ahorros
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold" id="tab-actividades-tab" data-bs-toggle="pill" data-bs-target="#tab-actividades" type="button">
-                                <i class="fa-solid fa-utensils me-1 text-info"></i>Actividades (Tamales/Rifas)
+                            <button class="nav-link px-3" id="tab-actividades-tab" data-bs-toggle="pill" data-bs-target="#tab-actividades" type="button">
+                                <i class="fa-solid fa-utensils me-1 gg-t-info"></i>Actividades (Tamales/Rifas)
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold" id="tab-prestamos-tab" data-bs-toggle="pill" data-bs-target="#tab-prestamos" type="button">
-                                <i class="fa-solid fa-hand-holding-dollar me-1 text-warning"></i>Préstamos e Intereses
+                            <button class="nav-link px-3" id="tab-prestamos-tab" data-bs-toggle="pill" data-bs-target="#tab-prestamos" type="button">
+                                <i class="fa-solid fa-hand-holding-dollar me-1 gg-t-gold"></i>Préstamos e Intereses
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill px-3 py-1.5 fw-semibold" id="tab-entregas-tab" data-bs-toggle="pill" data-bs-target="#tab-entregas" type="button">
-                                <i class="fa-solid fa-signature me-1 text-primary"></i>Entregas y Comprobantes
+                            <button class="nav-link px-3" id="tab-entregas-tab" data-bs-toggle="pill" data-bs-target="#tab-entregas" type="button">
+                                <i class="fa-solid fa-signature me-1 gg-t-pine"></i>Entregas y Comprobantes
                             </button>
                         </li>
                     </ul>
@@ -328,10 +332,10 @@
                     <div class="tab-content" id="tabExpedienteContent">
                         <!-- Tab 1: Cuotas y Ahorros -->
                         <div class="tab-pane fade show active" id="tab-cuotas" role="tabpanel">
-                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="gg-inner-card">
                                 <div class="table-responsive">
-                                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
-                                        <thead class="bg-dark text-white font-outfit">
+                                    <table class="table table-sm align-middle fs-7 mb-0">
+                                        <thead>
                                             <tr>
                                                 <th>Reunión</th>
                                                 <th>Fecha</th>
@@ -350,10 +354,10 @@
 
                         <!-- Tab 2: Actividades Comunitarias -->
                         <div class="tab-pane fade" id="tab-actividades" role="tabpanel">
-                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="gg-inner-card">
                                 <div class="table-responsive">
-                                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
-                                        <thead class="bg-dark text-white font-outfit">
+                                    <table class="table table-sm align-middle fs-7 mb-0">
+                                        <thead>
                                             <tr>
                                                 <th>Actividad</th>
                                                 <th>Fecha Realización</th>
@@ -372,10 +376,10 @@
 
                         <!-- Tab 3: Préstamos e Intereses -->
                         <div class="tab-pane fade" id="tab-prestamos" role="tabpanel">
-                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="gg-inner-card">
                                 <div class="table-responsive">
-                                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
-                                        <thead class="bg-dark text-white font-outfit">
+                                    <table class="table table-sm align-middle fs-7 mb-0">
+                                        <thead>
                                             <tr>
                                                 <th>Fecha Inicio</th>
                                                 <th>Monto Prestado</th>
@@ -395,10 +399,10 @@
 
                         <!-- Tab 4: Entregas y Comprobantes -->
                         <div class="tab-pane fade" id="tab-entregas" role="tabpanel">
-                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="gg-inner-card">
                                 <div class="table-responsive">
-                                    <table class="table table-sm table-bordered align-middle fs-7 mb-0">
-                                        <thead class="bg-dark text-white font-outfit">
+                                    <table class="table table-sm align-middle fs-7 mb-0">
+                                        <thead>
                                             <tr>
                                                 <th>Tipo Entrega</th>
                                                 <th>Fecha y Hora</th>
@@ -416,8 +420,8 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-secondary rounded-pill fw-bold" data-bs-dismiss="modal">Cerrar Hoja del Socio</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar Hoja del Socio</button>
             </div>
         </div>
     </div>
@@ -512,8 +516,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="fw-bold">R${c.numero_quincena}</td>
                                     <td>${c.fecha_reunion}</td>
                                     <td class="fw-bold text-dark">$${new Intl.NumberFormat('es-CO').format(cuotaVal)}</td>
-                                    <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(extraVal)}</td>
-                                    <td class="fw-bold font-outfit text-primary">$${new Intl.NumberFormat('es-CO').format(tot)}</td>
+                                    <td class="gg-t-pine fw-bold">$${new Intl.NumberFormat('es-CO').format(extraVal)}</td>
+                                    <td class="fw-bold font-outfit gg-t-pine">$${new Intl.NumberFormat('es-CO').format(tot)}</td>
                                     <td><span class="badge bg-${isPagada ? 'success' : 'danger'}">${isPagada ? 'Pagada' : 'Pendiente/Mora'}</span></td>
                                     <td>${c.observaciones || '-'}</td>
                                 </tr>
@@ -539,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (abonos.length > 0) {
                                 abonosList = '<ul class="list-unstyled mb-0 fs-8">';
                                 abonos.forEach(ab => {
-                                    abonosList += `<li><i class="fa-solid fa-angle-right text-info me-1"></i>$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} (${ab.fecha_abono})</li>`;
+                                    abonosList += `<li><i class="fa-solid fa-angle-right gg-t-info me-1"></i>$${new Intl.NumberFormat('es-CO').format(parseFloat(ab.monto_abono))} (${ab.fecha_abono})</li>`;
                                 });
                                 abonosList += '</ul>';
                             } else {
@@ -551,8 +555,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td class="fw-bold">${a.nombre_actividad}</td>
                                     <td>${a.fecha_actividad}</td>
                                     <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(cuota)}</td>
-                                    <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
-                                    <td class="text-danger fw-bold">$${new Intl.NumberFormat('es-CO').format(Math.max(0, saldo))}</td>
+                                    <td class="gg-t-pine fw-bold">$${new Intl.NumberFormat('es-CO').format(pagado)}</td>
+                                    <td class="gg-t-danger fw-bold">$${new Intl.NumberFormat('es-CO').format(Math.max(0, saldo))}</td>
                                     <td><span class="badge bg-${isPagado ? 'success' : 'warning text-dark'}">${isPagado ? 'Al Día' : 'Pendiente'}</span></td>
                                     <td>${abonosList}</td>
                                 </tr>
@@ -589,10 +593,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <tr>
                                     <td>${p.fecha_inicio}</td>
                                     <td class="fw-bold">$${new Intl.NumberFormat('es-CO').format(prestado)}</td>
-                                    <td class="fw-bold text-primary">${p.tasa_interes_mensual}%</td>
-                                    <td class="text-success fw-bold">$${new Intl.NumberFormat('es-CO').format(capPag)}</td>
-                                    <td class="text-danger fw-bold">$${new Intl.NumberFormat('es-CO').format(saldoCap)}</td>
-                                    <td class="text-warning fw-bold">$${new Intl.NumberFormat('es-CO').format(intPag)}</td>
+                                    <td class="fw-bold gg-t-pine">${p.tasa_interes_mensual}%</td>
+                                    <td class="gg-t-pine fw-bold">$${new Intl.NumberFormat('es-CO').format(capPag)}</td>
+                                    <td class="gg-t-danger fw-bold">$${new Intl.NumberFormat('es-CO').format(saldoCap)}</td>
+                                    <td class="gg-t-gold fw-bold">$${new Intl.NumberFormat('es-CO').format(intPag)}</td>
                                     <td><span class="badge bg-${p.estado === 'PAGADO' ? 'success' : 'warning text-dark'}">${p.estado}</span></td>
                                     <td>${cuotasList}</td>
                                 </tr>
@@ -616,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <tr>
                                     <td><span class="badge bg-${e.tipo_beneficio === 'PRESTAMO' ? 'primary' : (e.tipo_beneficio === 'RONDA' ? 'success' : 'warning text-dark')}">${e.tipo_beneficio}</span></td>
                                     <td>${new Date(e.fecha_entrega).toLocaleString('es-CO')}</td>
-                                    <td class="fw-bold text-success">$${new Intl.NumberFormat('es-CO').format(monto)}</td>
+                                    <td class="fw-bold gg-t-pine">$${new Intl.NumberFormat('es-CO').format(monto)}</td>
                                     <td>Reunión R${e.numero_quincena || '-'}</td>
                                     <td class="text-center">${firmaImg}</td>
                                     <td class="text-center">${fotoImg}</td>

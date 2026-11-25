@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Natillera Comunitaria - Software de Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>InfoNatillera</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome Icons -->
@@ -16,6 +16,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/app.css">
+    <!-- Tema 2027 (se carga al final para sobrescribir) -->
+    <link rel="stylesheet" href="/css/theme.css?v=<?= @filemtime(__DIR__ . '/../../../public/css/theme.css') ?: 1 ?>">
+    <!-- Estructura global y pantallas de acceso -->
+    <link rel="stylesheet" href="/css/pages/layout.css?v=<?= @filemtime(__DIR__ . '/../../../public/css/pages/layout.css') ?: 1 ?>">
+    <meta name="theme-color" content="#0e2a1f">
 </head>
 <body class="bg-light-gradient min-vh-100">
 
@@ -32,16 +37,16 @@
     <!-- Sidebar Navegación Desktop -->
     <aside class="app-sidebar shadow-lg">
         <div class="sidebar-brand d-flex align-items-center justify-content-between">
-            <a class="d-flex align-items-center gap-2 fw-bold text-gradient-gold text-decoration-none" href="/socio/dashboard">
-                <i class="fa-solid fa-coins fs-4 text-warning"></i>
-                <span class="font-outfit fs-5">InfoNatillera</span>
+            <a class="nt-brand" href="/socio/dashboard">
+                <span class="nt-brand__mark"><i class="fa-solid fa-coins"></i></span>
+                <span class="nt-brand__name">InfoNatillera</span>
             </a>
         </div>
 
         <?php if ($role === 'Presidente'): ?>
-            <div class="px-3 py-3 border-bottom border-white border-opacity-10 bg-white bg-opacity-5">
+            <div class="nt-mode-wrap">
                 <form action="/toggle-mode" method="POST" class="m-0">
-                    <button type="submit" class="btn btn-sm btn-outline-warning w-100 rounded-pill d-flex align-items-center justify-content-center gap-2 fs-7 fw-semibold">
+                    <button type="submit" class="btn nt-mode fw-semibold">
                         <i class="fa-solid fa-arrows-rotate"></i>
                         <span>Modo: <strong class="text-uppercase"><?= htmlspecialchars($activeMode) ?></strong></span>
                     </button>
@@ -151,56 +156,57 @@
         </ul>
 
         <div class="sidebar-user-footer">
-            <div class="d-flex align-items-center gap-3 mb-2">
-                <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
-                    <i class="fa-solid fa-user"></i>
-                </div>
+            <div class="nt-user">
+                <div class="nt-avatar"><i class="fa-solid fa-user"></i></div>
                 <div class="overflow-hidden">
-                    <div class="fw-bold font-outfit text-white text-truncate fs-7"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
-                    <small class="badge bg-secondary text-uppercase fs-8"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
+                    <div class="nt-user__name text-truncate"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
+                    <small class="nt-role"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
                 </div>
             </div>
-            <div class="d-flex gap-1 mt-2">
-                <button type="button" class="btn btn-xs btn-outline-warning w-33 rounded-pill btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Centro de Notificaciones">
-                    <i class="fa-solid fa-bell me-1"></i>Avisos
+            <div class="nt-user-actions">
+                <button type="button" class="btn nt-action btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Centro de Notificaciones">
+                    <i class="fa-solid fa-bell"></i><span>Avisos</span>
                 </button>
-                <button type="button" class="btn btn-xs btn-outline-light w-33 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
-                    <i class="fa-solid fa-user-pen me-1"></i>Perfil
+                <button type="button" class="btn nt-action" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+                    <i class="fa-solid fa-user-pen"></i><span>Perfil</span>
                 </button>
-                <a href="/logout" class="btn btn-xs btn-outline-danger w-33 rounded-pill text-decoration-none text-center">
-                    <i class="fa-solid fa-right-from-bracket me-1"></i>Salir
+                <a href="/logout" class="btn nt-action nt-action--danger">
+                    <i class="fa-solid fa-right-from-bracket"></i><span>Salir</span>
                 </a>
             </div>
         </div>
     </aside>
 
     <!-- Header Móvil (< 992px) -->
-    <header class="navbar navbar-dark bg-glass-dark d-lg-none sticky-top shadow-sm py-2 px-3">
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-gradient-gold text-decoration-none" href="/socio/dashboard">
-            <i class="fa-solid fa-coins fs-4 text-warning"></i>
-            <span class="font-outfit fs-5">InfoNatillera</span>
+    <header class="navbar navbar-dark bg-glass-dark d-lg-none sticky-top nt-topbar">
+        <a class="nt-brand" href="/socio/dashboard">
+            <span class="nt-brand__mark"><i class="fa-solid fa-coins"></i></span>
+            <span class="nt-brand__name">InfoNatillera</span>
         </a>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-warning rounded-circle position-relative btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Notificaciones y Comunicados">
+        <div class="nt-topbar__actions">
+            <button type="button" class="nt-iconbtn btnAbrirNotificaciones" data-bs-toggle="modal" data-bs-target="#modalMisNotificaciones" title="Notificaciones y Comunicados" aria-label="Notificaciones y Comunicados">
                 <i class="fa-solid fa-bell"></i>
             </button>
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar">
+            <button class="nt-iconbtn navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSidebar" aria-controls="offcanvasSidebar" aria-label="Abrir menú">
                 <span class="navbar-toggler-icon"></span>
             </button>
         </div>
     </header>
 
     <!-- Offcanvas Mobile Sidebar -->
-    <div class="offcanvas offcanvas-start bg-dark text-white d-lg-none" tabindex="-1" id="offcanvasSidebar">
-        <div class="offcanvas-header border-bottom border-white border-opacity-10">
-            <h5 class="offcanvas-title font-outfit fw-bold text-gradient-gold"><i class="fa-solid fa-coins me-2 text-warning"></i>InfoNatillera</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    <div class="offcanvas offcanvas-start nt-offcanvas text-white d-lg-none" tabindex="-1" id="offcanvasSidebar" aria-labelledby="offcanvasSidebarLabel">
+        <div class="offcanvas-header">
+            <div class="offcanvas-title nt-brand" id="offcanvasSidebarLabel">
+                <span class="nt-brand__mark"><i class="fa-solid fa-coins"></i></span>
+                <span class="nt-brand__name">InfoNatillera</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar menú"></button>
         </div>
         <div class="offcanvas-body p-0 d-flex flex-column">
             <?php if ($role === 'Presidente'): ?>
-                <div class="p-3 border-bottom border-white border-opacity-10 bg-white bg-opacity-5">
+                <div class="nt-mode-wrap">
                     <form action="/toggle-mode" method="POST" class="m-0">
-                        <button type="submit" class="btn btn-sm btn-outline-warning w-100 rounded-pill d-flex align-items-center justify-content-center gap-2">
+                        <button type="submit" class="btn nt-mode fw-semibold">
                             <i class="fa-solid fa-arrows-rotate"></i>
                             <span>Modo: <strong class="text-uppercase"><?= htmlspecialchars($activeMode) ?></strong></span>
                         </button>
@@ -310,21 +316,19 @@
             </ul>
 
             <div class="sidebar-user-footer mt-auto">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                    <div class="bg-primary text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
+                <div class="nt-user">
+                    <div class="nt-avatar"><i class="fa-solid fa-user"></i></div>
                     <div class="overflow-hidden">
-                        <div class="fw-bold font-outfit text-white text-truncate fs-7"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
-                        <small class="badge bg-secondary text-uppercase fs-8"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
+                        <div class="nt-user__name text-truncate"><?= htmlspecialchars($_SESSION['usuario']['nombre_completo']) ?></div>
+                        <small class="nt-role"><?= htmlspecialchars($_SESSION['usuario']['rol_nombre']) ?></small>
                     </div>
                 </div>
-                <div class="d-flex gap-1 mt-2">
-                    <button type="button" class="btn btn-xs btn-outline-light w-50 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
-                        <i class="fa-solid fa-user-pen me-1"></i>Perfil
+                <div class="nt-user-actions">
+                    <button type="button" class="btn nt-action" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+                        <i class="fa-solid fa-user-pen"></i><span>Perfil</span>
                     </button>
-                    <a href="/logout" class="btn btn-xs btn-outline-danger w-50 rounded-pill text-decoration-none text-center">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i>Salir
+                    <a href="/logout" class="btn nt-action nt-action--danger">
+                        <i class="fa-solid fa-right-from-bracket"></i><span>Salir</span>
                     </a>
                 </div>
             </div>
@@ -334,10 +338,10 @@
     <!-- Modal Editar Mis Datos Personales (Socio) -->
     <div class="modal fade" id="modalEditarMiPerfil" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <div class="modal-header bg-info text-white border-0">
-                    <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-user-pen me-2"></i>Editar Mis Datos Personales</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-content border-0">
+                <div class="modal-header nt-modal-head nt-modal-head--light">
+                    <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-user-pen me-2 text-primary"></i>Editar Mis Datos Personales</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form action="/socio/actualizar-mi-perfil" method="POST">
                     <div class="modal-body p-4 text-start text-dark">
@@ -362,9 +366,9 @@
                             <input type="password" name="password" id="my_password" class="form-control" placeholder="Dejar en blanco para conservar la actual">
                         </div>
                     </div>
-                    <div class="modal-footer border-0 pt-0">
+                    <div class="modal-footer nt-modal-foot">
                         <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-info text-white rounded-pill fw-bold px-4">Actualizar Mis Datos</button>
+                        <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Actualizar Mis Datos</button>
                     </div>
                 </form>
             </div>
@@ -374,13 +378,13 @@
     <!-- Modal Centro de Notificaciones y Avisos (Socio / Directiva) -->
     <div class="modal fade" id="modalMisNotificaciones" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <div class="modal-header bg-dark text-white border-0">
+            <div class="modal-content border-0">
+                <div class="modal-header nt-modal-head nt-modal-head--dark">
                     <h5 class="modal-title font-outfit fw-bold d-flex align-items-center gap-2">
                         <i class="fa-solid fa-bell text-warning"></i>
                         Centro de Notificaciones y Avisos
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-4 text-dark">
                     <div id="contenedorMisNotificaciones">
@@ -389,7 +393,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
+                <div class="modal-footer nt-modal-foot">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
@@ -399,33 +403,33 @@
     <!-- Modal Notificación de Pagos Recibidos y Saldo Acreditado -->
     <div class="modal fade" id="modalNotificacionPagosRecibidos" tabindex="-1" aria-labelledby="modalNotificacionPagosLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                <!-- Header con gradiente premium, branding y badge -->
-                <div class="modal-header bg-gradient-navy text-white p-4 border-0 position-relative">
+            <div class="modal-content border-0 overflow-hidden">
+                <!-- Encabezado del comprobante -->
+                <div class="modal-header nt-receipt__head">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="p-3 bg-white bg-opacity-10 rounded-circle text-warning fs-3 shadow-sm border border-white border-opacity-20 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                        <div class="nt-receipt__icon">
                             <i class="fa-solid fa-receipt"></i>
                         </div>
                         <div>
-                            <span class="badge bg-success-subtle text-success border border-success border-opacity-25 rounded-pill px-3 py-1 fs-8 fw-bold text-uppercase mb-1">
-                                <i class="fa-solid fa-circle-check me-1"></i> Comprobante Oficial de Ingreso
+                            <span class="nt-receipt__tag">
+                                <i class="fa-solid fa-circle-check"></i> Comprobante Oficial de Ingreso
                             </span>
-                            <h4 class="font-outfit fw-bold text-white m-0" id="modalNotificacionPagosLabel">
+                            <h4 class="font-outfit fw-bold nt-receipt__title m-0" id="modalNotificacionPagosLabel">
                                 ¡Nuevo Saldo Acreditado a tu Cuenta!
                             </h4>
-                            <p class="text-white-50 fs-7 m-0">La administración ha registrado y confirmado tus pagos en el sistema.</p>
+                            <p class="nt-receipt__sub">La administración ha registrado y confirmado tus pagos en el sistema.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Cuerpo del Modal -->
-                <div class="modal-body p-4 bg-light bg-opacity-50">
-                    <!-- Tarjeta Principal: Total General Pagado -->
-                    <div class="card border-0 shadow-sm rounded-4 mb-4 text-center p-3 p-md-4 bg-white border-top border-4 border-success">
-                        <span class="text-muted text-uppercase fw-semibold fs-8 letter-spacing d-block mb-1">
+                <div class="modal-body nt-receipt__body">
+                    <!-- Total General Pagado -->
+                    <div class="nt-receipt__total">
+                        <span class="nt-receipt__total-label">
                             Total Pagado y Acreditado en esta Notificación
                         </span>
-                        <h2 class="display-6 font-outfit fw-bold text-success mb-2" id="modalPagoTotalMonto">
+                        <h2 class="font-outfit nt-receipt__amount nt-money" id="modalPagoTotalMonto">
                             $0 COP
                         </h2>
                         <p class="text-muted fs-7 mb-0" id="modalPagoSubtituloSocio">
@@ -445,22 +449,22 @@
                     </div>
 
                     <!-- Tarjeta de Saldo Acumulado Actualizado -->
-                    <div class="card border-0 rounded-4 bg-gradient-navy text-white p-3 p-md-4 shadow-sm mb-3">
+                    <div class="nt-receipt__balance">
                         <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-warning fs-3">
+                                <div class="nt-receipt__balance-icon">
                                     <i class="fa-solid fa-vault"></i>
                                 </div>
                                 <div>
-                                    <span class="text-white-50 fs-8 d-block">Nuevo Saldo Total Ahorrado Acumulado</span>
-                                    <h3 class="font-outfit fw-bold text-warning m-0" id="modalPagoSaldoAhorroActual">
+                                    <span class="text-muted fs-8 d-block">Nuevo Saldo Total Ahorrado Acumulado</span>
+                                    <h3 class="font-outfit nt-receipt__balance-value nt-money" id="modalPagoSaldoAhorroActual">
                                         $0 COP
                                     </h3>
                                 </div>
                             </div>
                             <div class="text-sm-end">
-                                <span class="badge bg-white bg-opacity-20 text-white rounded-pill px-3 py-2 fs-8">
-                                <i class="fa-solid fa-shield-halved me-1 text-success"></i> Fondos Seguros y Registrados
+                                <span class="nt-chip">
+                                    <i class="fa-solid fa-shield-halved"></i> Fondos Seguros y Registrados
                                 </span>
                             </div>
                         </div>
@@ -468,15 +472,15 @@
 
                     <!-- Botón de Compartir por WhatsApp -->
                     <div class="text-center pt-2">
-                        <a href="#" target="_blank" class="btn btn-outline-success rounded-pill fw-bold btn-sm px-4 shadow-sm" id="btnCompartirPagoWa">
+                        <a href="#" target="_blank" class="btn btn-outline-success rounded-pill fw-bold px-4 d-inline-flex align-items-center justify-content-center" style="min-height:44px" id="btnCompartirPagoWa">
                             <i class="fa-brands fa-whatsapp me-2 fs-6"></i>Compartir Comprobante por WhatsApp
                         </a>
                     </div>
                 </div>
 
                 <!-- Footer con Botón de Confirmación -->
-                <div class="modal-footer bg-white border-0 p-3 p-md-4">
-                    <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold w-100 shadow py-3 font-outfit" id="btnAceptarComprobantePago">
+                <div class="modal-footer nt-receipt__foot">
+                    <button type="button" class="btn btn-primary btn-lg rounded-pill fw-bold w-100 font-outfit" id="btnAceptarComprobantePago">
                         <i class="fa-solid fa-circle-check me-2"></i>¡Entendido, Confirmar Recibido!
                     </button>
                 </div>
@@ -752,17 +756,17 @@
     <main class="flex-grow-1 py-4">
         <div class="container-fluid px-3 px-lg-4">
             <?php if (isset($_SESSION['success'])): ?>
-                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
-                    <i class="fa-solid fa-circle-check me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-success alert-dismissible fade show nt-flash mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check"></i><span><?= htmlspecialchars($_SESSION['success']) ?></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
                 <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
 
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 mb-4" role="alert">
-                    <i class="fa-solid fa-circle-exclamation me-2"></i><?= htmlspecialchars($_SESSION['error']) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-danger alert-dismissible fade show nt-flash mb-4" role="alert">
+                    <i class="fa-solid fa-circle-exclamation"></i><span><?= htmlspecialchars($_SESSION['error']) ?></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                 </div>
                 <?php unset($_SESSION['error']); ?>
             <?php endif; ?>

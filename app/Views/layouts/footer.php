@@ -1,9 +1,9 @@
         </div>
     </main>
 
-    <footer class="bg-dark text-white-50 py-3 mt-auto border-top border-secondary border-opacity-25">
-        <div class="container text-center font-outfit fs-7">
-            <p class="m-0">InfoNatillera &copy; <?= date('Y') ?> &bull; Sistema de Gestión de Natillera Comunitaria (50 Socios)</p>
+    <footer class="nt-footer">
+        <div class="container-fluid px-3 px-lg-4">
+            <p>InfoNatillera &copy; <?= date('Y') ?> &bull; Sistema de Gestión de Natillera Comunitaria (50 Socios)</p>
         </div>
     </footer>
 </div> <!-- Cierra .app-main-wrapper -->

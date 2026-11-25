@@ -1,145 +1,149 @@
-<div class="row mb-4 align-items-center">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-hand-holding-dollar text-warning"></i>
-            Gestión de Préstamos e Intereses
-        </h2>
-        <p class="text-muted m-0 fs-7">Control directo a socios, abonos a capital/interés e historial de cuotas.</p>
+<link rel="stylesheet" href="/css/pages/gestion-dinero.css">
+
+<div class="gd-head">
+    <div class="gd-head__main">
+        <span class="gd-head__icon gd-head__icon--gold" aria-hidden="true"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+        <div class="gd-head__text">
+            <h2 class="nt-page-title">Gestión de Préstamos e Intereses</h2>
+            <p class="nt-page-sub">Control directo a socios, abonos a capital/interés e historial de cuotas.</p>
+        </div>
     </div>
-    <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2">
+    <div class="gd-head__actions">
         <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
-            <button type="button" class="btn btn-outline-dark rounded-pill fw-semibold btn-sm" data-bs-toggle="modal" data-bs-target="#modalTopeCredit">
-                <i class="fa-solid fa-sliders me-1"></i>Ajustar Tope Socio
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalTopeCredit">
+                <i class="fa-solid fa-sliders me-2"></i>Ajustar Tope Socio
             </button>
         <?php endif; ?>
-        <button type="button" class="btn btn-warning rounded-pill fw-bold btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
-            <i class="fa-solid fa-plus me-1"></i>Nuevo Préstamo
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
+            <i class="fa-solid fa-plus me-2"></i>Nuevo Préstamo
         </button>
     </div>
 </div>
 
 <!-- Barra de Filtros y Búsqueda en Préstamos -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-3">
-        <div class="row g-2 align-items-center">
-            <div class="col-12 col-md-8">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" id="buscarPrestamo" class="form-control border-start-0 ps-0" value="<?= htmlspecialchars($_GET['search'] ?? ($_GET['search_query'] ?? '')) ?>" placeholder="Buscar por socio, cédula, referencia o reunión (ej: R1, R2, Juan)...">
-                </div>
+<div class="gd-toolbar">
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-8">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="buscarPrestamo" class="form-control" value="<?= htmlspecialchars($_GET['search'] ?? ($_GET['search_query'] ?? '')) ?>" placeholder="Buscar por socio, cédula, referencia o reunión (ej: R1, R2, Juan)..." aria-label="Buscar préstamo">
             </div>
-            <div class="col-12 col-md-4">
-                <select id="filtrarEstadoPrestamo" class="form-select border-secondary text-dark fw-semibold">
-                    <option value="">-- Todos los Préstamos --</option>
-                    <option value="ACTIVO">Solo Activos</option>
-                    <option value="PAGADO">Solo Pagados</option>
-                    <option value="AUTOPRESTAMO">Solo Autopréstamos</option>
-                </select>
-            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <select id="filtrarEstadoPrestamo" class="form-select fw-semibold" aria-label="Filtrar por estado">
+                <option value="">-- Todos los Préstamos --</option>
+                <option value="ACTIVO">Solo Activos</option>
+                <option value="PAGADO">Solo Pagados</option>
+                <option value="AUTOPRESTAMO">Solo Autopréstamos</option>
+            </select>
         </div>
     </div>
 </div>
 
 <!-- Lista de Préstamos -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+<div class="gd-surface">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
+        <table class="table table-hover align-middle gd-table gd-cards">
+            <thead>
                 <tr>
-                    <th class="ps-4">Socio Deudor</th>
+                    <th>Socio Deudor</th>
                     <th>Reunión</th>
                     <th>Referencia / Alias</th>
-                    <th>Monto Prestado</th>
-                    <th>Tasa %</th>
-                    <th>Capital Pagado</th>
-                    <th>Interés Pagado</th>
+                    <th class="text-end">Monto Prestado</th>
+                    <th class="text-end">Tasa %</th>
+                    <th class="text-end">Capital Pagado</th>
+                    <th class="text-end">Interés Pagado</th>
                     <th>Estado</th>
-                    <th class="text-end pe-4">Acciones</th>
+                    <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($prestamos)): ?>
                     <tr>
-                        <td colspan="9" class="text-center py-4 text-muted">No hay préstamos registrados aún.</td>
+                        <td colspan="9" class="gd-empty">No hay préstamos registrados aún.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($prestamos as $p): 
+                    <?php foreach ($prestamos as $p):
                         $saldoCapital = (float)$p['monto_prestado'] - (float)$p['total_capital_pagado'];
                         $refText = !empty($p['nombre_referencia']) ? $p['nombre_referencia'] : (!empty($p['tercero_nombre']) ? $p['tercero_nombre'] : '');
                         $numR = !empty($p['numero_quincena']) ? 'R' . $p['numero_quincena'] : '';
                     ?>
-                        <tr class="prestamo-row" 
+                        <tr class="prestamo-row"
                             data-search="<?= strtolower(htmlspecialchars($p['deudor_nombre'] . ' ' . $p['deudor_cedula'] . ' ' . $refText . ' ' . $numR . ' ' . ($p['es_autoprestamo'] ? 'autoprestamo' : ''))) ?>"
                             data-estado="<?= $p['estado'] ?>"
                             data-tipo="<?= $p['tipo_prestamo'] ?>">
-                            <td class="ps-4">
-                                <div class="fw-bold text-dark font-outfit"><?= htmlspecialchars($p['deudor_nombre']) ?></div>
-                                <small class="text-muted">C.C. <?= htmlspecialchars($p['deudor_cedula']) ?></small>
+                            <td class="gd-cell-title">
+                                <div class="gd-name"><?= htmlspecialchars($p['deudor_nombre']) ?></div>
+                                <small class="gd-sub">C.C. <?= htmlspecialchars($p['deudor_cedula']) ?></small>
                             </td>
-                            <td>
+                            <td data-label="Reunión">
                                 <?php $fechaPDisplay = !empty($p['fecha_prestamo']) ? $p['fecha_prestamo'] : (!empty($p['fecha_reunion']) ? $p['fecha_reunion'] : date('Y-m-d', strtotime($p['fecha_inicio']))); ?>
-                                <div class="fw-bold text-dark fs-7"><i class="fa-regular fa-calendar me-1 text-primary"></i><?= date('d/m/Y', strtotime($fechaPDisplay)) ?></div>
-                                <?php if (!empty($p['numero_quincena'])): ?>
-                                    <span class="badge bg-primary font-outfit fs-8 mt-1">R<?= $p['numero_quincena'] ?></span>
-                                <?php else: ?>
-                                    <small class="text-muted fs-8 d-block mt-1">Sin Reunión</small>
-                                <?php endif; ?>
+                                <div>
+                                    <div class="gd-date"><i class="fa-regular fa-calendar me-1"></i><?= date('d/m/Y', strtotime($fechaPDisplay)) ?></div>
+                                    <?php if (!empty($p['numero_quincena'])): ?>
+                                        <span class="badge bg-primary font-outfit fs-8 mt-1">R<?= $p['numero_quincena'] ?></span>
+                                    <?php else: ?>
+                                        <small class="gd-sub mt-1">Sin Reunión</small>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td>
+                            <td data-label="Referencia">
                                 <?php if (!empty($refText)): ?>
-                                    <span class="badge bg-light text-dark border fw-medium px-2 py-1">
-                                        <i class="fa-solid fa-bookmark text-primary me-1"></i><?= htmlspecialchars($refText) ?>
+                                    <span class="gd-ref">
+                                        <i class="fa-solid fa-bookmark"></i><?= htmlspecialchars($refText) ?>
                                     </span>
                                 <?php else: ?>
                                     <span class="text-muted fs-7">---</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="fw-bold text-dark font-outfit">$<?= number_format($p['monto_prestado'], 0, ',', '.') ?></td>
-                            <td><span class="badge bg-info text-dark"><?= number_format($p['tasa_interes_mensual'], 1) ?>%</span></td>
-                            <td class="text-success fw-semibold">$<?= number_format($p['total_capital_pagado'], 0, ',', '.') ?></td>
-                            <td class="text-warning fw-semibold">$<?= number_format($p['total_interes_pagado'], 0, ',', '.') ?></td>
-                            <td>
-                                <?php if ($p['anulado_sin_interes']): ?>
-                                    <span class="badge bg-secondary">Anulado 24h</span>
-                                <?php elseif ($p['estado'] === 'PAGADO'): ?>
-                                    <span class="badge bg-success">Pagado ✔</span>
-                                <?php else: ?>
-                                    <span class="badge bg-danger">Activo (Bal: $<?= number_format($saldoCapital, 0, ',', '.') ?>)</span>
-                                <?php endif; ?>
-                                <?php if ($p['es_autoprestamo']): ?>
-                                    <small class="d-block text-warning fw-bold fs-8 mt-1"><i class="fa-solid fa-bolt me-1"></i>Autopréstamo</small>
-                                <?php endif; ?>
+                            <td class="gd-num fw-bold font-outfit" data-label="Monto prestado">$<?= number_format($p['monto_prestado'], 0, ',', '.') ?></td>
+                            <td class="gd-num" data-label="Tasa"><span class="badge bg-info"><?= number_format($p['tasa_interes_mensual'], 1) ?>%</span></td>
+                            <td class="gd-num fw-semibold gd-pos" data-label="Capital pagado">$<?= number_format($p['total_capital_pagado'], 0, ',', '.') ?></td>
+                            <td class="gd-num fw-semibold gd-gold" data-label="Interés pagado">$<?= number_format($p['total_interes_pagado'], 0, ',', '.') ?></td>
+                            <td class="gd-cell-state" data-label="Estado">
+                                <div class="text-md-start">
+                                    <?php if ($p['anulado_sin_interes']): ?>
+                                        <span class="badge bg-secondary">Anulado 24h</span>
+                                    <?php elseif ($p['estado'] === 'PAGADO'): ?>
+                                        <span class="badge bg-success">Pagado ✔</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Activo (Bal: $<?= number_format($saldoCapital, 0, ',', '.') ?>)</span>
+                                    <?php endif; ?>
+                                    <?php if ($p['es_autoprestamo']): ?>
+                                        <small class="gd-flag d-flex"><i class="fa-solid fa-bolt"></i>Autopréstamo</small>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-1">
+                            <td class="gd-cell-actions text-end">
+                                <div class="gd-actions">
                                     <?php if ($p['estado'] === 'ACTIVO' && !$p['anulado_sin_interes']): ?>
-                                        <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2 py-1 btnAbonar" 
-                                                data-id="<?= $p['id'] ?>" 
-                                                data-deudor="<?= htmlspecialchars($p['deudor_nombre']) ?>" 
+                                        <button type="button" class="btn btn-outline-success rounded-pill gd-act btnAbonar"
+                                                data-id="<?= $p['id'] ?>"
+                                                data-deudor="<?= htmlspecialchars($p['deudor_nombre']) ?>"
                                                 data-saldo="<?= $saldoCapital ?>"
                                                 data-bs-toggle="modal" data-bs-target="#modalAbono">
-                                            <i class="fa-solid fa-coins me-1"></i>Abonar
+                                            <i class="fa-solid fa-coins"></i>Abonar
                                         </button>
                                     <?php endif; ?>
 
                                     <!-- Ver / Editar Cuotas -->
-                                    <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1 btnVerCuotas"
+                                    <button type="button" class="btn btn-outline-primary rounded-pill gd-act btnVerCuotas"
                                             data-id="<?= $p['id'] ?>"
                                             data-bs-toggle="modal" data-bs-target="#modalHistorialCuotas">
-                                        <i class="fa-solid fa-list-check me-1"></i>Cuotas
+                                        <i class="fa-solid fa-list-check"></i>Cuotas
                                     </button>
 
                                     <!-- Firma Digital y Foto Evidencia -->
                                     <?php $tieneFirmaFoto = !empty($p['tiene_firma_foto']) && $p['tiene_firma_foto'] > 0; ?>
-                                    <a href="/admin/entregas?tipo=PRESTAMO&socio_id=<?= $p['socio_deudor_id'] ?>&monto=<?= $p['monto_prestado'] ?>&reunion_id=<?= $p['reunion_id'] ?? '' ?>" 
-                                       class="btn btn-xs <?= $tieneFirmaFoto ? 'btn-warning text-dark font-outfit fw-bold shadow-sm' : 'btn-outline-warning text-dark' ?> rounded-pill px-2 py-1"
+                                    <a href="/admin/entregas?tipo=PRESTAMO&socio_id=<?= $p['socio_deudor_id'] ?>&monto=<?= $p['monto_prestado'] ?>&reunion_id=<?= $p['reunion_id'] ?? '' ?>"
+                                       class="btn <?= $tieneFirmaFoto ? 'btn-warning text-dark font-outfit fw-bold' : 'btn-outline-secondary' ?> rounded-pill gd-act"
                                        title="<?= $tieneFirmaFoto ? 'Firma/Foto Registrada - Click para ver/editar en Módulo Entregas' : 'Registrar Firma Digital y Foto Evidencia del Desembolso' ?>">
-                                        <i class="fa-solid <?= $tieneFirmaFoto ? 'fa-circle-check text-dark' : 'fa-signature' ?> me-1"></i>Firma/Foto<?= $tieneFirmaFoto ? ' ✔' : '' ?>
+                                        <i class="fa-solid <?= $tieneFirmaFoto ? 'fa-circle-check' : 'fa-signature' ?>"></i>Firma/Foto<?= $tieneFirmaFoto ? ' ✔' : '' ?>
                                     </a>
 
                                     <!-- Editar Préstamo (Presidente / Sec General) -->
                                     <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 btnEditarPrestamo"
+                                        <button type="button" class="btn btn-outline-secondary rounded-pill gd-act btnEditarPrestamo"
                                                 data-id="<?= $p['id'] ?>"
                                                 data-deudor-id="<?= $p['socio_deudor_id'] ?>"
                                                 data-reunion-id="<?= $p['reunion_id'] ?? '' ?>"
@@ -149,7 +153,7 @@
                                                 data-ref="<?= htmlspecialchars($refText) ?>"
                                                 data-estado="<?= $p['estado'] ?>"
                                                 data-bs-toggle="modal" data-bs-target="#modalEditarPrestamo">
-                                            <i class="fa-solid fa-pen me-1"></i>Editar
+                                            <i class="fa-solid fa-pen"></i>Editar
                                         </button>
                                     <?php endif; ?>
 
@@ -158,8 +162,8 @@
                                         <form action="/admin/prestamos/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿⚠️ ATENCIÓN: Estás seguro de eliminar el Préstamo N° <?= $p['id'] ?> de <?= htmlspecialchars($p['deudor_nombre']) ?>?\n\nEsta acción eliminará el registro y sus cuotas asociadas permanentemente.')">
                                             <input type="hidden" name="prestamo_id" value="<?= $p['id'] ?>">
                                             <input type="hidden" name="search_query" value="<?= htmlspecialchars($_GET['search'] ?? ($_GET['search_query'] ?? '')) ?>">
-                                            <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-1" title="Borrar préstamo (Permiso exclusivo de Presidente)">
-                                                <i class="fa-solid fa-trash me-1"></i>Borrar
+                                            <button type="submit" class="btn btn-outline-danger rounded-pill gd-act" title="Borrar préstamo (Permiso exclusivo de Presidente)">
+                                                <i class="fa-solid fa-trash"></i>Borrar
                                             </button>
                                         </form>
                                     <?php endif; ?>
@@ -176,23 +180,23 @@
 <!-- Modal Nuevo Préstamo -->
 <div class="modal fade" id="modalNuevoPrestamo" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-warning text-dark border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Registrar Nuevo Préstamo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-warning">
+                <h5 class="modal-title"><i class="fa-solid fa-hand-holding-dollar"></i>Registrar Nuevo Préstamo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="/admin/prestamos/guardar" method="POST" enctype="multipart/form-data" id="formNuevoPrestamo">
                 <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="firma_base64" id="firma_base64_prestamo">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-7">
-                            <label for="socio_deudor_id" class="form-label fw-semibold fs-7 mb-1">Socio Deudor <span class="text-danger">*</span></label>
-                            <div class="input-group input-group-sm mb-1">
-                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                                <input type="text" id="buscarSocioDeudorInput" class="form-control border-start-0" placeholder="🔍 Filtrar socio por nombre o cédula...">
+                            <label for="socio_deudor_id" class="form-label">Socio Deudor <span class="text-danger">*</span></label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input type="text" id="buscarSocioDeudorInput" class="form-control" placeholder="Filtrar socio por nombre o cédula...">
                             </div>
-                            <select name="socio_deudor_id" id="socio_deudor_id" class="form-select border-primary" required>
+                            <select name="socio_deudor_id" id="socio_deudor_id" class="form-select" required>
                                 <option value="">-- Seleccionar Socio --</option>
                                 <?php foreach ($socios as $s): ?>
                                     <option value="<?= $s['id'] ?>" data-search="<?= strtolower(htmlspecialchars($s['nombre_completo'] . ' ' . $s['cedula'])) ?>">
@@ -202,75 +206,75 @@
                             </select>
                         </div>
                         <div class="col-12 col-md-5">
-                            <label for="fecha_prestamo_nuevo" class="form-label fw-semibold fs-7 mb-1">Fecha del Préstamo <span class="text-danger">*</span></label>
+                            <label for="fecha_prestamo_nuevo" class="form-label">Fecha del Préstamo <span class="text-danger">*</span></label>
                             <input type="date" name="fecha_prestamo" id="fecha_prestamo_nuevo" class="form-control fw-bold" value="<?= date('Y-m-d') ?>" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="reunion_id_nuevo" class="form-label fw-semibold fs-7">Reunión Asociada (Opcional)</label>
+                        <label for="reunion_id_nuevo" class="form-label">Reunión Asociada (Opcional)</label>
                         <select name="reunion_id" id="reunion_id_nuevo" class="form-select">
                             <option value="">-- General / Sin Reunión Específica --</option>
-                            <?php foreach ($reuniones as $r): 
+                            <?php foreach ($reuniones as $r):
                                 $isAct = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
                                 $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
                             ?>
                                 <option value="<?= $r['id'] ?>" <?= $isAct ?>>R<?= $r['numero_quincena'] ?> - <?= date('d/m/Y', strtotime($r['fecha_reunion'])) ?><?= $lblEstado ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <small class="text-muted fs-8 d-block mt-1">Asocia este préstamo al acta/reunión seleccionada (opcional).</small>
+                        <small class="gd-field-hint">Asocia este préstamo al acta/reunión seleccionada (opcional).</small>
                     </div>
 
                     <div class="mb-3">
-                        <label for="nombre_referencia" class="form-label fw-semibold fs-7">Persona Referente / Nombre de Referencia (Opcional)</label>
+                        <label for="nombre_referencia" class="form-label">Persona Referente / Nombre de Referencia (Opcional)</label>
                         <input type="text" name="nombre_referencia" id="nombre_referencia" class="form-control" placeholder="Ej: Para negocio de empanadas / Ref: Juan">
-                        <small class="text-muted fs-8">Sirve como alias para identificar rápidamente el motivo o referente del préstamo.</small>
+                        <small class="gd-field-hint">Sirve como alias para identificar rápidamente el motivo o referente del préstamo.</small>
                     </div>
 
-                    <div class="row g-2 mb-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-7">
-                            <label for="monto_prestado" class="form-label fw-semibold fs-7">Monto a Prestar (COP)</label>
+                            <label for="monto_prestado" class="form-label">Monto a Prestar (COP)</label>
                             <input type="text" name="monto_prestado" id="monto_prestado" class="form-control money-input fw-bold" inputmode="numeric" placeholder="Ej: 500.000" required>
                         </div>
                         <div class="col-5">
-                            <label for="tasa_interes_mensual" class="form-label fw-semibold fs-7">Tasa Interés (%)</label>
+                            <label for="tasa_interes_mensual" class="form-label">Tasa Interés (%)</label>
                             <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="tasa_interes_mensual" class="form-control fw-bold" inputmode="decimal" value="10.0">
                         </div>
                     </div>
 
                     <!-- Firma Digital & Foto Evidencia en un solo formulario -->
-                    <div class="card border-0 bg-light p-3 rounded-3 mt-3">
-                        <h6 class="font-outfit fw-bold text-dark mb-2">
+                    <div class="gd-callout">
+                        <h6 class="mb-3">
                             <i class="fa-solid fa-file-signature text-warning me-1"></i>Constancia de Entrega Directa (Firma & Foto Evidencia)
                         </h6>
                         <div class="row g-3">
                             <div class="col-12 col-md-7">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <label class="form-label fw-semibold fs-8 mb-0 text-dark">
+                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                    <label class="form-label mb-0">
                                         <i class="fa-solid fa-pen-nib text-primary me-1"></i>Firma Digital del Socio (Opcional):
                                     </label>
-                                    <button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" id="btnLimpiarFirmaPrestamo">
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-3" id="btnLimpiarFirmaPrestamo">
                                         <i class="fa-solid fa-eraser me-1"></i>Limpiar
                                     </button>
                                 </div>
-                                <div class="border bg-white rounded-3 p-1 text-center shadow-inner overflow-hidden">
+                                <div class="gd-sign-box text-center">
                                     <canvas id="canvasFirmaPrestamo" width="340" height="130" class="w-100 cursor-crosshair" style="touch-action: none; background-color: #ffffff;"></canvas>
                                 </div>
-                                <small class="text-muted fs-8 d-block mt-1">Si el socio firma aquí, la constancia de entrega se creará automáticamente.</small>
+                                <small class="gd-field-hint">Si el socio firma aquí, la constancia de entrega se creará automáticamente.</small>
                             </div>
                             <div class="col-12 col-md-5">
-                                <label for="foto_evidencia_prestamo" class="form-label fw-semibold fs-8 mb-1 text-dark">
+                                <label for="foto_evidencia_prestamo" class="form-label">
                                     <i class="fa-solid fa-camera text-info me-1"></i>Foto Evidencia de Entrega:
                                 </label>
-                                <input type="file" name="foto_evidencia" id="foto_evidencia_prestamo" class="form-control form-control-sm mb-2" accept="image/*" capture="environment">
-                                <small class="text-muted fs-8 d-block">Sube o toma una foto del socio recibiendo el dinero.</small>
+                                <input type="file" name="foto_evidencia" id="foto_evidencia_prestamo" class="form-control mb-2" accept="image/*" capture="environment">
+                                <small class="gd-field-hint">Sube o toma una foto del socio recibiendo el dinero.</small>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Crear Préstamo y Constancia</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Crear Préstamo y Constancia</button>
                 </div>
             </form>
         </div>
@@ -281,17 +285,17 @@
 <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
 <div class="modal fade" id="modalEditarPrestamo" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Editar Préstamo</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-dark">
+                <h5 class="modal-title"><i class="fa-solid fa-pen-to-square"></i>Editar Préstamo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="/admin/prestamos/actualizar" method="POST">
                 <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="prestamo_id" id="edit_prestamo_id">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="edit_socio_deudor_id" class="form-label fw-semibold fs-7">Socio Deudor</label>
+                        <label for="edit_socio_deudor_id" class="form-label">Socio Deudor</label>
                         <select name="socio_deudor_id" id="edit_socio_deudor_id" class="form-select" required>
                             <?php foreach ($socios as $s): ?>
                                 <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['nombre_completo']) ?></option>
@@ -299,13 +303,13 @@
                         </select>
                     </div>
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label for="edit_fecha_prestamo" class="form-label fw-semibold fs-7">Fecha del Préstamo <span class="text-danger">*</span></label>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="edit_fecha_prestamo" class="form-label">Fecha del Préstamo <span class="text-danger">*</span></label>
                             <input type="date" name="fecha_prestamo" id="edit_fecha_prestamo" class="form-control fw-bold" required>
                         </div>
-                        <div class="col-6">
-                            <label for="edit_reunion_id" class="form-label fw-semibold fs-7">Reunión Asociada</label>
+                        <div class="col-12 col-sm-6">
+                            <label for="edit_reunion_id" class="form-label">Reunión Asociada</label>
                             <select name="reunion_id" id="edit_reunion_id" class="form-select">
                                 <option value="">-- Sin Reunión Específica --</option>
                                 <?php foreach ($reuniones as $r): ?>
@@ -316,32 +320,32 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="edit_nombre_referencia" class="form-label fw-semibold fs-7">Persona Referente / Alias</label>
+                        <label for="edit_nombre_referencia" class="form-label">Persona Referente / Alias</label>
                         <input type="text" name="nombre_referencia" id="edit_nombre_referencia" class="form-control">
                     </div>
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label for="edit_monto_prestado" class="form-label fw-semibold fs-7">Monto Prestado (COP)</label>
+                    <div class="row g-3 mb-3">
+                        <div class="col-7">
+                            <label for="edit_monto_prestado" class="form-label">Monto Prestado (COP)</label>
                             <input type="text" name="monto_prestado" id="edit_monto_prestado" class="form-control money-input fw-bold" inputmode="numeric" required>
                         </div>
-                        <div class="col-6">
-                            <label for="edit_tasa_interes_mensual" class="form-label fw-semibold fs-7">Tasa Interés (%)</label>
+                        <div class="col-5">
+                            <label for="edit_tasa_interes_mensual" class="form-label">Tasa Interés (%)</label>
                             <input type="number" step="0.5" min="0" name="tasa_interes_mensual" id="edit_tasa_interes_mensual" class="form-control fw-bold" inputmode="decimal" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="edit_estado" class="form-label fw-semibold fs-7">Estado del Préstamo</label>
+                    <div class="mb-1">
+                        <label for="edit_estado" class="form-label">Estado del Préstamo</label>
                         <select name="estado" id="edit_estado" class="form-select fw-bold">
                             <option value="ACTIVO">ACTIVO (Pendiente de Pago)</option>
                             <option value="PAGADO">PAGADO (Finalizado)</option>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Guardar Cambios</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -352,25 +356,25 @@
 <!-- Modal Historial y Edición de Cuotas / Abonos -->
 <div class="modal fade" id="modalHistorialCuotas" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-navy text-white border-0 bg-gradient-navy">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-list-check me-2 text-warning"></i>Historial de Cuotas / Abonos</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-primary">
+                <h5 class="modal-title"><i class="fa-solid fa-list-check"></i>Historial de Cuotas / Abonos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body p-4 text-dark">
-                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
-                    <div>
-                        <h6 class="m-0 fw-bold font-outfit text-primary" id="cuotas_deudor_nombre">---</h6>
+            <div class="modal-body">
+                <div class="gd-person">
+                    <div class="min-w-0">
+                        <h6 class="gd-person__name" id="cuotas_deudor_nombre">---</h6>
                         <small class="text-muted" id="cuotas_prestamo_resumen">---</small>
                     </div>
-                    <div class="d-flex align-items-center gap-1">
+                    <div class="gd-person__chips">
                         <span id="cuotas_estado_badge" class="badge bg-secondary font-outfit fs-7">---</span>
                         <span class="badge bg-success font-outfit fs-7" id="cuotas_total_abonos">$0 COP</span>
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle mb-0 fs-7">
-                        <thead class="bg-light font-outfit text-uppercase">
+                    <table class="table table-hover align-middle gd-table mb-0">
+                        <thead>
                             <tr>
                                 <th>Fecha</th>
                                 <th>Capital Pagado</th>
@@ -387,8 +391,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -397,24 +401,32 @@
 <!-- Modal Registrar Abono Individual -->
 <div class="modal fade" id="modalAbono" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-success text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-coins me-2"></i>Registrar Abono a Préstamo</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-success">
+                <h5 class="modal-title"><i class="fa-solid fa-coins"></i>Registrar Abono a Préstamo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="/admin/prestamos/abono" method="POST">
                 <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="prestamo_id" id="abono_prestamo_id">
-                <div class="modal-body p-4">
-                    <p class="mb-2">Socio: <strong id="abono_deudor_nombre" class="text-primary font-outfit"></strong></p>
-                    <p class="mb-3 text-muted fs-7">Saldo Pendiente Capital: <strong id="abono_saldo_capital" class="text-dark"></strong></p>
+                <div class="modal-body">
+                    <div class="gd-saldo-row">
+                        <div class="min-w-0">
+                            <span class="gd-bal__label">Socio</span>
+                            <strong id="abono_deudor_nombre" class="gd-person__name d-block"></strong>
+                        </div>
+                        <div class="text-sm-end">
+                            <span class="gd-bal__label">Saldo pendiente capital</span>
+                            <strong id="abono_saldo_capital" class="gd-total d-block"></strong>
+                        </div>
+                    </div>
 
                     <div class="mb-3">
-                        <label for="abono_reunion_id" class="form-label fw-semibold fs-7">Reunión Correspondiente</label>
+                        <label for="abono_reunion_id" class="form-label">Reunión Correspondiente</label>
                         <select name="reunion_id" id="abono_reunion_id" class="form-select fw-bold">
                             <option value="">-- Autodetectar por Fecha --</option>
                             <?php if (!empty($reuniones)): ?>
-                                <?php foreach ($reuniones as $r): 
+                                <?php foreach ($reuniones as $r):
                                     $isActA = (!empty($reunionActual) && $reunionActual['id'] == $r['id']) ? 'selected' : '';
                                     $lblEstado = ($r['estado'] === 'LLAMADO_CERRADO') ? ' (Llamado Cerrado ★)' : '';
                                 ?>
@@ -422,21 +434,23 @@
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </select>
-                        <small class="text-muted fs-8">Vincula directamente este abono al arqueo de caja de la reunión seleccionada.</small>
+                        <small class="gd-field-hint">Vincula directamente este abono al arqueo de caja de la reunión seleccionada.</small>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="monto_interes_pagado" class="form-label fw-semibold fs-7">Abono a Intereses (COP)</label>
-                        <input type="text" name="monto_interes_pagado" id="monto_interes_pagado" class="form-control money-input text-warning fw-bold" inputmode="numeric" placeholder="0">
-                    </div>
-                    <div class="mb-3">
-                        <label for="monto_capital_pagado" class="form-label fw-semibold fs-7">Abono a Capital (COP)</label>
-                        <input type="text" name="monto_capital_pagado" id="monto_capital_pagado" class="form-control money-input text-success fw-bold" inputmode="numeric" placeholder="0">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="monto_interes_pagado" class="form-label">Abono a Intereses (COP)</label>
+                            <input type="text" name="monto_interes_pagado" id="monto_interes_pagado" class="form-control money-input gd-gold fw-bold" inputmode="numeric" placeholder="0">
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="monto_capital_pagado" class="form-label">Abono a Capital (COP)</label>
+                            <input type="text" name="monto_capital_pagado" id="monto_capital_pagado" class="form-control money-input gd-pos fw-bold" inputmode="numeric" placeholder="0">
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success rounded-pill fw-bold px-4">Guardar Abono</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success px-4">Guardar Abono</button>
                 </div>
             </form>
         </div>
@@ -447,31 +461,33 @@
 <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
 <div class="modal fade" id="modalEditarCuotaItem" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-pen me-2"></i>Editar Cuota / Abono</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-primary">
+                <h5 class="modal-title"><i class="fa-solid fa-pen"></i>Editar Cuota / Abono</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="/admin/prestamos/abono/actualizar" method="POST">
                 <input type="hidden" name="search_query" class="search-query-hidden">
                 <input type="hidden" name="abono_id" id="edit_abono_id">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="edit_fecha_abono" class="form-label fw-semibold fs-7">Fecha del Abono</label>
+                        <label for="edit_fecha_abono" class="form-label">Fecha del Abono</label>
                         <input type="text" name="fecha_abono" id="edit_fecha_abono" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="edit_monto_capital_pagado" class="form-label fw-semibold fs-7">Monto Capital (COP)</label>
-                        <input type="text" name="monto_capital_pagado" id="edit_monto_capital_pagado" class="form-control money-input text-success fw-bold" inputmode="numeric" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_monto_interes_pagado" class="form-label fw-semibold fs-7">Monto Interés (COP)</label>
-                        <input type="text" name="monto_interes_pagado" id="edit_monto_interes_pagado" class="form-control money-input text-warning fw-bold" inputmode="numeric" required>
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <label for="edit_monto_capital_pagado" class="form-label">Monto Capital (COP)</label>
+                            <input type="text" name="monto_capital_pagado" id="edit_monto_capital_pagado" class="form-control money-input gd-pos fw-bold" inputmode="numeric" required>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label for="edit_monto_interes_pagado" class="form-label">Monto Interés (COP)</label>
+                            <input type="text" name="monto_interes_pagado" id="edit_monto_interes_pagado" class="form-control money-input gd-gold fw-bold" inputmode="numeric" required>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Actualizar Cuota</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Actualizar Cuota</button>
                 </div>
             </form>
         </div>
@@ -483,16 +499,16 @@
 <?php if (in_array($userRole, ['Presidente', 'Secretaria General'])): ?>
 <div class="modal fade" id="modalTopeCredit" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-sliders me-2"></i>Excepción de Tope de Crédito</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content gd-modal">
+            <div class="modal-header gd-mh gd-tone-dark">
+                <h5 class="modal-title"><i class="fa-solid fa-sliders"></i>Excepción de Tope de Crédito</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="/admin/prestamos/actualizar-tope" method="POST">
                 <input type="hidden" name="search_query" class="search-query-hidden">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="socio_id_tope" class="form-label fw-semibold fs-7">Seleccionar Socio</label>
+                        <label for="socio_id_tope" class="form-label">Seleccionar Socio</label>
                         <select name="socio_id" id="socio_id_tope" class="form-select" required>
                             <option value="">-- Seleccionar Socio --</option>
                             <?php foreach ($socios as $s): ?>
@@ -500,14 +516,14 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="nuevo_tope" class="form-label fw-semibold fs-7">Nuevo Tope Personalizado (COP)</label>
+                    <div class="mb-1">
+                        <label for="nuevo_tope" class="form-label">Nuevo Tope Personalizado (COP)</label>
                         <input type="text" name="nuevo_tope" id="nuevo_tope" class="form-control money-input fw-bold" inputmode="numeric" placeholder="Ej: 3.000.000" required>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark rounded-pill fw-bold px-4">Actualizar Tope</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Actualizar Tope</button>
                 </div>
             </form>
         </div>
@@ -678,13 +694,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         html += `
                             <tr>
-                                <td>${fecha}</td>
-                                <td class="text-success fw-bold">$${capFormatted}</td>
-                                <td class="text-warning fw-bold">$${intFormatted}</td>
+                                <td class="text-nowrap">${fecha}</td>
+                                <td class="gd-pos fw-bold gd-num">$${capFormatted}</td>
+                                <td class="gd-gold fw-bold gd-num">$${intFormatted}</td>
                                 <td>${usuario}</td>
                                 ${isCanEdit ? `
                                     <td class="text-end">
-                                        <button class="btn btn-xs btn-outline-primary me-1 btnEditCuotaItem"
+                                        <button class="btn btn-outline-primary gd-act me-1 btnEditCuotaItem" aria-label="Editar cuota"
                                                 data-id="${a.id}"
                                                 data-cap="${cap}"
                                                 data-int="${intM}"
@@ -694,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <form action="/admin/prestamos/abono/eliminar" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta cuota/abono?')">
                                             <input type="hidden" name="abono_id" value="${a.id}">
                                             <input type="hidden" name="search_query" value="${encodeURIComponent(inputBuscarPrestamo ? inputBuscarPrestamo.value.trim() : '')}">
-                                            <button type="submit" class="btn btn-xs btn-outline-danger">
+                                            <button type="submit" class="btn btn-outline-danger gd-act" aria-label="Eliminar cuota">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>

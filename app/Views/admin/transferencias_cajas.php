@@ -1,41 +1,44 @@
-<div class="row mb-4 align-items-center">
-    <div class="col-12 col-md-7 mb-2 mb-md-0">
-        <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-arrows-split-up-and-left text-warning"></i>
-            Transferencias y Préstamos Entre Cajas (Caja Mayor ↔ Actividades)
+<link rel="stylesheet" href="/css/pages/gestion-general.css">
+
+<header class="gg-head">
+    <div class="gg-head__text">
+        <span class="nt-eyebrow">Tesorería</span>
+        <h2 class="nt-page-title gg-head__title">
+            <i class="fa-solid fa-arrows-split-up-and-left gg-head__icon gg-head__icon--gold"></i>
+            <span>Transferencias y Préstamos Entre Cajas (Caja Mayor ↔ Actividades)</span>
         </h2>
-        <p class="text-muted m-0 fs-7">Control de préstamos <strong>sin interés</strong> otorgados por la Caja Mayor a la Caja de Actividades e ingresos por devoluciones de capital/utilidades.</p>
+        <p class="nt-page-sub m-0">Control de préstamos <strong>sin interés</strong> otorgados por la Caja Mayor a la Caja de Actividades e ingresos por devoluciones de capital/utilidades.</p>
     </div>
-    <div class="col-12 col-md-5 d-flex justify-content-md-end gap-2">
-        <button type="button" class="btn btn-warning text-dark rounded-pill fw-bold btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaTransferencia">
+    <div class="gg-head__actions">
+        <button type="button" class="btn btn-primary px-3" data-bs-toggle="modal" data-bs-target="#modalNuevaTransferencia">
             <i class="fa-solid fa-plus-circle me-1"></i>Registrar Movimiento Entre Cajas
         </button>
     </div>
-</div>
+</header>
 
 <!-- Tarjetas KPI Intercajas -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4 nt-stagger">
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-danger">
-            <span class="fs-8 text-muted fw-semibold">Total Prestado a Caja Actividades</span>
-            <h4 class="font-outfit fw-bold text-danger m-0 mt-1">$<?= number_format($resumen['total_prestado_actividades'], 0, ',', '.') ?> COP</h4>
-            <small class="text-muted fs-8 d-block mt-1">Capital financiado sin interés por la Caja Mayor</small>
+        <div class="nt-stat gg-kpi gg-kpi--danger">
+            <span class="nt-stat__label">Total Prestado a Caja Actividades</span>
+            <h4 class="nt-stat__value nt-money gg-t-danger m-0">$<?= number_format($resumen['total_prestado_actividades'], 0, ',', '.') ?> COP</h4>
+            <small class="gg-kpi__hint">Capital financiado sin interés por la Caja Mayor</small>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-success">
-            <span class="fs-8 text-muted fw-semibold">Total Devuelto a la Caja Mayor</span>
-            <h4 class="font-outfit fw-bold text-success m-0 mt-1">$<?= number_format($resumen['total_devuelto_caja_mayor'], 0, ',', '.') ?> COP</h4>
-            <small class="text-muted fs-8 d-block mt-1">Reembolsos y aportes de utilidades de eventos</small>
+        <div class="nt-stat gg-kpi">
+            <span class="nt-stat__label">Total Devuelto a la Caja Mayor</span>
+            <h4 class="nt-stat__value nt-money gg-t-pine m-0">$<?= number_format($resumen['total_devuelto_caja_mayor'], 0, ',', '.') ?> COP</h4>
+            <small class="gg-kpi__hint">Reembolsos y aportes de utilidades de eventos</small>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 <?= ($resumen['saldo_pendiente_actividades'] > 0) ? 'border-warning' : 'border-info' ?>">
-            <span class="fs-8 text-muted fw-semibold">Saldo Pendiente por Saldar entre Cajas</span>
-            <h4 class="font-outfit fw-bold <?= ($resumen['saldo_pendiente_actividades'] > 0) ? 'text-warning' : 'text-info' ?> m-0 mt-1">
+        <div class="nt-stat gg-kpi <?= ($resumen['saldo_pendiente_actividades'] > 0) ? 'gg-kpi--gold' : 'gg-kpi--info' ?>">
+            <span class="nt-stat__label">Saldo Pendiente por Saldar entre Cajas</span>
+            <h4 class="nt-stat__value nt-money <?= ($resumen['saldo_pendiente_actividades'] > 0) ? 'gg-t-gold' : 'gg-t-info' ?> m-0">
                 $<?= number_format($resumen['saldo_pendiente_actividades'], 0, ',', '.') ?> COP
             </h4>
-            <small class="text-muted fs-8 d-block mt-1">
+            <small class="gg-kpi__hint">
                 <?= ($resumen['saldo_pendiente_actividades'] > 0) ? 'Caja de Actividades adeuda a Caja Mayor' : 'Cuentas al día entre cajas' ?>
             </small>
         </div>
@@ -43,10 +46,10 @@
 </div>
 
 <!-- Tabla Principal de Transferencias -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+<div class="gg-panel">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="bg-dark text-white font-outfit fs-7 text-uppercase">
+        <table class="table table-hover align-middle gg-table gg-stack">
+            <thead>
                 <tr>
                     <th class="ps-4">Reunión</th>
                     <th>Tipo de Movimiento</th>
@@ -60,8 +63,8 @@
             <tbody>
                 <?php if (empty($transferencias)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4 fs-7">
-                            <i class="fa-solid fa-folder-open me-1 fs-5 d-block mb-1"></i>
+                        <td colspan="7" class="gg-empty fs-7">
+                            <i class="fa-solid fa-folder-open"></i>
                             No hay movimientos registrados entre la Caja Mayor y la Caja de Actividades. Presiona <strong>"+ Registrar Movimiento Entre Cajas"</strong> para agregar uno.
                         </td>
                     </tr>
@@ -70,26 +73,26 @@
                         $esPrestamo = ($t['tipo_movimiento'] === 'PRESTAMO_A_ACTIVIDAD');
                     ?>
                         <tr>
-                            <td class="ps-4">
+                            <td class="ps-4 gg-cell-main">
                                 <span class="badge bg-primary font-outfit fs-7">Reunión R<?= $t['numero_quincena'] ?></span>
                                 <small class="d-block text-muted fs-8"><?= date('d/m/Y', strtotime($t['fecha_reunion'])) ?></small>
                             </td>
-                            <td>
+                            <td data-label="Movimiento">
                                 <?php if ($esPrestamo): ?>
-                                    <span class="badge bg-danger text-white"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Préstamo a Actividades</span>
+                                    <span class="badge bg-danger"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Préstamo a Actividades</span>
                                 <?php else: ?>
-                                    <span class="badge bg-success text-white"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Devolución a Caja Mayor</span>
+                                    <span class="badge bg-success"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Devolución a Caja Mayor</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="Actividad">
                                 <?= !empty($t['nombre_actividad']) ? htmlspecialchars($t['nombre_actividad']) : '<span class="text-muted fs-8">General / Sin evento específico</span>' ?>
                             </td>
-                            <td class="fw-bold font-outfit fs-6 <?= $esPrestamo ? 'text-danger' : 'text-success' ?>">
+                            <td data-label="Monto" class="fw-bold font-outfit fs-6 nt-money <?= $esPrestamo ? 'gg-t-danger' : 'gg-t-pine' ?>">
                                 <?= $esPrestamo ? '-' : '+' ?>$<?= number_format($t['monto'], 0, ',', '.') ?> COP
                             </td>
-                            <td><?= htmlspecialchars($t['concepto']) ?></td>
-                            <td><?= date('d/m/Y g:i a', strtotime($t['fecha_transferencia'])) ?></td>
-                            <td class="text-end pe-4 font-outfit text-dark"><?= htmlspecialchars($t['registrado_por_nombre']) ?></td>
+                            <td data-label="Concepto" class="gg-wrap"><?= htmlspecialchars($t['concepto']) ?></td>
+                            <td data-label="Fecha"><?= date('d/m/Y g:i a', strtotime($t['fecha_transferencia'])) ?></td>
+                            <td data-label="Registrado por" class="text-end pe-4 font-outfit text-dark gg-wrap"><?= htmlspecialchars($t['registrado_por_nombre']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -100,14 +103,14 @@
 
 <!-- Modal Registrar Transferencia Entre Cajas -->
 <div class="modal fade" id="modalNuevaTransferencia" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-outfit fw-bold"><i class="fa-solid fa-arrows-split-up-and-left me-2 text-warning"></i>Registrar Movimiento Entre Cajas</h5>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content gg-modal">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-arrows-split-up-and-left me-2"></i>Registrar Movimiento Entre Cajas</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/admin/transferencias-cajas/crear" method="POST">
-                <div class="modal-body p-4">
+                <div class="modal-body">
                     <div class="mb-3">
                         <label for="trans_tipo_movimiento" class="form-label fw-semibold fs-7">Tipo de Movimiento</label>
                         <select name="tipo_movimiento" id="trans_tipo_movimiento" class="form-select fw-bold text-dark" required>
@@ -140,8 +143,8 @@
                     <div class="mb-3">
                         <label for="trans_monto" class="form-label fw-semibold fs-7">Monto Transferido (COP)</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-white fw-bold text-dark">$</span>
-                            <input type="text" name="monto" id="trans_monto" class="form-control money-input fw-bold text-dark fs-5" inputmode="numeric" placeholder="Ej: 300.000" required>
+                            <span class="input-group-text fw-bold">$</span>
+                            <input type="text" name="monto" id="trans_monto" class="form-control money-input fw-bold gg-bigmoney" inputmode="numeric" placeholder="Ej: 300.000" required>
                         </div>
                     </div>
 
@@ -150,9 +153,9 @@
                         <input type="text" name="concepto" id="trans_concepto" class="form-control" placeholder="Ej: Préstamo inicial para compra de ingredientes tamales" required>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning text-dark rounded-pill fw-bold px-4">Guardar Movimiento</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary px-4">Guardar Movimiento</button>
                 </div>
             </form>
         </div>

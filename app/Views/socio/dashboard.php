@@ -1,91 +1,59 @@
-<div class="row mb-4 align-items-center">
-    <div class="col-12 col-md-6 mb-2 mb-md-0">
-        <h2 class="font-outfit fw-bold text-dark m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-user-gear text-primary"></i>
-            Mi Estado de Cuenta y Ahorros
+<link rel="stylesheet" href="/css/pages/dashboards.css">
+<div class="nt-d-head">
+    <div>
+        <h2 class="nt-page-title m-0">
+            <i class="fa-solid fa-user-gear nt-d-title-ico"></i>Mi Estado de Cuenta y Ahorros
         </h2>
-        <p class="text-muted m-0 fs-7">Bienvenido(a), <strong><?= htmlspecialchars($user['nombre_completo']) ?></strong> (C.C. <?= htmlspecialchars($user['cedula']) ?>)</p>
+        <p class="nt-page-sub m-0 mt-1">Bienvenido(a), <strong><?= htmlspecialchars($user['nombre_completo']) ?></strong> (C.C. <?= htmlspecialchars($user['cedula']) ?>)</p>
     </div>
-    <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2">
-        <button type="button" class="btn btn-outline-primary rounded-pill fw-semibold btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
+    <div class="nt-d-head__actions">
+        <button type="button" class="btn btn-outline-primary rounded-pill fw-semibold btn-sm px-3" data-bs-toggle="modal" data-bs-target="#modalEditarMiPerfil">
             <i class="fa-solid fa-user-pen me-1"></i>Editar Mis Datos
         </button>
     </div>
 </div>
 
-<!-- Tarjetas Principales de Métricas del Socio -->
-<div class="row g-3 mb-4">
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-gradient-navy text-white">
-            <div class="d-flex align-items-center gap-3">
-                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-warning fs-3">
-                    <i class="fa-solid fa-piggy-bank"></i>
+<!-- Métricas del Socio: un héroe + deuda -->
+<div class="row g-3 mb-4 nt-stagger">
+    <div class="col-12 col-lg-8">
+        <div class="nt-hero nt-hero--dash h-100">
+            <span class="nt-eyebrow"><i class="fa-solid fa-vault"></i>Ahorro</span>
+            <div class="nt-hero__label">Total Ahorrado Acumulado</div>
+            <p class="nt-hero__value nt-money">$<?= number_format($resumen['total_ahorrado'], 0, ',', '.') ?></p>
+            <div class="nt-tiles nt-tiles--hero2">
+                <div class="nt-stat nt-stat--on-dark">
+                    <span class="nt-stat__label"><i class="fa-solid fa-piggy-bank"></i>Ahorro Obligatorio (Cuotas)</span>
+                    <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_cuotas'], 0, ',', '.') ?></span>
                 </div>
-                <div>
-                    <span class="text-white-50 fs-7 d-block">Ahorro Obligatorio (Cuotas)</span>
-                    <h3 class="font-outfit fw-bold m-0 text-white">$<?= number_format($resumen['total_cuotas'], 0, ',', '.') ?></h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-gradient-navy text-white">
-            <div class="d-flex align-items-center gap-3">
-                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-success fs-3">
-                    <i class="fa-solid fa-wallet"></i>
-                </div>
-                <div>
-                    <span class="text-white-50 fs-7 d-block">Ahorro Voluntario / Extra</span>
-                    <h3 class="font-outfit fw-bold m-0 text-success">$<?= number_format($resumen['total_ahorro_extra'], 0, ',', '.') ?></h3>
+                <div class="nt-stat nt-stat--on-dark">
+                    <span class="nt-stat__label"><i class="fa-solid fa-wallet"></i>Ahorro Voluntario / Extra</span>
+                    <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_ahorro_extra'], 0, ',', '.') ?></span>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-gradient-navy text-white">
-            <div class="d-flex align-items-center gap-3">
-                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-info fs-3">
-                    <i class="fa-solid fa-vault"></i>
-                </div>
-                <div>
-                    <span class="text-white-50 fs-7 d-block">Total Ahorrado Acumulado</span>
-                    <h3 class="font-outfit fw-bold m-0 text-info">$<?= number_format($resumen['total_ahorrado'], 0, ',', '.') ?></h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-gradient-navy text-white">
-            <div class="d-flex align-items-center gap-3">
-                <div class="p-3 bg-white bg-opacity-10 rounded-circle text-danger fs-3">
-                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                </div>
-                <div>
-                    <span class="text-white-50 fs-7 d-block">Deuda Activa Préstamos</span>
-                    <h3 class="font-outfit fw-bold m-0 text-warning">$<?= number_format($resumen['deuda_prestamos_capital'], 0, ',', '.') ?></h3>
-                </div>
-            </div>
+    <div class="col-12 col-lg-4">
+        <div class="nt-stat nt-stat--debt">
+            <span class="nt-stat__label"><i class="fa-solid fa-hand-holding-dollar"></i>Deuda Activa Préstamos</span>
+            <span class="nt-stat__value nt-money">$<?= number_format($resumen['deuda_prestamos_capital'], 0, ',', '.') ?></span>
         </div>
     </div>
 </div>
 
 <!-- Progress Bar de Meta de Intereses ($400.000 COP) -->
-<div class="card border-0 shadow-sm rounded-4 mb-4 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="font-outfit fw-bold m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-bullseye text-danger"></i>
+<div class="card nt-meta mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-2">
+        <h5 class="nt-panel__title">
+            <i class="fa-solid fa-bullseye"></i>
             Avance de Meta Individual de Intereses
         </h5>
-        <span class="fw-bold font-outfit text-primary fs-5">
+        <span class="nt-meta__figure nt-money">
             $<?= number_format($resumen['total_interes_generado'], 0, ',', '.') ?> / $400.000 COP (<?= $resumen['porcentaje_meta'] ?>%)
         </span>
     </div>
-    <p class="text-muted fs-7 mb-3">Compromiso anual de abonar al menos $400.000 COP en intereses por concepto de préstamos personales o generados.</p>
-    <div class="progress rounded-pill overflow-hidden" style="height: 18px;">
-        <div class="progress-bar progress-bar-striped progress-bar-animated bg-gradient-gold text-dark fw-bold font-outfit fs-7" 
+    <p class="nt-fineprint mb-3">Compromiso anual de abonar al menos $400.000 COP en intereses por concepto de préstamos personales o generados.</p>
+    <div class="progress rounded-pill overflow-hidden">
+        <div class="progress-bar" 
              role="progressbar" 
              style="width: <?= $resumen['porcentaje_meta'] ?>%;">
             <?= $resumen['porcentaje_meta'] ?>%
@@ -97,13 +65,13 @@
 <div class="row g-4 mb-4">
     <!-- Historial de Cuotas de Reunión -->
     <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-            <div class="card-header bg-dark text-white p-3">
-                <h5 class="font-outfit fw-bold m-0"><i class="fa-solid fa-list-check me-2 text-warning"></i>Historial de Ahorros por Reunión</h5>
+        <div class="card nt-panel h-100">
+            <div class="nt-panel__head">
+                <h5 class="nt-panel__title"><i class="fa-solid fa-list-check"></i>Historial de Ahorros por Reunión</h5>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light font-outfit fs-7 text-uppercase">
+                    <thead>
                         <tr>
                             <th class="ps-4">Reunión</th>
                             <th>Cuota Pagada</th>
@@ -132,7 +100,7 @@
                                             <span class="badge bg-warning text-dark">Autopréstamo</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-primary fw-semibold">$<?= number_format($c['monto_ahorro_extra'], 0, ',', '.') ?></td>
+                                    <td class="nt-pos nt-money">$<?= number_format($c['monto_ahorro_extra'], 0, ',', '.') ?></td>
                                     <td class="text-end pe-4 fw-bold font-outfit">$<?= number_format($totalCuotaSocio, 0, ',', '.') ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -145,9 +113,9 @@
 
     <!-- Mis Préstamos y Seguimiento de Cuotas -->
     <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
-            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-                <h5 class="font-outfit fw-bold m-0"><i class="fa-solid fa-file-invoice-dollar me-2 text-info"></i>Mis Préstamos</h5>
+        <div class="card nt-panel h-100">
+            <div class="nt-panel__head">
+                <h5 class="nt-panel__title"><i class="fa-solid fa-file-invoice-dollar"></i>Mis Préstamos</h5>
                 <span class="badge bg-secondary"><?= count($misPrestamos) ?> Total</span>
             </div>
             <div class="card-body p-0">
@@ -160,18 +128,18 @@
                             $collapseId = "collapseCuotasPrestamo_" . $mp['id'];
                             $refText = !empty($mp['nombre_referencia']) ? $mp['nombre_referencia'] : (!empty($mp['tercero_nombre']) ? $mp['tercero_nombre'] : '');
                         ?>
-                            <div class="list-group-item p-3 border-bottom">
+                            <div class="list-group-item nt-loan">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <div>
                                         <strong class="font-outfit fs-6 text-dark">$<?= number_format($mp['monto_prestado'], 0, ',', '.') ?> COP</strong>
                                         <?php if (!empty($refText)): ?>
-                                            <span class="badge bg-light text-dark border ms-1 fw-normal"><i class="fa-solid fa-tag text-primary me-1"></i><?= htmlspecialchars($refText) ?></span>
+                                            <span class="badge bg-light text-dark border ms-1 fw-normal"><i class="fa-solid fa-tag nt-pos me-1"></i><?= htmlspecialchars($refText) ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <span class="badge <?= $mp['estado'] === 'PAGADO' ? 'bg-success' : 'bg-danger' ?>"><?= $mp['estado'] ?></span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center text-muted fs-7 mb-2">
-                                    <span>Tasa: <strong class="text-info"><?= number_format($mp['tasa_interes_mensual'], 1) ?>%</strong></span>
+                                    <span>Tasa: <strong class="nt-pos"><?= number_format($mp['tasa_interes_mensual'], 1) ?>%</strong></span>
                                     <span>Saldo Capital: <strong class="text-dark">$<?= number_format($saldoP, 0, ',', '.') ?></strong></span>
                                 </div>
                                 
@@ -184,8 +152,8 @@
 
                                 <!-- Detalle Colapsable de Cuotas de este Préstamo -->
                                 <div class="collapse mt-3" id="<?= $collapseId ?>">
-                                    <div class="p-3 bg-light rounded-3 border">
-                                        <h6 class="font-outfit fw-bold text-primary fs-7 mb-2">
+                                    <div class="nt-sub-box">
+                                        <h6 class="font-outfit fw-bold nt-pos fs-7 mb-2">
                                             <i class="fa-solid fa-receipt me-1"></i>Historial de Cuotas / Pagos Realizados:
                                         </h6>
                                         <?php if (empty($mp['cuotas'])): ?>
@@ -205,8 +173,8 @@
                                                         <?php foreach ($mp['cuotas'] as $q): ?>
                                                             <tr>
                                                                 <td><?= date('d/m/Y H:i', strtotime($q['fecha_abono'])) ?></td>
-                                                                <td class="text-success fw-bold">$<?= number_format($q['monto_capital_pagado'], 0, ',', '.') ?></td>
-                                                                <td class="text-warning fw-bold">$<?= number_format($q['monto_interes_pagado'], 0, ',', '.') ?></td>
+                                                                <td class="nt-pos">$<?= number_format($q['monto_capital_pagado'], 0, ',', '.') ?></td>
+                                                                <td class="nt-gold">$<?= number_format($q['monto_interes_pagado'], 0, ',', '.') ?></td>
                                                                 <td class="fw-semibold text-dark"><i class="fa-solid fa-user-check text-primary me-1"></i><?= htmlspecialchars($q['registrado_por_nombre'] ?? 'Directiva') ?></td>
                                                             </tr>
                                                         <?php endforeach; ?>
@@ -226,10 +194,10 @@
 </div>
 
 <!-- Sección 2: Mis Actividades Comunitarias y Deudas (Tamales/Rifas) -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-    <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-        <h5 class="font-outfit fw-bold m-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-utensils text-info"></i>
+<div class="card nt-panel mb-4">
+    <div class="nt-panel__head flex-wrap">
+        <h5 class="nt-panel__title">
+            <i class="fa-solid fa-utensils"></i>
             Mis Actividades Comunitarias y Deudas
         </h5>
         <div>
@@ -246,7 +214,7 @@
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light font-outfit fs-7 text-uppercase">
+            <thead>
                 <tr>
                     <th class="ps-4">Actividad / Descripción</th>
                     <th>Fecha Evento</th>
@@ -283,7 +251,7 @@
                             </td>
                             <td><span class="badge bg-secondary-subtle text-dark border"><i class="fa-solid fa-calendar-day me-1"></i><?= date('d/m/Y', strtotime($act['fecha_actividad'])) ?></span></td>
                             <td class="fw-bold text-dark font-outfit">$<?= number_format($cuota, 0, ',', '.') ?></td>
-                            <td class="text-success fw-bold">$<?= number_format($pagado, 0, ',', '.') ?></td>
+                            <td class="nt-pos">$<?= number_format($pagado, 0, ',', '.') ?></td>
                             <td>
                                 <?php if ($saldoAct > 0): ?>
                                     <span class="badge bg-danger fs-7">$<?= number_format($saldoAct, 0, ',', '.') ?></span>
@@ -291,7 +259,7 @@
                                     <span class="text-muted fs-7">$0</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="text-info fw-semibold">$<?= number_format($ganancia, 0, ',', '.') ?></td>
+                            <td class="nt-gold">$<?= number_format($ganancia, 0, ',', '.') ?></td>
                             <td class="text-end pe-4">
                                 <?php if ($isPagado): ?>
                                     <span class="badge bg-success rounded-pill px-3 py-1"><i class="fa-solid fa-check me-1"></i>Al Día</span>
@@ -301,8 +269,8 @@
                             </td>
                         </tr>
                         <tr class="collapse" id="abonos_socio_act_<?= $act['id'] ?>">
-                            <td colspan="7" class="bg-light p-3 border-bottom">
-                                <div class="fw-bold text-success mb-2 fs-7"><i class="fa-solid fa-clock-rotate-left me-1"></i>Desglose de Mis Pagos Abonados - <?= htmlspecialchars($act['nombre_actividad']) ?></div>
+                            <td colspan="7" class="p-3" style="background:var(--nt-pine-50)">
+                                <div class="fw-bold nt-pos mb-2 fs-7"><i class="fa-solid fa-clock-rotate-left me-1"></i>Desglose de Mis Pagos Abonados - <?= htmlspecialchars($act['nombre_actividad']) ?></div>
                                 <?php if (empty($abonosSocio)): ?>
                                     <div class="text-muted small py-1"><i class="fa-solid fa-info-circle me-1"></i>Aún no has realizado abonos para esta actividad.</div>
                                 <?php else: ?>
@@ -320,7 +288,7 @@
                                                 <?php foreach ($abonosSocio as $ab): ?>
                                                     <tr>
                                                         <td><?= date('d/m/Y h:i A', strtotime($ab['fecha_abono'])) ?></td>
-                                                        <td class="fw-bold text-success">$<?= number_format($ab['monto_abono'], 0, ',', '.') ?> COP</td>
+                                                        <td class="nt-pos">$<?= number_format($ab['monto_abono'], 0, ',', '.') ?> COP</td>
                                                         <td><?= htmlspecialchars($ab['registrado_por_nombre'] ?? 'Secretaría') ?></td>
                                                         <td><?= htmlspecialchars($ab['observacion'] ?: '-') ?></td>
                                                     </tr>
