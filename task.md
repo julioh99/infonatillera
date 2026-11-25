@@ -219,4 +219,32 @@ Hecho: capa de diseño `public/css/theme.css` (colores, tipografía, tarjetas, b
 - [ ] **Despliegue:** `php scripts/migrate.php --status`, `--dry-run`, luego sin opciones; apuntar el DocumentRoot a `public/`; crear el cron o las tareas programadas (`docs/06`); `NT_NO_AUTOMIGRATE=1` está activo en el `.env` local.
 - [ ] 5.5 partir vistas grandes y mover JS a `public/js/` · 5.7 columna de ciclo en las tablas (no se hicieron: chocan con el rediseño).
 - [ ] **Cierre del año (sección 0):** respaldo, copiar al servidor, guardar el año `Dic 2025 - Nov 2026`, descargar la copia JSON y crear el año nuevo el 1 de diciembre. Probar antes el histórico en una copia de la base real.
-- [ ] **Logo:** elegir ganador entre las propuestas de `/logos.html` y las de Gemini; luego convertir el nombre a trazos y cambiar el ícono del aviso push (`ICONO` en `sw.js`).
+- [ ] **Logo:** elegir ganador entre las propuestas de `/logos.html` (3 del proyecto + 3 de Gemini, ya cargadas); luego convertir el nombre a trazos y cambiar el ícono del aviso push (`ICONO` en `sw.js`).
+
+---
+
+## 9. Cierre de la jornada del 25/11/2026 (listo para subir)
+
+**Hecho y commiteado hoy**
+- [x] Socios activos: llamado a lista, préstamos, actividades, entregas y notificaciones usan solo activos y respetan `orden`; Gestión de Socios sigue mostrando a todos para poder reactivar. Llamado a lista sin duplicados (`ON DUPLICATE KEY UPDATE`).
+- [x] Valores fijos a `config/natillera.php` (`web.ciclo_nombre`, `web.app_url`, `web.color_marca`, meta de intereses, premios por tipo en entregas). El año del ciclo del login/pie se cambia en `web.ciclo_nombre`.
+- [x] Firma y foto seguras unificadas en `core/Evidencia.php` (Préstamos ahora rechaza imágenes inválidas con mensaje).
+- [x] Campana con indicador de "sin leer".
+- [x] Guía `docs/DESPLIEGUE.md` y verificador `php scripts/verificar_despliegue.php`.
+- [x] Dato R23: `valor_cuota_base` corregido de 5.500.000 a 55.000 (base remota).
+- [x] Logos: `/logos.html` con las 6 propuestas y comparación a 32 px.
+- [x] Pruebas: 10 de 11 archivos pasan (`seguridad` no puede arrancar su servidor local en este equipo; el CSRF y el login se comprobaron a mano en el navegador).
+
+**Cambio de año (script `scripts/nuevo_anio_socios.php`)**
+- Ensayado en una copia local de la base: 50 socios activos en el orden pedido, 45 que continúan (10 con ortografía corregida), 5 nuevos (cédulas y claves temporales nuevas), 5 que quedan inactivos (no se borran), 26 reuniones del 14/12/2026 al 29/11/2027 con las cuotas extra separadas (ronda en 3, 9, 16 y 22; rifa en 6, 12, 19 y 25), y el año anterior guardado con respaldo automático.
+- Cruce de nombres que conviene revisar: Marglevis Abuelles = antes "Argumedo"; Gisela Cassas = antes "Jicela Casas"; Yufari Herrera = antes "Yulfarys Herrera"; Yuli Gonzalez = antes "Yulieth Gonzalez"; Rosiris Henriquez = antes "Rosiris Enrique"; Dina Luz Gonzalez = antes "Dina Gonzalez"; "Lina" se conservó como "Lina Arroyo".
+- Salen (quedan inactivos): Cecilia Gonzalez, Jhonatan Alvarez, Cristina Fuentes, Antonio Gonzalez, Isabel Fuentes. Cuatro de ellos tienen 9 préstamos activos.
+- Los 5 socios nuevos reciben cédula con el esquema 1040+id y una clave temporal (se guarda en un CSV fuera del proyecto); deben cambiarla al primer ingreso. Las cédulas de todo el sistema son números de prueba 1040xx: reemplazarlas por las reales cuando se tengan.
+- [ ] Ejecutar el cambio de año en la base real (pendiente de la confirmación del usuario sobre: cierre de R26, préstamos activos y fecha de la primera reunión).
+
+**Sigue pendiente**
+- [ ] Elegir el logo con la mesa directiva.
+- [ ] Rotar la clave de la BD remota y las llaves VAPID (ver `docs/DESPLIEGUE.md`).
+- [ ] `php scripts/reconciliar_cierres.php --aplicar` (-$2.755.000 de movimientos posteriores al cierre en R13, R14, R15 y R18): solo con respaldo y OK del usuario.
+- [ ] 5.5 (partir vistas grandes y mover JS) y 5.7 (columna de ciclo): no se hicieron.
+- [ ] Revisar a mano en el navegador: firma en entregas, actividades, inyecciones, transferencias, notificaciones y los modales de préstamos.
