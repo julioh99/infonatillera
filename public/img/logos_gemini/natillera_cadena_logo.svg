@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&amp;display=swap');
+      .brand-name {
+        font-family: 'Montserrat', 'Century Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        font-size: 52px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        fill: #14573D;
+        text-anchor: middle;
+      }
+    </style>
+  </defs>
+
+  <!-- Fondo blanco liso -->
+  <rect width="1000" height="1000" fill="#FFFFFF"/>
+
+  <!-- SÍMBOLO: Anillo de unión comunitaria y fondo central -->
+  <g id="simbolo-comunidad">
+    <!-- Moneda / Círculo central dorado (#E8A317): El ahorro y respaldo común -->
+    <circle cx="500" cy="385" r="64" fill="#E8A317"/>
+
+    <!-- Cadena cerrada de 16 socios: Cada círculo se toca en tangencia exacta -->
+    <!-- Socio receptor de la ronda (Turno actual) -->
+    <circle cx="500.000" cy="200.000" r="36.092" fill="#E8A317"/>
+    <!-- Socio 2 de la comunidad -->
+    <circle cx="570.796" cy="214.082" r="36.092" fill="#14573D"/>
+    <!-- Socio 3 de la comunidad -->
+    <circle cx="630.815" cy="254.185" r="36.092" fill="#14573D"/>
+    <!-- Socio 4 de la comunidad -->
+    <circle cx="670.918" cy="314.204" r="36.092" fill="#14573D"/>
+    <!-- Socio 5 de la comunidad -->
+    <circle cx="685.000" cy="385.000" r="36.092" fill="#14573D"/>
+    <!-- Socio 6 de la comunidad -->
+    <circle cx="670.918" cy="455.796" r="36.092" fill="#14573D"/>
+    <!-- Socio 7 de la comunidad -->
+    <circle cx="630.815" cy="515.815" r="36.092" fill="#14573D"/>
+    <!-- Socio 8 de la comunidad -->
+    <circle cx="570.796" cy="555.918" r="36.092" fill="#14573D"/>
+    <!-- Socio 9 de la comunidad -->
+    <circle cx="500.000" cy="570.000" r="36.092" fill="#14573D"/>
+    <!-- Socio 10 de la comunidad -->
+    <circle cx="429.204" cy="555.918" r="36.092" fill="#14573D"/>
+    <!-- Socio 11 de la comunidad -->
+    <circle cx="369.185" cy="515.815" r="36.092" fill="#14573D"/>
+    <!-- Socio 12 de la comunidad -->
+    <circle cx="329.082" cy="455.796" r="36.092" fill="#14573D"/>
+    <!-- Socio 13 de la comunidad -->
+    <circle cx="315.000" cy="385.000" r="36.092" fill="#14573D"/>
+    <!-- Socio 14 de la comunidad -->
+    <circle cx="329.082" cy="314.204" r="36.092" fill="#14573D"/>
+    <!-- Socio 15 de la comunidad -->
+    <circle cx="369.185" cy="254.185" r="36.092" fill="#14573D"/>
+    <!-- Socio 16 de la comunidad -->
+    <circle cx="429.204" cy="214.082" r="36.092" fill="#14573D"/>
+  </g>
+
+  <!-- TIPOGRAFÍA: Nombre en sans-serif geométrica en negrita, verde pino -->
+  <text x="500" y="730" class="brand-name">Natillera La Unión</text>
+</svg>

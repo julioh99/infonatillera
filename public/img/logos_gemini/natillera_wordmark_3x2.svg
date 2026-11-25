@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1000" width="1500" height="1000">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&amp;display=swap');
+      
+      .natillera-light {
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        font-size: 38px;
+        font-weight: 400;
+        letter-spacing: 0.32em;
+        text-transform: lowercase;
+      }
+      .la-union-bold {
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        font-size: 104px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .caption-text {
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+      }
+      .u-stroke-pos {
+        stroke: #14573D;
+        stroke-width: 17px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+      .u-stroke-neg {
+        stroke: #FFFFFF;
+        stroke-width: 10.5px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+      }
+    </style>
+  </defs>
+
+  <!-- 1. FONDO PRINCIPAL: Blanco liso (#FFFFFF) -->
+  <rect width="1500" height="1000" fill="#FFFFFF"/>
+
+  <!-- ========================================== -->
+  <!-- 2. WORDMARK PRINCIPAL EN POSITIVO (CENTRO) -->
+  <!-- ========================================== -->
+  <g id="wordmark-positivo" transform="translate(0, 0)">
+    
+    <!-- Línea 1: "natillera" en minúsculas, ligero, pequeño -->
+    <text x="750" y="275" 
+          text-anchor="middle" 
+          class="natillera-light" 
+          fill="#14573D">natillera</text>
+
+    <!-- Línea 2: "La Unión" más grande y en semibold -->
+    <!-- Coordenadas calculadas para centrar perfectamente "La Unión" -->
+    <!-- Ancho total de "La Unión" ~ 520px. Centro en X=750. Inicio en X=490 -->
+    <g transform="translate(480, 400)">
+      
+      <!-- Texto "La " -->
+      <text x="0" y="0" class="la-union-bold" fill="#14573D">La </text>
+
+      <!-- Letra "U" personalizada: dos trazos que se encuentran en la base -->
+      <!-- Inicio de la U en X=148, baseline Y=0, cap-height=74px (Y de -74 a 0) -->
+      <g id="custom-U-pos" transform="translate(150, -74)">
+        <!-- Trazo Izquierdo de la U: Desciende vertical y curva hacia el centro de la base -->
+        <path d="M 9 0 
+                 L 9 44 
+                 A 28 28 0 0 0 37 72" 
+              class="u-stroke-pos"/>
+        
+        <!-- Trazo Derecho de la U: Desciende vertical y curva hacia el centro de la base -->
+        <path d="M 65 0 
+                 L 65 44 
+                 A 28 28 0 0 1 37 72" 
+              class="u-stroke-pos"/>
+
+        <!-- Punto Dorado en el punto de unión (base de la U) -->
+        <circle cx="37" cy="72" r="7.5" fill="#E8A317"/>
+      </g>
+
+      <!-- Texto "nión" continuando inmediatamente tras la U -->
+      <text x="232" y="0" class="la-union-bold" fill="#14573D">nión</text>
+    </g>
+  </g>
+
+  <!-- Línea divisoria decorativa sutil / respiración -->
+  <line x1="650" y1="580" x2="850" y2="580" stroke="#14573D" stroke-width="1.5" stroke-opacity="0.15"/>
+
+  <!-- ======================================================== -->
+  <!-- 3. VERSIÓN EN NEGATIVO: Blanco sobre fondo verde pino   -->
+  <!-- ======================================================== -->
+  <g id="tarjeta-negativo" transform="translate(450, 640)">
+    
+    <!-- Contenedor / Tarjeta Verde Pino (#14573D) -->
+    <rect width="600" height="260" rx="18" fill="#14573D"/>
+
+    <!-- Etiqueta superior sutil -->
+    <text x="300" y="48" 
+          text-anchor="middle" 
+          class="caption-text" 
+          fill="#FFFFFF" 
+          fill-opacity="0.55">Versión en Negativo</text>
+
+    <!-- Wordmark escalado a 62% dentro de la tarjeta -->
+    <g transform="translate(300, 140)">
+      
+      <!-- Línea 1: "natillera" -->
+      <text x="0" y="0" 
+            text-anchor="middle" 
+            font-family="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+            font-size="24px" 
+            font-weight="400" 
+            letter-spacing="0.32em" 
+            fill="#FFFFFF" 
+            fill-opacity="0.95">natillera</text>
+
+      <!-- Línea 2: "La Unión" centrado -->
+      <g transform="translate(-160, 75)">
+        <text x="0" y="0" 
+              font-family="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+              font-size="64px" 
+              font-weight="700" 
+              letter-spacing="-0.01em" 
+              fill="#FFFFFF">La </text>
+
+        <!-- U en negativo -->
+        <g transform="translate(92, -45.5)">
+          <path d="M 5.5 0 
+                   L 5.5 27 
+                   A 17.5 17.5 0 0 0 23 44.5" 
+                class="u-stroke-neg"/>
+          <path d="M 40.5 0 
+                   L 40.5 27 
+                   A 17.5 17.5 0 0 1 23 44.5" 
+                class="u-stroke-neg"/>
+          <circle cx="23" cy="44.5" r="5" fill="#E8A317"/>
+        </g>
+
+        <!-- "nión" -->
+        <text x="143" y="0" 
+              font-family="'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
+              font-size="64px" 
+              font-weight="700" 
+              letter-spacing="-0.01em" 
+              fill="#FFFFFF">nión</text>
+      </g>
+    </g>
+  </g>
+</svg>
