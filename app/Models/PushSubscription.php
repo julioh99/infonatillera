@@ -35,6 +35,42 @@ class PushSubscription extends Model {
         ]);
     }
 
+    /** Igual que registrarNotificacion pero devuelve el id creado (0 si falla). */
+    public function registrarNotificacionId(string $titulo, string $mensaje, string $destinatarioTipo, ?int $socioId, int $enviadoPorId): int {
+        if (!$this->registrarNotificacion($titulo, $mensaje, $destinatarioTipo, $socioId, $enviadoPorId)) {
+            return 0;
+        }
+        return (int)$this->db->lastInsertId();
+    }
+
+    /** Suscripciones push: de un socio o de todos (socioId null). Solo id, socio_id y endpoint. */
+    public function getSuscripciones(?int $socioId = null): array {
+        if ($socioId === null) {
+            return $this->db->query("SELECT id, socio_id, endpoint FROM natillera_push_subscriptions")->fetchAll();
+        }
+        $stmt = $this->db->prepare("SELECT id, socio_id, endpoint FROM natillera_push_subscriptions WHERE socio_id = :s");
+        $stmt->execute([':s' => $socioId]);
+        return $stmt->fetchAll();
+    }
+
+    public function eliminarSuscripcion(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM natillera_push_subscriptions WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
+
+    /** Registra el resultado de un envio por suscripcion. No lanza error si la tabla aun no existe. */
+    public function registrarEnvio(?int $notificacionId, ?int $suscripcionId, ?int $socioId, int $status, bool $ok, string $detalle): void {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO natillera_push_envios (notificacion_id, suscripcion_id, socio_id, http_status, exitoso, detalle)
+                VALUES (:n, :s, :so, :h, :e, :d)
+            ");
+            $stmt->execute([':n' => $notificacionId, ':s' => $suscripcionId, ':so' => $socioId, ':h' => $status, ':e' => $ok ? 1 : 0, ':d' => mb_substr($detalle, 0, 250)]);
+        } catch (Exception $e) {
+            error_log('[push] no se pudo registrar el envio: ' . $e->getMessage());
+        }
+    }
+
     public function getHistorialNotificaciones(): array {
         $stmt = $this->db->query("
             SELECT n.*, u_rem.nombre_completo as remitente_nombre, u_dest.nombre_completo as destinatario_nombre

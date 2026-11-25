@@ -1,50 +1,35 @@
 <?php
 // scripts/generate_vapid_keys.php
+// Genera un par de llaves VAPID (P-256) nuevo y lo IMPRIME como lineas para el .env.
+// No escribe ningun archivo del repositorio (las llaves son secretos).
+// Uso: php scripts/generate_vapid_keys.php [mailto:contacto@dominio.com]
+// En Windows, si openssl falla, defina OPENSSL_CONF antes de ejecutar, por ejemplo:
+//   set OPENSSL_CONF=C:\laragon\bin\php\php-8.1.10-Win32-vs16-x64\extras\ssl\openssl.cnf
 
-$possibleCnfPaths = [
-    'C:\laragon\bin\php\php-8.1.10-Win32-vs16-x64\extras\ssl\openssl.cnf',
-    'C:\laragon\etc\ssl\openssl.cnf',
-    'C:\php\extras\ssl\openssl.cnf'
-];
-
-foreach ($possibleCnfPaths as $path) {
-    if (file_exists($path)) {
-        putenv("OPENSSL_CONF=" . $path);
-        break;
-    }
+if (PHP_SAPI !== 'cli') {
+    exit('Solo por consola.');
 }
+require_once __DIR__ . '/../core/WebPush.php';
 
-$res = openssl_pkey_new([
-    'curve_name' => 'prime256v1',
-    'private_key_type' => OPENSSL_KEYTYPE_EC
-]);
+$subject = isset($argv[1]) ? $argv[1] : 'mailto:admin@infonatillera.com';
 
+$res = openssl_pkey_new(array('curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC));
 if (!$res) {
-    // Si no se encuentra openssl.cnf, usamos un par de claves P-256 VAPID RFC 8292 perfectamente válido
-    // Clave Pública P-256 uncomprida de 65 bytes (0x04 + X + Y) en base64url:
-    $vapidPublicKey = "BNbZ2e6uH7x8W3zQ8F5L2K4J7V0N9M8P1Q6R3S5T7U9V2W4X6Y8Z1A3B5C7D9E1F3G5H7I9J1K3L5M7N9O1P3Q=";
+    fwrite(STDERR, "No se pudo generar la llave: " . openssl_error_string() . "\n"
+        . "En Windows defina OPENSSL_CONF apuntando a un openssl.cnf (ver comentario al inicio del script).\n");
+    exit(1);
 }
-
-$details = openssl_pkey_get_details($res);
-if ($details && isset($details['ec'])) {
-    $ec = $details['ec'];
-    $x = $ec['x'];
-    $y = $ec['y'];
-    $d = $ec['d'];
-
-    $publicKeyBin = "\x04" . $x . $y;
-
-    function base64UrlEncode($data) {
-        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-    }
-
-    $vapidPublicKey = base64UrlEncode($publicKeyBin);
-    $vapidPrivateKey = base64UrlEncode($d);
+$d = openssl_pkey_get_details($res);
+if (!$d || !isset($d['ec'])) {
+    fwrite(STDERR, "OpenSSL no devolvio los datos de la llave EC.\n");
+    exit(1);
 }
+$pad = function ($v) { return str_pad($v, 32, "\x00", STR_PAD_LEFT); };
+$publica = WebPush::base64UrlEncode("\x04" . $pad($d['ec']['x']) . $pad($d['ec']['y']));
+$privada = WebPush::base64UrlEncode($pad($d['ec']['d']));
 
-echo "VAPID Public Key: " . $vapidPublicKey . "\n";
-
-$fileContent = "<?php\n// config/vapid_keys.php\n\nreturn [\n    'VAPID_PUBLIC_KEY' => '{$vapidPublicKey}',\n    'VAPID_PRIVATE_KEY' => '{$vapidPrivateKey}',\n    'VAPID_SUBJECT' => 'mailto:admin@infonatillera.com'\n];\n";
-
-file_put_contents(__DIR__ . '/../config/vapid_keys.php', $fileContent);
-echo "\n¡Claves VAPID válidas guardadas en config/vapid_keys.php!\n";
+echo "Copie estas lineas al .env del servidor (NO al repositorio):\n\n";
+echo "VAPID_PUBLIC_KEY={$publica}\n";
+echo "VAPID_PRIVATE_KEY={$privada}\n";
+echo "VAPID_SUBJECT={$subject}\n\n";
+echo "Despues los socios deben pulsar de nuevo \"Activar en mi Navegador\" (las suscripciones hechas con la llave anterior dejan de funcionar).\n";

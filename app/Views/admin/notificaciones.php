@@ -25,10 +25,21 @@
                 Permite a tu navegador o dispositivo recibir avisos automáticos. Si tu dispositivo o navegador no lo soporta (como iOS Safari o modo incógnito), 
                 <strong>todas las notificaciones quedan guardadas dentro de la plataforma en la Campanita 🔔 y puedes difundirlas a tu Grupo de WhatsApp con 1 clic.</strong>
             </p>
+            <?php if (empty($pushConfigurado)): ?>
+                <p class="gg-banner__text mb-0"><strong>Atención:</strong> el servidor no tiene configuradas las llaves VAPID, por eso los avisos no llegan al navegador (siguen en la Campanita).</p>
+            <?php endif; ?>
         </div>
-        <button type="button" class="btn btn-warning px-4" id="btnActivarNotifications" data-vapid-key="<?= htmlspecialchars($vapidPublicKey) ?>">
-            <i class="fa-solid fa-bell me-1"></i>Activar en mi Navegador
-        </button>
+        <div class="d-flex flex-column align-items-end gap-2">
+            <span id="pushEstado" class="badge bg-secondary">Revisando...</span>
+            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                <button type="button" class="btn btn-warning px-4" id="btnActivarNotifications" data-vapid-key="<?= htmlspecialchars($vapidPublicKey) ?>">
+                    <i class="fa-solid fa-bell me-1"></i>Activar en mi Navegador
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="btnProbarPush">
+                    <i class="fa-solid fa-vial me-1"></i>Enviarme una prueba
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
