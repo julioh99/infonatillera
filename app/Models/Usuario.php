@@ -4,6 +4,7 @@
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/Historico.php';
 require_once __DIR__ . '/Prestamo.php';
+require_once __DIR__ . '/../../core/Money.php';
 
 class Usuario extends Model {
 
@@ -30,12 +31,19 @@ class Usuario extends Model {
         return null;
     }
 
+    /** Meta anual de intereses por socio (config/natillera.php: prestamo.meta_intereses_anual). */
+    public static function metaIntereses(): float {
+        return (float)Money::config('prestamo.meta_intereses_anual', 400000);
+    }
+
     /**
-     * Socios en el orden definido por natillera_usuarios.orden (los activos primero, los inactivos al final).
-     * $soloActivos = true devuelve solo los socios del ano en curso (estado = 1).
+     * Socios en el orden definido por natillera_usuarios.orden.
+     * Por defecto SOLO los activos (estado = 1): es la lista para operar (llamado a lista, prestamos, actividades...).
+     * $incluirInactivos = true devuelve tambien a los que no continuan (activos primero, inactivos al final);
+     * solo para Gestion de Socios y el Historico.
      */
-    public function getAllSocios($soloActivos = false) {
-        $where = $soloActivos ? 'WHERE u.estado = 1' : '';
+    public function getAllSocios($incluirInactivos = false) {
+        $where = $incluirInactivos ? '' : 'WHERE u.estado = 1';
         $stmt = $this->db->query("
             SELECT u.id, u.cedula, u.nombre_completo, u.telefono, u.fecha_nacimiento, u.rol_id, u.tope_prestamo_personalizado, u.interes_minimo_meta, u.estado, u.orden, r.nombre as rol_nombre
             FROM natillera_usuarios u
@@ -47,6 +55,11 @@ class Usuario extends Model {
     }
 
     public function getSociosActivos() {
+        return $this->getAllSocios(false);
+    }
+
+    /** Todos los socios, activos e inactivos (Gestion de Socios, Historico). */
+    public function getTodosSocios() {
         return $this->getAllSocios(true);
     }
 
@@ -98,10 +111,11 @@ class Usuario extends Model {
         $siguienteOrden = (int)$this->db->query("SELECT IFNULL(MAX(orden), 0) + 1 FROM natillera_usuarios")->fetchColumn();
         $stmt = $this->db->prepare("
             INSERT INTO natillera_usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta, estado, orden)
-            VALUES (:cedula, :nombre_completo, :telefono, :fecha_nacimiento, :password_hash, :rol_id, :tope, 400000.00, 1, :orden)
+            VALUES (:cedula, :nombre_completo, :telefono, :fecha_nacimiento, :password_hash, :rol_id, :tope, :meta, 1, :orden)
         ");
         return $stmt->execute([
             ':orden' => $siguienteOrden,
+            ':meta' => self::metaIntereses(),
             ':cedula' => $datos['cedula'],
             ':nombre_completo' => $datos['nombre_completo'],
             ':telefono' => $datos['telefono'] ?? null,
@@ -203,7 +217,7 @@ class Usuario extends Model {
         $totalExtra = (float)($ahorros['total_ahorro_extra'] ?? 0);
         $totalAhorrado = $totalCuotas + $totalExtra;
 
-        // Total intereses pagados por el socio en préstamos (para la meta de $400.000)
+        // Total intereses pagados por el socio en préstamos (para la meta anual de intereses)
         $stmtInteres = $this->db->prepare("
             SELECT SUM(ap.monto_interes_pagado) as total_interes
             FROM natillera_abonos_prestamos ap
@@ -244,6 +258,7 @@ class Usuario extends Model {
         // Interes mensual progresivo pendiente de los prestamos activos (InteresPrestamo)
         $interesSocio = (new Prestamo())->resumenInteresSocio($socioId);
 
+        $meta = self::metaIntereses();
         return [
             'interes_pendiente_prestamos' => $interesSocio['interes_pendiente'],
             'meses_interes_cobrados' => $interesSocio['meses_cobrados'],
@@ -252,8 +267,8 @@ class Usuario extends Model {
             'total_ahorro_extra' => $totalExtra,
             'total_ahorrado' => $totalAhorrado,
             'total_interes_generado' => $totalInteresPagado,
-            'meta_interes' => 400000.00,
-            'porcentaje_meta' => min(100, round(($totalInteresPagado / 400000.00) * 100, 1)),
+            'meta_interes' => $meta,
+            'porcentaje_meta' => min(100, ($meta > 0 ? round(($totalInteresPagado / $meta) * 100, 1) : 0)),
             'deuda_prestamos_capital' => $saldoPendienteCapital,
             'deuda_actividades' => $deudaActividades
         ];

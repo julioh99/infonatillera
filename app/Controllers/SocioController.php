@@ -218,7 +218,7 @@ class SocioController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria General']);
 
         $usuarioModel = new Usuario();
-        $socios = $usuarioModel->getAllSocios();
+        $socios = $usuarioModel->getTodosSocios(); // Gestion de Socios muestra tambien a los inactivos para poder reactivarlos
         $cumpleanos = $usuarioModel->getProximosCumpleanos();
 
         // Obtener lista de roles para el select de edición

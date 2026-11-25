@@ -195,6 +195,18 @@ class Actividad extends Model {
             ]);
 
             $actividadId = (int)$this->db->lastInsertId();
+
+            // Solo participan socios activos (los que no continuan conservan su historia pero no entran a actividades nuevas)
+            if ($participantesCuotas) {
+                $ids = array_map('intval', array_keys($participantesCuotas));
+                $in = implode(',', array_fill(0, count($ids), '?'));
+                $stA = $this->db->prepare("SELECT id FROM natillera_usuarios WHERE estado = 1 AND id IN ({$in})");
+                $stA->execute($ids);
+                $activos = array_flip(array_map('intval', $stA->fetchAll(PDO::FETCH_COLUMN)));
+                foreach ($participantesCuotas as $sId => $c) {
+                    if (!isset($activos[(int)$sId])) unset($participantesCuotas[$sId]);
+                }
+            }
             $numParticipantes = count($participantesCuotas);
 
             if ($numParticipantes > 0) {

@@ -330,6 +330,10 @@ class Reunion extends Model {
             $stmtInsertAhorro = $this->db->prepare("
                 INSERT INTO natillera_ahorros_cuotas (reunion_id, socio_id, cuota_pagada, monto_cuota, monto_aporte_ronda, monto_aporte_rifa, monto_ahorro_extra, autoprestamo_generado, prestamo_id_asociado)
                 VALUES (:reunion_id, :socio_id, :cuota_pagada, :monto_cuota, :monto_aporte_ronda, :monto_aporte_rifa, :monto_ahorro_extra, :autoprestamo_generado, :prestamo_id_asociado)
+                ON DUPLICATE KEY UPDATE cuota_pagada = VALUES(cuota_pagada), monto_cuota = VALUES(monto_cuota),
+                    monto_aporte_ronda = VALUES(monto_aporte_ronda), monto_aporte_rifa = VALUES(monto_aporte_rifa),
+                    monto_ahorro_extra = VALUES(monto_ahorro_extra), autoprestamo_generado = VALUES(autoprestamo_generado),
+                    prestamo_id_asociado = VALUES(prestamo_id_asociado)
             ");
 
             $stmtInsertPrestamo = $this->db->prepare("
@@ -360,6 +364,14 @@ class Reunion extends Model {
                   AND (firma_digital_path IS NULL OR firma_digital_path = '')
                   AND (foto_evidencia_path IS NULL OR foto_evidencia_path = '')
             ");
+
+            // Sin duplicados: si un socio llega repetido queda el ultimo registro (respeta el indice unico reunion+socio)
+            $unicos = [];
+            foreach ($registros as $reg) {
+                if (!is_array($reg) || !isset($reg['socio_id'])) continue;
+                $unicos[(int)$reg['socio_id']] = $reg;
+            }
+            $registros = array_values($unicos);
 
             foreach ($registros as $reg) {
                 $socioId = (int)$reg['socio_id'];
