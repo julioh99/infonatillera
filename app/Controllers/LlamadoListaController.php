@@ -78,7 +78,7 @@ class LlamadoListaController extends Controller {
         if ($ok) {
             $_SESSION['success'] = "Autopréstamo anulado exitosamente dentro de las 24 horas sin recargo ni intereses.";
         } else {
-            $_SESSION['error'] = "No se pudo anular el autopréstamo.";
+            $_SESSION['error'] = $reunionModel->ultimoError ?: "No se pudo anular el autopréstamo.";
         }
 
         $this->redirect($_SERVER['HTTP_REFERER'] ?? '/admin/llamado-lista');

@@ -89,10 +89,10 @@ class CierreController extends Controller {
         }
 
         $usuarioModel = new Usuario();
-        $usuarioId = (int)($_SESSION['usuario']['id'] ?? 1);
-        if (!$usuarioModel->getSocioById($usuarioId)) {
-            $todosSocios = $usuarioModel->getAllSocios();
-            $usuarioId = !empty($todosSocios) ? (int)$todosSocios[0]['id'] : 1;
+        $usuarioId = (int)($_SESSION['usuario']['id'] ?? 0);
+        if ($usuarioId <= 0 || !$usuarioModel->getSocioById($usuarioId)) {
+            $_SESSION['error'] = "No se pudo identificar al usuario de la sesión. Inicia sesión nuevamente para realizar el cierre.";
+            $this->redirect('/admin/cierre-reunion?reunion_id=' . $reunionId);
         }
 
         try {
@@ -105,8 +105,12 @@ class CierreController extends Controller {
             } else {
                 $_SESSION['error'] = "No se pudo procesar el cierre financiero.";
             }
+        } catch (RuntimeException $e) {
+            // Mensajes de negocio (p. ej. reunión ya cerrada)
+            $_SESSION['error'] = $e->getMessage();
         } catch (Throwable $e) {
-            $_SESSION['error'] = "Error al cerrar reunión: " . $e->getMessage();
+            $this->logError($e);
+            $_SESSION['error'] = "Ocurrió un error al cerrar la reunión. Intenta nuevamente o revisa logs/cierre_reunion.log.";
         }
 
         $this->redirect('/admin/cierre-reunion?reunion_id=' . $reunionId);

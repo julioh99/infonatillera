@@ -42,7 +42,55 @@ class Prestamo extends Model {
         return $stmt->fetch() ?: null;
     }
 
+    /** Indica si la reunion (por id) esta CERRADA. Sin id => false. */
+    public function reunionEstaCerrada(?int $reunionId): bool {
+        if (empty($reunionId)) return false;
+        $stmt = $this->db->prepare("SELECT estado FROM natillera_reuniones WHERE id = :id");
+        $stmt->execute([':id' => $reunionId]);
+        return $stmt->fetchColumn() === 'CERRADA';
+    }
+
+    private function exigirReunionAbierta(?int $reunionId): void {
+        if ($this->reunionEstaCerrada($reunionId)) {
+            throw new InvalidArgumentException("La reunión asociada está CERRADA; no se pueden crear, editar ni eliminar préstamos o abonos de una reunión cerrada.");
+        }
+    }
+
+    /**
+     * Crea o actualiza (sin duplicar) la entrega/egreso PRESTAMO ligada a un prestamo_id.
+     * Firma y foto son opcionales; si la entrega ya existia no se pisan con valores vacios.
+     * Los autoprestamos generan su propia constancia en Reunion (sin prestamo_id) y no pasan por aqui.
+     */
+    public function asegurarEntregaPrestamo(int $prestamoId, int $reunionId, int $socioId, float $monto, ?string $firmaPath, ?string $fotoPath, int $entregadoPor): void {
+        $stmt = $this->db->prepare("SELECT id FROM natillera_entregas_beneficios WHERE prestamo_id = :pid AND tipo_beneficio = 'PRESTAMO' LIMIT 1");
+        $stmt->execute([':pid' => $prestamoId]);
+        $id = $stmt->fetchColumn();
+
+        if ($id) {
+            $stmtU = $this->db->prepare("
+                UPDATE natillera_entregas_beneficios
+                SET monto_entregado = :monto,
+                    firma_digital_path = COALESCE(:firma, firma_digital_path),
+                    foto_evidencia_path = COALESCE(:foto, foto_evidencia_path)
+                WHERE id = :id
+            ");
+            $stmtU->execute([':monto' => $monto, ':firma' => $firmaPath, ':foto' => $fotoPath, ':id' => $id]);
+            return;
+        }
+
+        $stmtI = $this->db->prepare("
+            INSERT INTO natillera_entregas_beneficios
+            (reunion_id, socio_id, prestamo_id, tipo_beneficio, monto_entregado, firma_digital_path, foto_evidencia_path, entregado_por_usuario_id)
+            VALUES (:reunion_id, :socio_id, :prestamo_id, 'PRESTAMO', :monto, :firma, :foto, :por)
+        ");
+        $stmtI->execute([
+            ':reunion_id' => $reunionId, ':socio_id' => $socioId, ':prestamo_id' => $prestamoId,
+            ':monto' => $monto, ':firma' => $firmaPath, ':foto' => $fotoPath, ':por' => $entregadoPor
+        ]);
+    }
+
     public function crearPrestamo(array $datos) {
+        $this->exigirReunionAbierta(!empty($datos['reunion_id']) ? (int)$datos['reunion_id'] : null);
         $fechaPrestamo = !empty($datos['fecha_prestamo']) ? $datos['fecha_prestamo'] : date('Y-m-d');
 
         $stmt = $this->db->prepare("
@@ -73,6 +121,12 @@ class Prestamo extends Model {
     }
 
     public function actualizarPrestamo(int $id, array $datos): bool {
+        $actual = $this->getPrestamoById($id);
+        if (!$actual) {
+            throw new InvalidArgumentException("El préstamo no existe.");
+        }
+        $this->exigirReunionAbierta(!empty($actual['reunion_id']) ? (int)$actual['reunion_id'] : null);
+        $this->exigirReunionAbierta(!empty($datos['reunion_id']) ? (int)$datos['reunion_id'] : null);
         $fechaPrestamo = !empty($datos['fecha_prestamo']) ? $datos['fecha_prestamo'] : date('Y-m-d');
 
         $stmt = $this->db->prepare("
@@ -99,10 +153,38 @@ class Prestamo extends Model {
         ]);
 
         if ($ok) {
+            // Mantener el egreso del cierre coherente con el monto prestado
+            $stmtEnt = $this->db->prepare("UPDATE natillera_entregas_beneficios SET monto_entregado = :monto WHERE prestamo_id = :id AND tipo_beneficio = 'PRESTAMO'");
+            $stmtEnt->execute([':monto' => $datos['monto_prestado'], ':id' => $id]);
             $this->recalcularEstadoPrestamo($id);
         }
 
         return $ok;
+    }
+
+    /**
+     * Valida montos y saldo de un abono. $abonoReemplazadoId excluye ese abono del saldo (edicion).
+     * Lanza InvalidArgumentException con mensaje amigable.
+     */
+    private function validarAbono(array $prestamo, float $montoCapital, float $montoInteres, ?int $abonoReemplazadoId = null): void {
+        if ($montoCapital < 0 || $montoInteres < 0) {
+            throw new InvalidArgumentException("Los montos del abono no pueden ser negativos.");
+        }
+        if ($montoCapital <= 0 && $montoInteres <= 0) {
+            throw new InvalidArgumentException("Ingresa al menos un valor a abonar en capital o interés.");
+        }
+        $sql = "SELECT IFNULL(SUM(monto_capital_pagado), 0) FROM natillera_abonos_prestamos WHERE prestamo_id = :pid";
+        $params = [':pid' => (int)$prestamo['id']];
+        if ($abonoReemplazadoId !== null) {
+            $sql .= " AND id != :aid";
+            $params[':aid'] = $abonoReemplazadoId;
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $saldo = (float)$prestamo['monto_prestado'] - (float)$stmt->fetchColumn();
+        if (round($montoCapital, 2) > round($saldo, 2)) {
+            throw new InvalidArgumentException("El abono a capital ($" . number_format($montoCapital, 0, ',', '.') . ") supera el saldo pendiente del préstamo ($" . number_format(max($saldo, 0), 0, ',', '.') . ").");
+        }
     }
 
     public function getAbonosPorPrestamo(int $prestamoId): array {
@@ -120,6 +202,19 @@ class Prestamo extends Model {
     public function registrarAbono(int $prestamoId, float $montoCapital, float $montoInteres, int $usuarioId, ?int $reunionId = null): bool {
         $this->db->beginTransaction();
         try {
+            $stmtLock = $this->db->prepare("SELECT id, monto_prestado, estado, reunion_id FROM natillera_prestamos WHERE id = :id FOR UPDATE");
+            $stmtLock->execute([':id' => $prestamoId]);
+            $prestamoRow = $stmtLock->fetch();
+            if (!$prestamoRow) {
+                throw new InvalidArgumentException("El préstamo no existe.");
+            }
+            if ($prestamoRow['estado'] !== 'ACTIVO') {
+                throw new InvalidArgumentException("Solo se pueden registrar abonos en préstamos activos.");
+            }
+            $this->exigirReunionAbierta($reunionId);
+            $this->exigirReunionAbierta(!empty($prestamoRow['reunion_id']) ? (int)$prestamoRow['reunion_id'] : null);
+            $this->validarAbono($prestamoRow, $montoCapital, $montoInteres);
+
             $stmt = $this->db->prepare("
                 INSERT INTO natillera_abonos_prestamos (prestamo_id, reunion_id, monto_capital_pagado, monto_interes_pagado, registrado_por_usuario_id)
                 VALUES (:prestamo_id, :reunion_id, :monto_capital, :monto_interes, :registrado_por)
@@ -156,19 +251,32 @@ class Prestamo extends Model {
             $this->db->commit();
             $this->recalcularEstadoPrestamo($prestamoId);
             return true;
+        } catch (InvalidArgumentException $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $e;
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) $this->db->rollBack();
             return false;
         }
     }
 
     public function actualizarAbono(int $abonoId, float $montoCapital, float $montoInteres, ?string $fechaAbono = null, ?int $reunionId = null): bool {
-        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM natillera_abonos_prestamos WHERE id = :id");
+        $stmtAbono = $this->db->prepare("SELECT prestamo_id, reunion_id FROM natillera_abonos_prestamos WHERE id = :id");
         $stmtAbono->execute([':id' => $abonoId]);
         $abono = $stmtAbono->fetch();
-        if (!$abono) return false;
+        if (!$abono) {
+            throw new InvalidArgumentException("El abono no existe.");
+        }
 
         $prestamoId = (int)$abono['prestamo_id'];
+        $prestamo = $this->getPrestamoById($prestamoId);
+        if (!$prestamo || $prestamo['estado'] === 'ANULADO') {
+            throw new InvalidArgumentException("El préstamo del abono no existe o está anulado.");
+        }
+        $this->exigirReunionAbierta(!empty($abono['reunion_id']) ? (int)$abono['reunion_id'] : null);
+        $this->exigirReunionAbierta($reunionId);
+        $this->exigirReunionAbierta(!empty($prestamo['reunion_id']) ? (int)$prestamo['reunion_id'] : null);
+        $this->validarAbono($prestamo, $montoCapital, $montoInteres, $abonoId);
 
         $fields = ["monto_capital_pagado = :capital", "monto_interes_pagado = :interes"];
         $params = [
@@ -199,12 +307,13 @@ class Prestamo extends Model {
     }
 
     public function eliminarAbono(int $abonoId): bool {
-        $stmtAbono = $this->db->prepare("SELECT prestamo_id FROM natillera_abonos_prestamos WHERE id = :id");
+        $stmtAbono = $this->db->prepare("SELECT prestamo_id, reunion_id FROM natillera_abonos_prestamos WHERE id = :id");
         $stmtAbono->execute([':id' => $abonoId]);
         $abono = $stmtAbono->fetch();
         if (!$abono) return false;
 
         $prestamoId = (int)$abono['prestamo_id'];
+        $this->exigirReunionAbierta(!empty($abono['reunion_id']) ? (int)$abono['reunion_id'] : null);
 
         $stmtDel = $this->db->prepare("DELETE FROM natillera_abonos_prestamos WHERE id = :id");
         $ok = $stmtDel->execute([':id' => $abonoId]);
@@ -238,6 +347,23 @@ class Prestamo extends Model {
     }
 
     public function eliminarPrestamo(int $id): bool {
+        $prestamo = $this->getPrestamoById($id);
+        if (!$prestamo) {
+            throw new InvalidArgumentException("El préstamo no existe.");
+        }
+        $this->exigirReunionAbierta(!empty($prestamo['reunion_id']) ? (int)$prestamo['reunion_id'] : null);
+        $stmtCerr = $this->db->prepare("
+            SELECT COUNT(*) FROM natillera_reuniones r
+            WHERE r.estado = 'CERRADA' AND (
+                r.id IN (SELECT reunion_id FROM natillera_abonos_prestamos WHERE prestamo_id = :id1 AND reunion_id IS NOT NULL)
+                OR r.id IN (SELECT reunion_id FROM natillera_entregas_beneficios WHERE prestamo_id = :id2)
+            )
+        ");
+        $stmtCerr->execute([':id1' => $id, ':id2' => $id]);
+        if ((int)$stmtCerr->fetchColumn() > 0) {
+            throw new InvalidArgumentException("El préstamo tiene abonos o entregas en una reunión CERRADA; no se puede eliminar.");
+        }
+
         $this->db->beginTransaction();
         try {
             // 1. Eliminar abonos a capital/intereses asociados

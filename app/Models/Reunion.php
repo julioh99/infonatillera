@@ -6,6 +6,9 @@ require_once __DIR__ . '/PagoNotificacion.php';
 
 class Reunion extends Model {
 
+    /** Motivo del último rechazo/fallo de anularAutoprestamo24Horas. */
+    public $ultimoError = '';
+
     public function getReuniones(): array {
         $stmt = $this->db->query("
             SELECT r.*, u.nombre_completo as ganador_nombre
@@ -132,9 +135,15 @@ class Reunion extends Model {
         $this->db->beginTransaction();
 
         try {
-            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
+            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion, estado FROM natillera_reuniones WHERE id = :id FOR UPDATE");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
+            if (!$reunion) {
+                throw new Exception('La reunión no existe.');
+            }
+            if (($reunion['estado'] ?? '') === 'CERRADA') {
+                throw new Exception('La reunión está CERRADA; no se puede modificar el llamado a lista.');
+            }
             $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
 
             if ($valorCuotaBase >= 65000) {
@@ -179,8 +188,9 @@ class Reunion extends Model {
             $entregadoPor = (int)($_SESSION['usuario']['id'] ?? 1);
 
             $stmtCheckEntrega = $this->db->prepare("
-                SELECT id FROM natillera_entregas_beneficios 
+                SELECT id FROM natillera_entregas_beneficios
                 WHERE reunion_id = :reunion_id AND socio_id = :socio_id AND tipo_beneficio = 'PRESTAMO'
+                  AND prestamo_id IS NULL
             ");
             $stmtInsertEntrega = $this->db->prepare("
                 INSERT INTO natillera_entregas_beneficios (reunion_id, socio_id, tipo_beneficio, monto_entregado, entregado_por_usuario_id)
@@ -194,7 +204,8 @@ class Reunion extends Model {
             $stmtDelEntrega = $this->db->prepare("
                 DELETE FROM natillera_entregas_beneficios 
                 WHERE reunion_id = :reunion_id AND socio_id = :socio_id AND tipo_beneficio = 'PRESTAMO'
-                  AND (firma_digital_path IS NULL OR firma_digital_path = '') 
+                  AND prestamo_id IS NULL
+                  AND (firma_digital_path IS NULL OR firma_digital_path = '')
                   AND (foto_evidencia_path IS NULL OR foto_evidencia_path = '')
             ");
 
@@ -312,15 +323,77 @@ class Reunion extends Model {
     }
 
     public function anularAutoprestamo24Horas(int $ahorroId): bool {
+        $this->ultimoError = '';
         $this->db->beginTransaction();
         try {
-            $stmtAhorro = $this->db->prepare("SELECT * FROM natillera_ahorros_cuotas WHERE id = :id");
+            $stmtAhorro = $this->db->prepare("SELECT * FROM natillera_ahorros_cuotas WHERE id = :id FOR UPDATE");
             $stmtAhorro->execute([':id' => $ahorroId]);
             $ahorro = $stmtAhorro->fetch();
 
-            if ($ahorro && $ahorro['prestamo_id_asociado']) {
-                $prestamoId = (int)$ahorro['prestamo_id_asociado'];
+            if (!$ahorro || empty($ahorro['prestamo_id_asociado']) || empty($ahorro['autoprestamo_generado'])) {
+                return $this->abortarAnulacion('No existe un autopréstamo vigente asociado a este registro.');
+            }
 
+            $prestamoId = (int)$ahorro['prestamo_id_asociado'];
+            $socioIdAhorro = (int)$ahorro['socio_id'];
+            $reunionIdAhorro = (int)$ahorro['reunion_id'];
+
+            // Plazo de 24 horas contado desde la creación del autopréstamo (fecha_inicio DATETIME); se compara en SQL con NOW()
+            $stmtPrest = $this->db->prepare("
+                SELECT id, estado, anulado_sin_interes, es_autoprestamo,
+                       TIMESTAMPDIFF(SECOND, fecha_inicio, NOW()) AS segundos
+                FROM natillera_prestamos
+                WHERE id = :pid AND socio_deudor_id = :sid AND reunion_id = :rid
+                FOR UPDATE
+            ");
+            $stmtPrest->execute([':pid' => $prestamoId, ':sid' => $socioIdAhorro, ':rid' => $reunionIdAhorro]);
+            $prest = $stmtPrest->fetch();
+
+            if (!$prest || (int)$prest['es_autoprestamo'] !== 1) {
+                return $this->abortarAnulacion('No se encontró el autopréstamo asociado.');
+            }
+            if ((int)$prest['anulado_sin_interes'] === 1 || $prest['estado'] === 'ANULADO') {
+                return $this->abortarAnulacion('El autopréstamo ya fue anulado.');
+            }
+            if ($prest['segundos'] === null || (int)$prest['segundos'] > 24 * 3600) {
+                return $this->abortarAnulacion('Ya transcurrieron más de 24 horas desde la creación del autopréstamo.');
+            }
+
+            $stmtEstReu = $this->db->prepare("SELECT estado FROM natillera_reuniones WHERE id = :id");
+            $stmtEstReu->execute([':id' => $reunionIdAhorro]);
+            if ($stmtEstReu->fetchColumn() === 'CERRADA') {
+                return $this->abortarAnulacion('La reunión está CERRADA; no se puede anular el autopréstamo.');
+            }
+
+            $stmtAb = $this->db->prepare("SELECT COUNT(*) FROM natillera_abonos_prestamos WHERE prestamo_id = :pid");
+            $stmtAb->execute([':pid' => $prestamoId]);
+            if ((int)$stmtAb->fetchColumn() > 0) {
+                return $this->abortarAnulacion('El autopréstamo ya tiene abonos registrados y no puede anularse.');
+            }
+
+            // Constancia de entrega generada automáticamente: se elimina si no está firmada ni tiene evidencia
+            $stmtEnt = $this->db->prepare("
+                SELECT id, firma_digital_path, foto_evidencia_path FROM natillera_entregas_beneficios
+                WHERE reunion_id = :rid AND socio_id = :sid AND tipo_beneficio = 'PRESTAMO'
+                  AND prestamo_id IS NULL
+            ");
+            $stmtEnt->execute([':rid' => $reunionIdAhorro, ':sid' => $socioIdAhorro]);
+            $entregas = $stmtEnt->fetchAll();
+            foreach ($entregas as $ent) {
+                if (!empty($ent['firma_digital_path']) || !empty($ent['foto_evidencia_path'])) {
+                    return $this->abortarAnulacion('La constancia de entrega del autopréstamo ya tiene firma o evidencia; no puede anularse.');
+                }
+            }
+            if ($entregas) {
+                $stmtDelEnt = $this->db->prepare("
+                    DELETE FROM natillera_entregas_beneficios
+                    WHERE reunion_id = :rid AND socio_id = :sid AND tipo_beneficio = 'PRESTAMO'
+                      AND prestamo_id IS NULL
+                ");
+                $stmtDelEnt->execute([':rid' => $reunionIdAhorro, ':sid' => $socioIdAhorro]);
+            }
+
+            {
                 // Consultar cuota base de la reunión para calcular desgloses
                 $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
                 $stmtReunion->execute([':id' => $ahorro['reunion_id']]);
@@ -398,8 +471,19 @@ class Reunion extends Model {
             $this->db->commit();
             return true;
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $this->ultimoError = 'Error al anular el autopréstamo.';
             return false;
         }
+    }
+
+    private function abortarAnulacion(string $mensaje): bool {
+        if ($this->db->inTransaction()) {
+            $this->db->rollBack();
+        }
+        $this->ultimoError = $mensaje;
+        return false;
     }
 }

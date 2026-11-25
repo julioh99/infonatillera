@@ -50,6 +50,9 @@ class CierreReunion extends Model {
 
         // b) Abonos a préstamos (Capital e Intereses) asociados a esta quincena o realizados en el rango de fechas
         $quincenaNum = (int)$reunion['numero_quincena'];
+        // numero_quincena es consecutivo global (MAX+1, no se reinicia por año). En la primera
+        // reunión no existe la previa (0): el IFNULL de las consultas usa '2000-01-01' y el
+        // acumulado previo es 0.
         $quincenaPrevNum = $quincenaNum - 1;
 
         $stmtPrestamos = $this->db->prepare("
@@ -347,12 +350,27 @@ class CierreReunion extends Model {
         $this->db->beginTransaction();
 
         try {
+            // Bloquea la reunión y evita re-cerrar una reunión ya CERRADA (no existe flujo de "reabrir").
+            $stmtLock = $this->db->prepare("SELECT estado FROM natillera_reuniones WHERE id = :id FOR UPDATE");
+            $stmtLock->execute([':id' => $reunionId]);
+            $estadoActual = $stmtLock->fetchColumn();
+            if ($estadoActual === false) {
+                throw new RuntimeException("Reunión no encontrada.");
+            }
+
+            $stmtYa = $this->db->prepare("SELECT COUNT(*) FROM natillera_cierres_reunion WHERE reunion_id = :id");
+            $stmtYa->execute([':id' => $reunionId]);
+            // Solo se bloquea si ya existe el cierre: una reunión marcada CERRADA a mano sin cierre aún debe poder cerrarse.
+            if ((int)$stmtYa->fetchColumn() > 0) {
+                throw new RuntimeException("Esta reunión ya fue cerrada. No es posible repetir el cierre.");
+            }
+
             $ing = $resumen['ingresos'];
             $egr = $resumen['egresos'];
             $desgloseJson = json_encode($resumen, JSON_UNESCAPED_UNICODE);
 
             $stmt = $this->db->prepare("
-                INSERT INTO natillera_cierres_reunion 
+                INSERT INTO natillera_cierres_reunion
                 (reunion_id, total_ingresos_cuotas_base, total_ingresos_ahorro_extra, total_ingresos_rondas_rifas,
                  total_ingresos_abono_capital, total_ingresos_intereses_prestamos, total_ingresos_actividades,
                  total_ingresos_inyecciones, total_ingresos_general, total_egresos_prestamos_otorgados,
@@ -405,11 +423,39 @@ class CierreReunion extends Model {
             $stmtUpdR = $this->db->prepare("UPDATE natillera_reuniones SET estado = 'CERRADA' WHERE id = :id");
             $stmtUpdR->execute([':id' => $reunionId]);
 
+            // Si se cerró en medio de la secuencia, recalcula en cascada los saldos de cierres posteriores
+            $this->recalcularSaldosAcumulados();
+
             $this->db->commit();
             return true;
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $e;
+        }
+    }
+
+    /**
+     * Recalcula saldo_acumulado_caja de todos los cierres como suma corrida de saldo_neto_reunion
+     * ordenada por numero_quincena (misma regla que calcularResumenReunion). No abre transacción:
+     * debe llamarse dentro de la del llamador (o envolverse en una).
+     */
+    public function recalcularSaldosAcumulados(): void {
+        $cierres = $this->db->query("
+            SELECT cr.id, cr.saldo_neto_reunion, cr.saldo_acumulado_caja
+            FROM natillera_cierres_reunion cr
+            JOIN natillera_reuniones r ON cr.reunion_id = r.id
+            ORDER BY r.numero_quincena ASC
+        ")->fetchAll();
+
+        $stmtUpd = $this->db->prepare("UPDATE natillera_cierres_reunion SET saldo_acumulado_caja = :saldo WHERE id = :id");
+        $acumulado = 0.0;
+        foreach ($cierres as $c) {
+            $acumulado += (float)$c['saldo_neto_reunion'];
+            if (abs($acumulado - (float)$c['saldo_acumulado_caja']) > 0.005) {
+                $stmtUpd->execute([':saldo' => $acumulado, ':id' => $c['id']]);
+            }
         }
     }
 

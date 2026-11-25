@@ -35,10 +35,10 @@ class PrestamoController extends Controller {
 
         $socioDeudorId = (int)($_POST['socio_deudor_id'] ?? 0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
-        $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
+        $monto = $this->parseMonto($_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.00);
 
-        if ($socioDeudorId <= 0 || $monto <= 0) {
+        if ($socioDeudorId <= 0 || $monto === null || $monto <= 0) {
             $_SESSION['error'] = "Por favor selecciona un socio deudor y un monto válido.";
             $this->redirectConBusqueda();
         }
@@ -57,19 +57,38 @@ class PrestamoController extends Controller {
         $fechaPrestamo = !empty($_POST['fecha_prestamo']) ? trim($_POST['fecha_prestamo']) : date('Y-m-d');
 
         $prestamoModel = new Prestamo();
-        $prestamoId = $prestamoModel->crearPrestamo([
-            'socio_deudor_id' => $socioDeudorId,
-            'reunion_id' => $reunionId,
-            'fecha_prestamo' => $fechaPrestamo,
-            'nombre_referencia' => $nombreReferencia,
-            'monto_prestado' => $monto,
-            'tasa_interes_mensual' => $tasa,
-            'tipo_prestamo' => 'DIRECTO',
-            'es_autoprestamo' => 0
-        ]);
+
+        // La reunion del egreso: la indicada o la actual (nunca se asume una reunion arbitraria)
+        $reunionFinalId = $reunionId;
+        if (!$reunionFinalId) {
+            $reunionModel = new Reunion();
+            $rAct = $reunionModel->getReunionActual();
+            $reunionFinalId = $rAct ? (int)$rAct['id'] : null;
+        }
+        if (!$reunionFinalId) {
+            $_SESSION['error'] = "No hay una reunión activa a la cual asociar el préstamo. Selecciona una reunión.";
+            $this->redirectConBusqueda();
+        }
+
+        try {
+            // El prestamo queda ligado a la reunion donde se registra su egreso
+            $prestamoId = $prestamoModel->crearPrestamo([
+                'socio_deudor_id' => $socioDeudorId,
+                'reunion_id' => $reunionFinalId,
+                'fecha_prestamo' => $fechaPrestamo,
+                'nombre_referencia' => $nombreReferencia,
+                'monto_prestado' => $monto,
+                'tasa_interes_mensual' => $tasa,
+                'tipo_prestamo' => 'DIRECTO',
+                'es_autoprestamo' => 0
+            ]);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($prestamoId) {
-            // Verificar si enviaron Firma Digital o Foto Evidencia en la creación directa
+            // Firma Digital y Foto Evidencia son opcionales; el egreso se registra siempre
             $firmasDir = __DIR__ . '/../../public/uploads/firmas';
             $evidenciasDir = __DIR__ . '/../../public/uploads/evidencias';
 
@@ -101,26 +120,20 @@ class PrestamoController extends Controller {
                 }
             }
 
-            if (!empty($firmaPath) || !empty($fotoPath)) {
-                $entregaModel = new EntregaBeneficio();
-                $reunionFinalId = $reunionId;
-                if (!$reunionFinalId) {
-                    $reunionModel = new Reunion();
-                    $rAct = $reunionModel->getReunionActual();
-                    $reunionFinalId = $rAct ? (int)$rAct['id'] : 1;
-                }
+            try {
+                // Idempotente por prestamo_id: no duplica si la entrega ya existia
+                $prestamoModel->asegurarEntregaPrestamo(
+                    (int)$prestamoId, (int)$reunionFinalId, $socioDeudorId, $monto,
+                    $firmaPath, $fotoPath, (int)($_SESSION['usuario']['id'] ?? 1)
+                );
+            } catch (Throwable $e) {
+                // Sin egreso el cierre quedaria descuadrado: se revierte el prestamo recien creado
+                try { $prestamoModel->eliminarPrestamo((int)$prestamoId); } catch (Throwable $e2) {}
+                $_SESSION['error'] = "No se pudo registrar el préstamo ni su egreso. Intenta de nuevo.";
+                $this->redirect('/admin/prestamos');
+            }
 
-                $entregadoPor = (int)($_SESSION['usuario']['id'] ?? 1);
-                $entregaModel->registrarEntrega([
-                    'reunion_id' => $reunionFinalId,
-                    'socio_id' => $socioDeudorId,
-                    'prestamo_id' => $prestamoId,
-                    'tipo_beneficio' => 'PRESTAMO',
-                    'monto_entregado' => $monto,
-                    'firma_digital_path' => $firmaPath,
-                    'foto_evidencia_path' => $fotoPath,
-                    'entregado_por_usuario_id' => $entregadoPor
-                ]);
+            if (!empty($firmaPath) || !empty($fotoPath)) {
                 $_SESSION['success'] = "Préstamo N° {$prestamoId} registrado exitosamente con firma y evidencia.";
             } else {
                 $_SESSION['success'] = "Préstamo N° {$prestamoId} registrado exitosamente.";
@@ -138,27 +151,32 @@ class PrestamoController extends Controller {
         $id = (int)($_POST['prestamo_id'] ?? 0);
         $socioDeudorId = (int)($_POST['socio_deudor_id'] ?? 0);
         $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
-        $monto = (float)str_replace('.', '', $_POST['monto_prestado'] ?? 0);
+        $monto = $this->parseMonto($_POST['monto_prestado'] ?? 0);
         $tasa = (float)($_POST['tasa_interes_mensual'] ?? 10.0);
         $nombreReferencia = trim($_POST['nombre_referencia'] ?? '');
         $fechaPrestamo = !empty($_POST['fecha_prestamo']) ? trim($_POST['fecha_prestamo']) : date('Y-m-d');
         $estado = trim($_POST['estado'] ?? 'ACTIVO');
 
-        if ($id <= 0 || $socioDeudorId <= 0 || $monto <= 0) {
+        if ($id <= 0 || $socioDeudorId <= 0 || $monto === null || $monto <= 0) {
             $_SESSION['error'] = "Datos de préstamo inválidos para actualizar.";
             $this->redirectConBusqueda();
         }
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->actualizarPrestamo($id, [
-            'socio_deudor_id' => $socioDeudorId,
-            'reunion_id' => $reunionId,
-            'fecha_prestamo' => $fechaPrestamo,
-            'monto_prestado' => $monto,
-            'tasa_interes_mensual' => $tasa,
-            'nombre_referencia' => $nombreReferencia,
-            'estado' => $estado
-        ]);
+        try {
+            $ok = $prestamoModel->actualizarPrestamo($id, [
+                'socio_deudor_id' => $socioDeudorId,
+                'reunion_id' => $reunionId,
+                'fecha_prestamo' => $fechaPrestamo,
+                'monto_prestado' => $monto,
+                'tasa_interes_mensual' => $tasa,
+                'nombre_referencia' => $nombreReferencia,
+                'estado' => $estado
+            ]);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($ok) {
             $_SESSION['success'] = "Préstamo N° {$id} actualizado correctamente.";
@@ -174,8 +192,13 @@ class PrestamoController extends Controller {
 
         $prestamoId = (int)($_POST['prestamo_id'] ?? 0);
         $reunionId = !empty($_POST['reunion_id']) ? (int)$_POST['reunion_id'] : null;
-        $montoCapital = (float)str_replace('.', '', $_POST['monto_capital_pagado'] ?? 0);
-        $montoInteres = (float)str_replace('.', '', $_POST['monto_interes_pagado'] ?? 0);
+        $montoCapital = $this->parseMonto($_POST['monto_capital_pagado'] ?? 0);
+        $montoInteres = $this->parseMonto($_POST['monto_interes_pagado'] ?? 0);
+
+        if ($montoCapital === null || $montoInteres === null) {
+            $_SESSION['error'] = "Los montos del abono no son válidos (no pueden ser negativos ni tener formato incorrecto).";
+            $this->redirectConBusqueda();
+        }
 
         if ($prestamoId <= 0 || ($montoCapital <= 0 && $montoInteres <= 0)) {
             $_SESSION['error'] = "Ingresa al menos un valor a abonar en capital o interés.";
@@ -190,7 +213,12 @@ class PrestamoController extends Controller {
         }
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->registrarAbono($prestamoId, $montoCapital, $montoInteres, $usuarioId, $reunionId);
+        try {
+            $ok = $prestamoModel->registrarAbono($prestamoId, $montoCapital, $montoInteres, $usuarioId, $reunionId);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($ok) {
             $_SESSION['success'] = "Abono registrado correctamente.";
@@ -226,9 +254,14 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria General']);
 
         $abonoId = (int)($_POST['abono_id'] ?? 0);
-        $montoCapital = (float)str_replace('.', '', $_POST['monto_capital_pagado'] ?? 0);
-        $montoInteres = (float)str_replace('.', '', $_POST['monto_interes_pagado'] ?? 0);
+        $montoCapital = $this->parseMonto($_POST['monto_capital_pagado'] ?? 0);
+        $montoInteres = $this->parseMonto($_POST['monto_interes_pagado'] ?? 0);
         $fechaAbono = trim($_POST['fecha_abono'] ?? '');
+
+        if ($montoCapital === null || $montoInteres === null) {
+            $_SESSION['error'] = "Los montos del abono no son válidos (no pueden ser negativos ni tener formato incorrecto).";
+            $this->redirectConBusqueda();
+        }
 
         if ($abonoId <= 0) {
             $_SESSION['error'] = "Abono no válido.";
@@ -236,7 +269,12 @@ class PrestamoController extends Controller {
         }
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->actualizarAbono($abonoId, $montoCapital, $montoInteres, $fechaAbono);
+        try {
+            $ok = $prestamoModel->actualizarAbono($abonoId, $montoCapital, $montoInteres, $fechaAbono);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($ok) {
             $_SESSION['success'] = "Cuota/Abono actualizado correctamente.";
@@ -258,7 +296,12 @@ class PrestamoController extends Controller {
         }
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->eliminarAbono($abonoId);
+        try {
+            $ok = $prestamoModel->eliminarAbono($abonoId);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($ok) {
             $_SESSION['success'] = "Cuota/Abono eliminado correctamente.";
@@ -273,9 +316,9 @@ class PrestamoController extends Controller {
         $this->requireRole(['Presidente', 'Secretaria General']);
 
         $socioId = (int)($_POST['socio_id'] ?? 0);
-        $nuevoTope = (float)str_replace('.', '', $_POST['nuevo_tope'] ?? 2000000.00);
+        $nuevoTope = $this->parseMonto($_POST['nuevo_tope'] ?? 2000000.00);
 
-        if ($socioId <= 0 || $nuevoTope <= 0) {
+        if ($socioId <= 0 || $nuevoTope === null || $nuevoTope <= 0) {
             $_SESSION['error'] = "Datos de tope de crédito no válidos.";
             $this->redirectConBusqueda();
         }
@@ -303,7 +346,12 @@ class PrestamoController extends Controller {
         }
 
         $prestamoModel = new Prestamo();
-        $ok = $prestamoModel->eliminarPrestamo($id);
+        try {
+            $ok = $prestamoModel->eliminarPrestamo($id);
+        } catch (InvalidArgumentException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
 
         if ($ok) {
             $_SESSION['success'] = "Préstamo N° {$id} eliminado correctamente de la natillera.";
@@ -312,6 +360,26 @@ class PrestamoController extends Controller {
         }
 
         $this->redirectConBusqueda();
+    }
+
+    /**
+     * Convierte un monto del formulario a float (formato es-CO: 1.500.000 o 1.500.000,50).
+     * Vacio => 0.0. Devuelve null si el formato es invalido o negativo.
+     */
+    private function parseMonto($valor): ?float {
+        if (is_int($valor) || is_float($valor)) {
+            return $valor < 0 ? null : (float)$valor;
+        }
+        $v = trim(str_replace(['$', ' '], '', (string)$valor));
+        if ($v === '') return 0.0;
+        if (strpos($v, ',') !== false) {
+            // Coma = decimal, punto = miles
+            if (!preg_match('/^(\d{1,3}(\.\d{3})*|\d+),\d{1,2}$/', $v)) return null;
+            return (float)str_replace(',', '.', str_replace('.', '', $v));
+        }
+        if (preg_match('/^\d{1,3}(\.\d{3})+$/', $v)) return (float)str_replace('.', '', $v); // miles
+        if (preg_match('/^\d+(\.\d{1,2})?$/', $v)) return (float)$v;                        // entero o decimal con punto
+        return null;
     }
 
     private function redirectConBusqueda(string $defaultPath = '/admin/prestamos'): void {
