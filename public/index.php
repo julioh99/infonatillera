@@ -113,6 +113,11 @@ $router->post('/socio/actualizar-mi-perfil', [SocioController::class, 'actualiza
 $router->get('/socio/pagos-pendientes-modal', [SocioController::class, 'pagosPendientesModal']);
 $router->post('/socio/marcar-pagos-leidos', [SocioController::class, 'marcarPagosLeidos']);
 
+// Rutas adicionales por módulo: cada archivo de app/routes/*.php recibe $router
+foreach (glob(__DIR__ . '/../app/routes/*.php') ?: [] as $archivoRutas) {
+    require $archivoRutas;
+}
+
 // Despachar la Petición
 $uri = $_SERVER['REQUEST_URI'] ?? '/';
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
