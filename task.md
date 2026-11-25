@@ -240,7 +240,10 @@ Hecho: capa de diseño `public/css/theme.css` (colores, tipografía, tarjetas, b
 - Cruce de nombres que conviene revisar: Marglevis Abuelles = antes "Argumedo"; Gisela Cassas = antes "Jicela Casas"; Yufari Herrera = antes "Yulfarys Herrera"; Yuli Gonzalez = antes "Yulieth Gonzalez"; Rosiris Henriquez = antes "Rosiris Enrique"; Dina Luz Gonzalez = antes "Dina Gonzalez"; "Lina" se conservó como "Lina Arroyo".
 - Salen (quedan inactivos): Cecilia Gonzalez, Jhonatan Alvarez, Cristina Fuentes, Antonio Gonzalez, Isabel Fuentes. Cuatro de ellos tienen 9 préstamos activos.
 - Los 5 socios nuevos reciben cédula con el esquema 1040+id y una clave temporal (se guarda en un CSV fuera del proyecto); deben cambiarla al primer ingreso. Las cédulas de todo el sistema son números de prueba 1040xx: reemplazarlas por las reales cuando se tengan.
-- [ ] Ejecutar el cambio de año en la base real (pendiente de la confirmación del usuario sobre: cierre de R26, préstamos activos y fecha de la primera reunión).
+- [x] **Cambio de año ejecutado en la base real (25/11/2026 11:51)**, con las decisiones del usuario: ahora mismo, sin pasar los préstamos activos (45, $23.636.600 de capital pendiente: quedaron solo en el año guardado), primera reunión el 14/12/2026 y nombres dudosos confirmados como las mismas personas. Resultado: año "Dic 2025 - Nov 2026" guardado y verificado (con respaldo automático), año "Dic 2026 - Nov 2027" cargado con 50 socios activos, 5 inactivos, 26 reuniones (14/12/2026 a 29/11/2027; extras de ronda en 3, 9, 16 y 22 y de rifa en 6, 12, 19 y 25), sin cuotas, préstamos ni cierres. Respaldo previo y claves temporales de los 5 socios nuevos en `J:\www\infonatillera_backups\2026-11-25_antes_cambio_anio_real\` (entregar las claves y luego borrar el CSV).
+- [ ] **Préstamos que quedaron en el año anterior:** los 45 préstamos activos no están en el año nuevo; para cobrarlos hay que cargar "Dic 2025 - Nov 2026" desde Histórico de Años o registrarlos como saldo inicial.
+- [ ] **Liquidación anual del año que cerró:** hacerla antes de borrar nada; el año está guardado y se puede recargar para consultarla.
+- [ ] Cédulas de los 5 socios nuevos (104052 a 104056) son números de prueba; cambiar por las reales en Gestión de Socios.
 
 **Sigue pendiente**
 - [ ] Elegir el logo con la mesa directiva.
