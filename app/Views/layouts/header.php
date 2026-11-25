@@ -20,7 +20,11 @@
     <link rel="stylesheet" href="/css/theme.css?v=<?= @filemtime(__DIR__ . '/../../../public/css/theme.css') ?: 1 ?>">
     <!-- Estructura global y pantallas de acceso -->
     <link rel="stylesheet" href="/css/pages/layout.css?v=<?= @filemtime(__DIR__ . '/../../../public/css/pages/layout.css') ?: 1 ?>">
-    <meta name="theme-color" content="#0e2a1f">
+    <meta name="theme-color" content="#14573d">
+    <!-- CSRF central: agrega el token a formularios y a fetch (ver public/js/csrf.js) -->
+    <meta name="csrf-token" content="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+    <script src="/js/csrf.js?v=<?= @filemtime(__DIR__ . '/../../../public/js/csrf.js') ?: 1 ?>"></script>
+    <script src="/js/ui.js?v=<?= @filemtime(__DIR__ . '/../../../public/js/ui.js') ?: 1 ?>" defer></script>
 </head>
 <body class="bg-light-gradient min-vh-100">
 
@@ -141,6 +145,15 @@
                         <a class="nav-link <?= strpos($currentUri, '/admin/inyecciones') === 0 ? 'active' : '' ?>" href="/admin/inyecciones">
                             <i class="fa-solid fa-chart-line text-success"></i>
                             <span>Inyecciones Capital</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <?php if ($role === 'Presidente' && $activeMode === 'Presidente'): ?>
+                    <li>
+                        <a class="nav-link <?= strpos($currentUri, '/admin/historico') === 0 ? 'active' : '' ?>" href="/admin/historico">
+                            <i class="fa-solid fa-clock-rotate-left text-warning"></i>
+                            <span>Histórico de Años</span>
                         </a>
                     </li>
                 <?php endif; ?>
@@ -301,6 +314,15 @@
                             <a class="nav-link <?= strpos($currentUri, '/admin/inyecciones') === 0 ? 'active' : '' ?>" href="/admin/inyecciones">
                                 <i class="fa-solid fa-chart-line text-success"></i>
                                 <span>Inyecciones Capital</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if ($role === 'Presidente' && $activeMode === 'Presidente'): ?>
+                        <li>
+                            <a class="nav-link <?= strpos($currentUri, '/admin/historico') === 0 ? 'active' : '' ?>" href="/admin/historico">
+                                <i class="fa-solid fa-clock-rotate-left text-warning"></i>
+                                <span>Histórico de Años</span>
                             </a>
                         </li>
                     <?php endif; ?>

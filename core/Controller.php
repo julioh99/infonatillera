@@ -19,9 +19,18 @@ abstract class Controller {
         $viewFile = __DIR__ . '/../app/Views/' . $view . '.php';
 
         if (file_exists($viewFile)) {
-            require_once __DIR__ . '/../app/Views/layouts/header.php';
-            require_once $viewFile;
-            require_once __DIR__ . '/../app/Views/layouts/footer.php';
+            // Se captura la salida para insertar el token CSRF en los formularios POST (core/Csrf.php)
+            Csrf::token();
+            ob_start();
+            try {
+                require_once __DIR__ . '/../app/Views/layouts/header.php';
+                require_once $viewFile;
+                require_once __DIR__ . '/../app/Views/layouts/footer.php';
+            } catch (Throwable $e) {
+                ob_end_clean();
+                throw $e;
+            }
+            echo Csrf::inyectar(ob_get_clean());
         } else {
             die("Vista no encontrada: " . htmlspecialchars($view));
         }
@@ -57,17 +66,52 @@ abstract class Controller {
     protected function requireRole($allowedRoles) {
         $user = $this->requireAuth();
         $userRole = isset($_SESSION['usuario']['rol_nombre']) ? $_SESSION['usuario']['rol_nombre'] : '';
+        $activeMode = isset($_SESSION['active_mode']) ? $_SESSION['active_mode'] : $userRole;
 
-        // Si es Presidente, puede acceder a todo si está en modo admin
+        // El Presidente accede a todo SOLO en modo Presidente; en modo Socio se trata como Socio.
         if ($userRole === 'Presidente') {
-            return $user;
+            if ($activeMode === 'Presidente') {
+                return $user;
+            }
+            $userRole = 'Socio';
         }
 
         if (!in_array($userRole, (array)$allowedRoles, true)) {
+            if (Csrf::esAjax()) {
+                $this->json(['success' => false, 'message' => 'No tienes permisos suficientes.'], 403);
+            }
             $_SESSION['error'] = "No tienes permisos suficientes para acceder a este módulo.";
             $this->redirect('/socio/dashboard');
         }
 
         return $user;
+    }
+
+    /** Lee una clave de config/natillera.php con notacion de puntos: natillera('seguridad.password_min', 8). */
+    protected function natillera($clave, $defecto = null) {
+        static $cfg = null;
+        if ($cfg === null) {
+            $cfg = require __DIR__ . '/../config/natillera.php';
+        }
+        $nodo = $cfg;
+        foreach (explode('.', $clave) as $parte) {
+            if (!is_array($nodo) || !array_key_exists($parte, $nodo)) {
+                return $defecto;
+            }
+            $nodo = $nodo[$parte];
+        }
+        return $nodo;
+    }
+
+    /** Token CSRF de la sesion (para vistas o controladores que lo necesiten). */
+    protected function csrfToken() {
+        return Csrf::token();
+    }
+
+    /** Valida el token de la peticion actual; responde 419 y termina si no es valido. */
+    protected function verificarCsrf() {
+        if (!Csrf::valido()) {
+            Csrf::rechazar();
+        }
     }
 }

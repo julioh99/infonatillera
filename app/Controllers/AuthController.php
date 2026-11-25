@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../Models/Usuario.php';
+require_once __DIR__ . '/../Models/LoginIntento.php';
 
 class AuthController extends Controller {
 
@@ -22,10 +23,25 @@ class AuthController extends Controller {
             $this->redirect('/login');
         }
 
+        $cedula = substr($cedula, 0, 30);
+        $ip = LoginIntento::ipCliente();
+        $intentos = new LoginIntento();
+
+        // Limite de intentos fallidos por cédula + IP
+        $espera = $intentos->minutosBloqueo($cedula, $ip);
+        if ($espera > 0) {
+            $_SESSION['error'] = "Demasiados intentos fallidos. Espera {$espera} " . ($espera === 1 ? 'minuto' : 'minutos') . " antes de volver a intentarlo.";
+            $this->redirect('/login');
+        }
+
         $usuarioModel = new Usuario();
         $user = $usuarioModel->login($cedula, $password);
 
         if ($user) {
+            $intentos->limpiar($cedula, $ip);
+            // Evita la fijación de sesión: nuevo id de sesión al autenticar (conserva el token CSRF)
+            session_regenerate_id(true);
+
             $_SESSION['usuario'] = $user;
             $_SESSION['active_mode'] = $user['rol_nombre']; // 'Presidente', 'Tesorera', 'Socio', etc.
 
@@ -41,7 +57,13 @@ class AuthController extends Controller {
                 $this->redirect('/socio/dashboard');
             }
         } else {
-            $_SESSION['error'] = "Credenciales incorrectas o usuario inactivo.";
+            $intentos->registrarFallo($cedula, $ip);
+            $espera = $intentos->minutosBloqueo($cedula, $ip);
+            if ($espera > 0) {
+                $_SESSION['error'] = "Demasiados intentos fallidos. Espera {$espera} " . ($espera === 1 ? 'minuto' : 'minutos') . " antes de volver a intentarlo.";
+            } else {
+                $_SESSION['error'] = "Credenciales incorrectas o usuario inactivo.";
+            }
             $this->redirect('/login');
         }
     }
@@ -64,8 +86,9 @@ class AuthController extends Controller {
         $passwordNuevo = trim($_POST['password_nuevo'] ?? '');
         $passwordConfirmar = trim($_POST['password_confirmar'] ?? '');
 
-        if (strlen($passwordNuevo) < 6) {
-            $_SESSION['error'] = "La nueva contraseña debe tener al menos 6 caracteres.";
+        $minPass = (int)$this->natillera('seguridad.password_min', 8);
+        if (strlen($passwordNuevo) < $minPass) {
+            $_SESSION['error'] = "La nueva contraseña debe tener al menos {$minPass} caracteres.";
             $this->redirect('/cambiar-password-inicial');
         }
 
