@@ -1,31 +1,38 @@
-# 💰 Módulo 03: Gestión de Préstamos e Historial de Cuotas
+# Módulo 03: Préstamos, intereses y abonos
 
-Este módulo administra los préstamos concedidos a los socios de la natillera, las rentabilidades por intereses generadas y el registro de abonos a capital e interés.
+Administra los préstamos a socios, el cálculo del interés mensual y los abonos a capital e interés.
+
+## Componentes
+- Controlador: [`app/Controllers/PrestamoController.php`](../app/Controllers/PrestamoController.php)
+- Modelos: [`app/Models/Prestamo.php`](../app/Models/Prestamo.php) y [`app/Models/InteresPrestamo.php`](../app/Models/InteresPrestamo.php) (cálculo puro, sin base de datos)
+- Vista: `app/Views/admin/prestamos.php`
+- Permisos: registrar y abonar, Presidente, Tesorera y Secretaria General; editar y borrar, Presidente y Secretaria General.
+
+## Reglas
+
+### Préstamos directos
+- Se otorgan al socio deudor, con un campo opcional de **referencia o alias** (para qué es o a nombre de quién).
+- Tope por socio (`tope_prestamo_personalizado`, $2.000.000 por defecto). Superarlo solo lo autoriza el Presidente o la Secretaria General.
+- Todo préstamo entregado queda como **egreso** del cierre de su reunión, tenga o no firma o foto. La constancia de firma y foto (módulo 09) es evidencia adicional.
+- No se pueden crear préstamos en una reunión `CERRADA`.
+
+### Interés mensual
+Regla vigente (`interes.modo = SALDO_MES_INICIADO` en `config/natillera.php`): **10% mensual sobre el capital pendiente al inicio de cada mes; el mes que empieza se cobra completo**.
+- Si el socio abona capital, el mes siguiente paga menos.
+- Si paga todo el capital, el interés deja de correr ese día.
+- Modos alternativos: `SALDO_MES_COMPLETO` (solo meses cumplidos) y `COMPUESTO` (interés sobre interés no pagado).
+- La lista de préstamos muestra interés causado, pagado y pendiente, y el detalle mes a mes; el modal de abono propone el interés pendiente.
+- Autopréstamos anulados por la regla de 24 horas: interés 0.
+- Prueba: `php tests/test_interes_progresivo.php`.
+
+### Abonos
+- Capital e interés se abonan por separado. Se rechazan montos negativos y capital mayor al saldo.
+- Al llegar el saldo de capital a cero el préstamo pasa a `PAGADO`.
+- Un abono sin reunión asignada se ubica en el cierre por la fecha del abono.
+- El Presidente y la Secretaria General pueden editar préstamos y corregir o eliminar abonos del historial de cuotas; el saldo y el estado se recalculan.
+
+### Meta de intereses
+Cada socio tiene una meta anual de $400.000 en intereses (`prestamo.meta_intereses_anual`), visible en su panel.
 
 ---
-
-## 🛠️ Clases y Componentes Relacionados
-
-- **Controlador:** [`app/Controllers/PrestamoController.php`](../app/Controllers/PrestamoController.php)
-- **Modelo:** [`app/Models/Prestamo.php`](../app/Models/Prestamo.php)
-- **Vista:** [`app/Views/admin/prestamos.php`](../app/Views/admin/prestamos.php)
-
----
-
-## ⚙️ Características y Funcionalidades
-
-### 1. Préstamos Directos y Referencias Opcionales
-- Los préstamos se otorgan **directamente al socio deudor**.
-- Incluyen el campo opcional **Persona Referente / Nombre de Referencia** (*ej: "Para negocio de empanadas" / "Ref: Juan Pérez"*), permitiendo a la directiva identificar con claridad el motivo o referente del préstamo sin necesidad de figuras de fiadores.
-
-### 2. Abonos Independientes a Capital e Interés
-- Permite amortizar montos separados para **Capital** e **Interés**.
-- Al completar el total del capital prestado, el estado del préstamo pasa automáticamente a `PAGADO ✔`.
-
-### 3. Edición de Préstamos Pagados y Control de Cuotas
-- **Modificación por Directiva:** El Presidente y la Secretaria General pueden usar el botón **"✏ Editar"** en cualquier préstamo (incluso en préstamos finalizados `PAGADO`).
-- **Historial Editable de Cuotas (`≡ Cuotas`):** Permite abrir el historial de abonos realizados a un préstamo para modificar montos o eliminar registros erróneos.
-- El saldo y el estado del préstamo se recalculan en tiempo real tras cualquier ajuste.
-
----
-[⬅️ Anterior: Llamado a Lista](./02_llamado_a_lista.md) | [📋 Índice](./README.md) | [➡️ Siguiente: Actividades (Tamales)](./04_actividades_tamales.md)
+[Anterior](./02_llamado_a_lista.md) | [Índice](./README.md) | [Siguiente: Actividades](./04_actividades_tamales.md)

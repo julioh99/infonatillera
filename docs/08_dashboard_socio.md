@@ -1,31 +1,22 @@
-# 📊 Módulo 08: Dashboard Individual del Socio
+# Módulo 08: Panel individual del socio
 
-El Dashboard del Socio proporciona transparencia financiera total, permitiendo a cada socio consultar en cualquier momento su saldo acumulado, rendimiento proyectado y estado de préstamos.
+Transparencia financiera: cada socio consulta su estado de cuenta en cualquier momento.
 
----
+## Componentes
+- Controlador: [`app/Controllers/SocioController.php`](../app/Controllers/SocioController.php)
+- Modelos: `Usuario`, `Reunion`, `Prestamo`, `PagoNotificacion`
+- Vista: `app/Views/socio/dashboard.php`
 
-## 🛠️ Clases y Componentes Relacionados
+## Qué muestra
+1. **Ahorro:** cuotas de $40.000 pagadas más ahorros extra.
+2. **Meta de intereses** ($400.000 al año): barra de avance.
+3. **Mis préstamos:** capital, saldo, tasa, referencia, interés pendiente ("+ interés pendiente") y botón **Ver cuotas** con fecha, capital, interés y quién recibió cada pago.
+4. **Mis actividades comunitarias:** cuota asignada, pagado, saldo, estado y desglose de abonos.
+5. **Historial quincenal:** cuotas reunión por reunión.
+6. **Notificaciones de pago:** ventana que aparece cuando la directiva registra un pago; el socio confirma que la vio.
+7. **Notificaciones generales** (campana) con los mensajes de la directiva.
 
-- **Controlador:** [`app/Controllers/SocioController.php`](../app/Controllers/SocioController.php)
-- **Modelos:**
-  - [`app/Models/Usuario.php`](../app/Models/Usuario.php)
-  - [`app/Models/Reunion.php`](../app/Models/Reunion.php)
-  - [`app/Models/Prestamo.php`](../app/Models/Prestamo.php)
-- **Vista:** [`app/Views/socio/dashboard.php`](../app/Views/socio/dashboard.php)
-
----
-
-## ⚙️ Métricas y Secciones Visualizadas
-
-1. **Total Ahorrado en Cuotas y Extras:** Suma de todas las cuotas fijas pagadas y ahorros opcionales aportados.
-2. **Progreso de Meta de Intereses ($400.000 COP):** Indicador gráfico del nivel de cumplimiento del compromiso anual de intereses.
-3. **Mis Préstamos y Seguimiento de Cuotas:**
-   - Visualización de créditos vigentes y pagados con su tasa de interés, saldo de capital y referente/alias.
-   - Botón **"Ver Cuotas"** para desplegar el desglose detallado de cada cuota abonada: fecha, abono a capital, abono a interés y la persona de la directiva que recibió/registró dicho pago.
-4. **Mis Actividades Comunitarias y Deudas:**
-   - Panel dedicado a eventos comunitarios (venta de tamales, actividades extraordinarias).
-   - Muestra la cuota asignada por actividad, el monto pagado, el saldo pendiente individual y el estado (`PAGADO` o `PENDIENTE`).
-5. **Historial de Asistencia Quincenal:** Tabla con el detalle de cuotas aportadas reunión por reunión.
+El Presidente ve este mismo panel al activar el modo Socio. Cada socio solo ve sus propios datos; la vista de liquidación de todos los socios es para la directiva.
 
 ---
-[⬅️ Anterior: Gestión de Socios](./07_gestion_socios.md) | [📋 Índice](./README.md)
+[Anterior](./07_gestion_socios.md) | [Índice](./README.md) | [Siguiente: Entregas, cierres y años](./09_entregas_rondas_rifas.md)

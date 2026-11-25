@@ -1,149 +1,125 @@
 <?php
-// seed.php - Seeder Inteligente de Datos de Prueba para la Natillera
+// seed.php - Datos de DEMOSTRACION para una base LOCAL de pruebas (MySQL, tablas natillera_*).
+//   DB_DATABASE=nt_demo php scripts/migrate.php --sin-seed     (crea el esquema sin Presidente)
+//   DB_DATABASE=nt_demo php seed.php
+// - Solo por consola. Se niega a correr si el host no es local o si ya hay usuarios.
+// - No hay claves fijas: se genera UNA clave temporal aleatoria para toda la demostracion,
+//   se imprime una sola vez por consola y cada usuario debe cambiarla al entrar.
+// - NUNCA lo ejecutes contra la base de produccion.
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
 
 require_once __DIR__ . '/config/database.php';
+Database::$autoMigrar = false;
+Database::loadEnv(__DIR__ . '/.env');
+
+$host = getenv('DB_HOST') ?: '127.0.0.1';
+if (!in_array($host, array('127.0.0.1', 'localhost', '::1'), true)) {
+    fwrite(STDERR, "seed.php solo corre contra una base local (DB_HOST={$host} no es local).\n");
+    exit(2);
+}
 
 try {
-    $db = Database::getConnection();
-
-    echo "Inicializando Base de Datos...\n";
-    Database::initDatabase();
-
-    // 1. Verificar e Insertar Roles si están vacíos
-    $stmtRolesCount = $db->query("SELECT COUNT(*) as total FROM roles");
-    if ($stmtRolesCount->fetch()['total'] == 0) {
-        echo "Creando Roles de Usuario...\n";
-        $roles = ['Presidente', 'Tesorera', 'Secretaria Actividades', 'Secretaria General', 'Socio'];
-        $stmtInsertRole = $db->prepare("INSERT INTO roles (nombre) VALUES (:nombre)");
-        foreach ($roles as $r) {
-            $stmtInsertRole->execute([':nombre' => $r]);
-        }
-    }
-
-    // MAPA DE ROLES ID
-    $rolesMap = [];
-    foreach ($db->query("SELECT id, nombre FROM roles")->fetchAll() as $row) {
-        $rolesMap[$row['nombre']] = $row['id'];
-    }
-
-    // 2. Crear 50 Socios con Nombres Reales
-    $stmtUserCount = $db->query("SELECT COUNT(*) as total FROM usuarios");
-    if ($stmtUserCount->fetch()['total'] == 0) {
-        echo "Generando 50 Socios y Directiva...\n";
-
-        $nombres = [
-            "Carlos Eduardo Ramírez (Presidente)", "María Fernanda Gómez (Tesorera)", "Ana Milena Suárez (Sec. Actividades)",
-            "Luz Stella Restrepo (Sec. General)", "Jorge Eliécer Hernández", "Martha Cecilia Valencia",
-            "José Luis Rodríguez", "Claudia Patricia Morales", "Andrés Felipe Castro", "Diana Marcela Ospina",
-            "Juan Esteban Jaramillo", "Gloria Inés Martínez", "Héctor Mario Patiño", "Sandra Milena Londoño",
-            "Santiago Arango", "Paula Andrea Botero", "Alejandro Bedoya", "Esperanza Cardona",
-            "Gonzalo de Jesús Montoya", "Olga Lucía Henao", "Mauricio Tobón", "Lina María Quintero",
-            "Gabriel Jaime Rendón", "Adriana María Correa", "César Augusto Vargas", "Verónica Marín",
-            "Diego León Gil", "Isabel Cristina Múnera", "Felipe Zuluaga", "Beatriz Elena Osorio",
-            "Álvaro José Carvajal", "Patricia Eugenia Cano", "Víctor Manuel Ríos", "Yolanda Franco",
-            "Camilo Andrés Giraldo", "Mónica Maria Agudelo", "Daniel Fernando Castaño", "Liliana María Tamayo",
-            "Oscar Iván Duque", "Silvia Rosa Bustamante", "Jaime Alberto Villa", "Rosa Amelia Echavarría",
-            "Julián Esteban Marulanda", "Dora Luz Hoyos", "Hernán Darío Velásquez", "Angela María Saldarriaga",
-            "Mateo Arboleda", "Carolina Galeano", "Esteban Roldán", "Valeria Pineda"
-        ];
-
-        $passwordHash = password_hash('123456', PASSWORD_DEFAULT);
-
-        $stmtUser = $db->prepare("
-            INSERT INTO usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta)
-            VALUES (:cedula, :nombre, :telefono, :fecha_nacimiento, :password, :rol_id, :tope, 400000.00)
-        ");
-
-        for ($i = 0; $i < 50; $i++) {
-            $cedula = (string)(1010000001 + $i);
-            $nombre = $nombres[$i];
-            $telefono = "300" . str_pad($i + 1, 7, "0", STR_PAD_LEFT);
-            // Generar fecha de nacimiento realista (ej: entre 1970 y 2000, repartidos en los meses)
-            $mes = str_pad(($i % 12) + 1, 2, "0", STR_PAD_LEFT);
-            $dia = str_pad(($i % 28) + 1, 2, "0", STR_PAD_LEFT);
-            $anio = 1975 + ($i % 25);
-            $fechaNacimiento = "$anio-$mes-$dia";
-
-            // Asignar rol correspondiente
-            if ($i === 0) $rolId = $rolesMap['Presidente'];
-            elseif ($i === 1) $rolId = $rolesMap['Tesorera'];
-            elseif ($i === 2) $rolId = $rolesMap['Secretaria Actividades'];
-            elseif ($i === 3) $rolId = $rolesMap['Secretaria General'];
-            else $rolId = $rolesMap['Socio'];
-
-            $tope = ($i % 5 === 0) ? 3000000.00 : 2000000.00;
-
-            $stmtUser->execute([
-                ':cedula' => $cedula,
-                ':nombre' => $nombre,
-                ':telefono' => $telefono,
-                ':fecha_nacimiento' => $fechaNacimiento,
-                ':password' => $passwordHash,
-                ':rol_id' => $rolId,
-                ':tope' => $tope
-            ]);
-        }
-    }
-
-    // 3. Crear las 26 Quincenas del Año
-    $stmtReunionesCount = $db->query("SELECT COUNT(*) as total FROM reuniones");
-    if ($stmtReunionesCount->fetch()['total'] == 0) {
-        echo "Programando las 26 Quincenas del Año...\n";
-
-        $stmtReunion = $db->prepare("
-            INSERT INTO reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
-            VALUES (:num, :fecha, '14:00:00', :cuota, :evento, :premio, :estado)
-        ");
-
-        $startDate = new DateTime('2026-01-15');
-
-        for ($q = 1; $q <= 26; $q++) {
-            $cuotaBase = 55000.00;
-            $evento = 'NINGUNO';
-            $premio = 0.00;
-
-            // 4 quincenas con Rifa ($150k) -> cuota $60k
-            if (in_array($q, [4, 10, 16, 22])) {
-                $cuotaBase = 60000.00;
-                $evento = 'RIFA';
-                $premio = 150000.00;
-            }
-            // 4 quincenas con Ronda ($300k) -> cuota $65k
-            elseif (in_array($q, [7, 13, 19, 25])) {
-                $cuotaBase = 65000.00;
-                $evento = 'RONDA';
-                $premio = 300000.00;
-            }
-
-            $estado = ($q === 1) ? 'EN_PROCESO' : 'PROGRAMADA';
-
-            $stmtReunion->execute([
-                ':num' => $q,
-                ':fecha' => $startDate->format('Y-m-d'),
-                ':cuota' => $cuotaBase,
-                ':evento' => $evento,
-                ':premio' => $premio,
-                ':estado' => $estado
-            ]);
-
-            // Avanzar 15 días aproximadamente (15 y 30 de cada mes)
-            if ($q % 2 !== 0) {
-                $startDate->modify('+15 days');
-            } else {
-                $startDate->modify('first day of next month');
-                $startDate->setDate((int)$startDate->format('Y'), (int)$startDate->format('m'), 15);
-            }
-        }
-    }
-
-    echo "¡Base de datos sembrada correctamente!\n";
-    echo "Usuarios de Prueba Creados:\n";
-    echo "- Presidente: Cédula 1010000001 / Clave 123456\n";
-    echo "- Tesorera: Cédula 1010000002 / Clave 123456\n";
-    echo "- Sec. Actividades: Cédula 1010000003 / Clave 123456\n";
-    echo "- Sec. General: Cédula 1010000004 / Clave 123456\n";
-    echo "- Socios: Cédula 1010000005 hasta 1010000050 / Clave 123456\n";
-
+    $db = Database::crearConexion();
 } catch (Exception $e) {
-    echo "Error en Seeder: " . $e->getMessage() . "\n";
+    Database::fallaConexion($e);
+}
+
+try {
+    $existe = $db->query("SHOW TABLES LIKE 'natillera_usuarios'")->fetchColumn();
+    if (!$existe) {
+        fwrite(STDERR, "No hay esquema. Primero: php scripts/migrate.php --sin-seed\n");
+        exit(1);
+    }
+    Database::sembrarRoles($db);
+
+    if ((int)$db->query('SELECT COUNT(*) FROM natillera_usuarios')->fetchColumn() > 0) {
+        fwrite(STDERR, "La base ya tiene usuarios; el seeder solo llena bases vacias.\n");
+        exit(1);
+    }
+
+    $roles = array();
+    foreach ($db->query('SELECT id, nombre FROM natillera_roles') as $r) {
+        $roles[$r['nombre']] = (int)$r['id'];
+    }
+
+    $cfg = require __DIR__ . '/config/natillera.php';
+    $cupos = (int)$cfg['cupos'];
+    $porCiclo = (int)$cfg['reuniones_por_ciclo'];
+    $cuota = $cfg['cuota']['base_total'];
+
+    $nombres = array(
+        'Carlos Eduardo Ramirez', 'Maria Fernanda Gomez', 'Ana Milena Suarez', 'Luz Stella Restrepo',
+        'Jorge Eliecer Hernandez', 'Martha Cecilia Valencia', 'Jose Luis Rodriguez', 'Claudia Patricia Morales',
+        'Andres Felipe Castro', 'Diana Marcela Ospina', 'Juan Esteban Jaramillo', 'Gloria Ines Martinez',
+        'Hector Mario Patino', 'Sandra Milena Londono', 'Santiago Arango', 'Paula Andrea Botero',
+        'Alejandro Bedoya', 'Esperanza Cardona', 'Gonzalo de Jesus Montoya', 'Olga Lucia Henao',
+        'Mauricio Tobon', 'Lina Maria Quintero', 'Gabriel Jaime Rendon', 'Adriana Maria Correa',
+        'Cesar Augusto Vargas', 'Veronica Marin', 'Diego Leon Gil', 'Isabel Cristina Munera',
+        'Felipe Zuluaga', 'Beatriz Elena Osorio', 'Alvaro Jose Carvajal', 'Patricia Eugenia Cano',
+        'Victor Manuel Rios', 'Yolanda Franco', 'Camilo Andres Giraldo', 'Monica Maria Agudelo',
+        'Daniel Fernando Castano', 'Liliana Maria Tamayo', 'Oscar Ivan Duque', 'Silvia Rosa Bustamante',
+        'Jaime Alberto Villa', 'Rosa Amelia Echavarria', 'Julian Esteban Marulanda', 'Dora Luz Hoyos',
+        'Hernan Dario Velasquez', 'Angela Maria Saldarriaga', 'Mateo Arboleda', 'Carolina Galeano',
+        'Esteban Roldan', 'Valeria Pineda',
+    );
+
+    $clave = Database::claveAleatoria();
+    $hash = password_hash($clave, PASSWORD_DEFAULT);
+
+    $db->beginTransaction();
+
+    $stmtUser = $db->prepare("
+        INSERT INTO natillera_usuarios (cedula, nombre_completo, telefono, fecha_nacimiento, password_hash, rol_id, tope_prestamo_personalizado, interes_minimo_meta, password_changed)
+        VALUES (:cedula, :nombre, :telefono, :nacimiento, :hash, :rol, :tope, 400000.00, 0)
+    ");
+    for ($i = 0; $i < $cupos; $i++) {
+        if ($i === 0) $rol = $roles['Presidente'];
+        elseif ($i === 1) $rol = $roles['Tesorera'];
+        elseif ($i === 2) $rol = $roles['Secretaria Actividades'];
+        elseif ($i === 3) $rol = $roles['Secretaria General'];
+        else $rol = $roles['Socio'];
+
+        $stmtUser->execute(array(
+            ':cedula' => (string)(1010000001 + $i),
+            ':nombre' => isset($nombres[$i]) ? $nombres[$i] : 'Socio de demostracion ' . ($i + 1),
+            ':telefono' => '300' . str_pad((string)($i + 1), 7, '0', STR_PAD_LEFT),
+            ':nacimiento' => (1975 + ($i % 25)) . '-' . str_pad((string)(($i % 12) + 1), 2, '0', STR_PAD_LEFT) . '-' . str_pad((string)(($i % 28) + 1), 2, '0', STR_PAD_LEFT),
+            ':hash' => $hash,
+            ':rol' => $rol,
+            ':tope' => ($i % 5 === 0) ? 3000000.00 : 2000000.00,
+        ));
+    }
+
+    // Reuniones: una cada 14 dias desde el proximo lunes, todas con la cuota normal.
+    // Las cuotas extra ($60.000 / $65.000) se planifican despues desde el modulo Reuniones.
+    $stmtReunion = $db->prepare("
+        INSERT INTO natillera_reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
+        VALUES (:num, :fecha, '14:00:00', :cuota, 'NINGUNO', 0, :estado)
+    ");
+    $fecha = new DateTime('next monday');
+    for ($q = 1; $q <= $porCiclo; $q++) {
+        $stmtReunion->execute(array(
+            ':num' => $q,
+            ':fecha' => $fecha->format('Y-m-d'),
+            ':cuota' => $cuota,
+            ':estado' => ($q === 1) ? 'EN_PROCESO' : 'PROGRAMADA',
+        ));
+        $fecha->modify('+14 days');
+    }
+
+    $db->commit();
+
+    echo "Base de demostracion creada: {$cupos} usuarios y {$porCiclo} reuniones.\n";
+    echo "Cedulas 1010000001 (Presidente), 1010000002 (Tesorera), 1010000003 (Sec. Actividades),\n";
+    echo "1010000004 (Sec. General) y 1010000005 en adelante (Socios).\n";
+    echo "Clave temporal de TODOS (se muestra solo ahora; deben cambiarla al entrar): {$clave}\n";
+} catch (Exception $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    Database::log('seed.php: ' . $e->getMessage());
+    fwrite(STDERR, "El seeder fallo (detalle en logs/app.log).\n");
+    exit(1);
 }

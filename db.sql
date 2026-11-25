@@ -1,405 +1,419 @@
--- TABLA DE ROLES
-CREATE TABLE IF NOT EXISTS natillera_roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE -- 'Presidente', 'Tesorera', 'Secretaria Actividades', 'Secretaria General', 'Socio'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- InfoNatillera: esquema de referencia (SOLO estructura, sin datos).
+-- Generado con: php scripts/generar_db_sql.php  (despues de php scripts/migrate.php)
+-- No lo edites a mano. Lo carga la migracion 00000000_0000_baseline solo en una base vacia.
 
--- TABLA DE USUARIOS / SOCIOS
-CREATE TABLE IF NOT EXISTS natillera_usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    cedula VARCHAR(20) UNIQUE NOT NULL,
-    nombre_completo VARCHAR(100) NOT NULL,
-    telefono VARCHAR(20),
-    fecha_nacimiento DATE,
-    password_hash VARCHAR(255) NOT NULL,
-    rol_id INT NOT NULL,
-    tope_prestamo_personalizado DECIMAL(10,2) DEFAULT 2000000.00, -- Modificable por Sec. General
-    interes_minimo_meta DECIMAL(10,2) DEFAULT 400000.00, -- Meta individual de $400k
-    estado TINYINT(1) DEFAULT 1,
-    password_changed TINYINT(1) DEFAULT 0,
-    FOREIGN KEY (rol_id) REFERENCES natillera_roles(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
--- REUNIONES QUINCENALES
-CREATE TABLE IF NOT EXISTS natillera_reuniones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    numero_quincena INT NOT NULL, -- 1 a 26
-    fecha_reunion DATE NOT NULL,
-    hora_reunion TIME DEFAULT '14:00:00',
-    valor_cuota_base DECIMAL(10,2) NOT NULL DEFAULT 55000.00, -- 55000, 60000, 65000
-    tipo_evento_extra VARCHAR(50) DEFAULT 'NINGUNO', -- 'RIFA', 'RONDA', 'NINGUNO'
-    monto_premio_extra DECIMAL(10,2) DEFAULT 0.00, -- 150000 o 300000
-    ganador_socio_id INT, -- Socio beneficiado con la Rifa/Ronda
-    estado VARCHAR(20) DEFAULT 'PROGRAMADA', -- 'PROGRAMADA', 'EN_PROCESO', 'CERRADA'
-    FOREIGN KEY (ganador_socio_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_abonos_actividades` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `actividad_participante_id` int NOT NULL,
+  `monto_abono` decimal(10,2) NOT NULL,
+  `fecha_abono` datetime DEFAULT CURRENT_TIMESTAMP,
+  `observacion` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `registrado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `actividad_participante_id` (`actividad_participante_id`),
+  KEY `registrado_por_usuario_id` (`registrado_por_usuario_id`),
+  CONSTRAINT `natillera_abonos_actividades_ibfk_1` FOREIGN KEY (`actividad_participante_id`) REFERENCES `natillera_actividad_participantes` (`id`),
+  CONSTRAINT `natillera_abonos_actividades_ibfk_2` FOREIGN KEY (`registrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- COBROS EN LLAMADO A LISTA
-CREATE TABLE IF NOT EXISTS natillera_ahorros_cuotas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reunion_id INT NOT NULL,
-    socio_id INT NOT NULL,
-    cuota_pagada TINYINT(1) DEFAULT 0,
-    monto_cuota DECIMAL(10,2) NOT NULL, -- Siempre $40.000 COP acreditado al socio
-    monto_aporte_ronda DECIMAL(10,2) DEFAULT 0.00,
-    monto_aporte_rifa DECIMAL(10,2) DEFAULT 0.00,
-    monto_ahorro_extra DECIMAL(10,2) DEFAULT 0.00,
-    autoprestamo_generado TINYINT(1) DEFAULT 0,
-    prestamo_id_asociado INT, -- Si generó autopréstamo
-    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_abonos_prestamos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `prestamo_id` int NOT NULL,
+  `reunion_id` int DEFAULT NULL,
+  `monto_interes_pagado` decimal(10,2) DEFAULT '0.00',
+  `monto_capital_pagado` decimal(10,2) DEFAULT '0.00',
+  `fecha_abono` datetime DEFAULT CURRENT_TIMESTAMP,
+  `registrado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `prestamo_id` (`prestamo_id`),
+  KEY `registrado_por_usuario_id` (`registrado_por_usuario_id`),
+  KEY `fk_abonos_reunion` (`reunion_id`),
+  CONSTRAINT `fk_abonos_reunion` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_abonos_prestamos_ibfk_1` FOREIGN KEY (`prestamo_id`) REFERENCES `natillera_prestamos` (`id`),
+  CONSTRAINT `natillera_abonos_prestamos_ibfk_2` FOREIGN KEY (`registrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- PRÉSTAMOS E INTERESES
-CREATE TABLE IF NOT EXISTS natillera_prestamos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    socio_deudor_id INT NOT NULL,
-    reunion_id INT NULL,
-    nombre_referencia VARCHAR(150), -- Nombre de referencia / Persona referente opcional
-    monto_prestado DECIMAL(10,2) NOT NULL,
-    tasa_interes_mensual DECIMAL(5,2) DEFAULT 10.00,
-    tipo_prestamo VARCHAR(20) DEFAULT 'DIRECTO', -- 'DIRECTO', 'AUTOPRESTAMO'
-    fecha_inicio DATETIME DEFAULT CURRENT_TIMESTAMP,
-    es_autoprestamo TINYINT(1) DEFAULT 0,
-    anulado_sin_interes TINYINT(1) DEFAULT 0,
-    estado VARCHAR(20) DEFAULT 'ACTIVO', -- 'ACTIVO', 'PAGADO', 'ANULADO'
-    FOREIGN KEY (socio_deudor_id) REFERENCES natillera_usuarios(id),
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_actividad_participantes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `actividad_id` int NOT NULL,
+  `socio_id` int NOT NULL,
+  `cuota_asignada` decimal(10,2) DEFAULT '0.00',
+  `monto_pagado` decimal(10,2) DEFAULT '0.00',
+  `ganancia_asignada` decimal(10,2) DEFAULT '0.00',
+  `estado_pago` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'PENDIENTE',
+  PRIMARY KEY (`id`),
+  KEY `actividad_id` (`actividad_id`),
+  KEY `socio_id` (`socio_id`),
+  CONSTRAINT `natillera_actividad_participantes_ibfk_1` FOREIGN KEY (`actividad_id`) REFERENCES `natillera_actividades` (`id`),
+  CONSTRAINT `natillera_actividad_participantes_ibfk_2` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- ABONOS A PRÉSTAMOS
-CREATE TABLE IF NOT EXISTS natillera_abonos_prestamos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    prestamo_id INT NOT NULL,
-    reunion_id INT NULL,
-    monto_interes_pagado DECIMAL(10,2) DEFAULT 0.00,
-    monto_capital_pagado DECIMAL(10,2) DEFAULT 0.00,
-    fecha_abono DATETIME DEFAULT CURRENT_TIMESTAMP,
-    registrado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (prestamo_id) REFERENCES natillera_prestamos(id),
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_actividades` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre_actividad` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `descripcion` text COLLATE utf8mb4_general_ci,
+  `fecha_actividad` date NOT NULL,
+  `ingresos_totales` decimal(10,2) DEFAULT '0.00',
+  `gastos_totales` decimal(10,2) DEFAULT '0.00',
+  `ganancia_neta` decimal(10,2) DEFAULT '0.00',
+  `cuota_por_socio` decimal(10,2) DEFAULT '0.00',
+  `estado` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'EN_PROCESO',
+  `creado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `creado_por_usuario_id` (`creado_por_usuario_id`),
+  CONSTRAINT `natillera_actividades_ibfk_1` FOREIGN KEY (`creado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- ACTIVIDADES (TAMALES, RIFAS)
-CREATE TABLE IF NOT EXISTS natillera_actividades (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_actividad VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    fecha_actividad DATE NOT NULL,
-    ingresos_totales DECIMAL(10,2) DEFAULT 0.00,
-    gastos_totales DECIMAL(10,2) DEFAULT 0.00,
-    ganancia_neta DECIMAL(10,2) DEFAULT 0.00,
-    cuota_por_socio DECIMAL(10,2) DEFAULT 0.00, -- Cuota a pagar asignada a cada socio
-    estado VARCHAR(20) DEFAULT 'EN_PROCESO', -- 'EN_PROCESO', 'LIQUIDADA'
-    creado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (creado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_ahorros_cuotas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `socio_id` int NOT NULL,
+  `cuota_pagada` tinyint(1) DEFAULT '0',
+  `monto_cuota` decimal(10,2) NOT NULL,
+  `monto_aporte_ronda` decimal(10,2) DEFAULT '0.00',
+  `monto_aporte_rifa` decimal(10,2) DEFAULT '0.00',
+  `monto_ahorro_extra` decimal(10,2) DEFAULT '0.00',
+  `autoprestamo_generado` tinyint(1) DEFAULT '0',
+  `prestamo_id_asociado` int DEFAULT NULL,
+  `fecha_registro` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ahorros_reunion_socio` (`reunion_id`,`socio_id`),
+  KEY `reunion_id` (`reunion_id`),
+  KEY `socio_id` (`socio_id`),
+  CONSTRAINT `natillera_ahorros_cuotas_ibfk_1` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_ahorros_cuotas_ibfk_2` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- PARTICIPANTES Y DEUDAS EN ACTIVIDADES
-CREATE TABLE IF NOT EXISTS natillera_actividad_participantes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    actividad_id INT NOT NULL,
-    socio_id INT NOT NULL,
-    cuota_asignada DECIMAL(10,2) DEFAULT 0.00, -- Deuda asignada o parte proporcional de gastos
-    monto_pagado DECIMAL(10,2) DEFAULT 0.00,
-    ganancia_asignada DECIMAL(10,2) DEFAULT 0.00, -- Utilidad que le corresponde de la actividad
-    estado_pago VARCHAR(20) DEFAULT 'PENDIENTE', -- 'PENDIENTE', 'PAGADO'
-    FOREIGN KEY (actividad_id) REFERENCES natillera_actividades(id),
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_auditoria` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `fecha` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `usuario_id` int DEFAULT NULL,
+  `rol` varchar(50) DEFAULT NULL,
+  `accion` varchar(80) NOT NULL,
+  `entidad` varchar(80) NOT NULL,
+  `entidad_id` int DEFAULT NULL,
+  `datos_antes` json DEFAULT NULL,
+  `datos_despues` json DEFAULT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_aud_entidad` (`entidad`,`entidad_id`),
+  KEY `idx_aud_fecha` (`fecha`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- ABONOS A ACTIVIDADES COMUNITARIAS
-CREATE TABLE IF NOT EXISTS natillera_abonos_actividades (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    actividad_participante_id INT NOT NULL,
-    monto_abono DECIMAL(10,2) NOT NULL,
-    fecha_abono DATETIME DEFAULT CURRENT_TIMESTAMP,
-    observacion VARCHAR(255),
-    registrado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (actividad_participante_id) REFERENCES natillera_actividad_participantes(id),
-    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_cierres_reunion` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `total_ingresos_cuotas_base` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_ahorro_extra` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_rondas_rifas` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_abono_capital` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_intereses_prestamos` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_actividades` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_inyecciones` decimal(10,2) DEFAULT '0.00',
+  `total_ingresos_general` decimal(10,2) DEFAULT '0.00',
+  `total_egresos_prestamos_otorgados` decimal(10,2) DEFAULT '0.00',
+  `total_egresos_premios_entregados` decimal(10,2) DEFAULT '0.00',
+  `total_egresos_inyecciones_devueltas` decimal(10,2) DEFAULT '0.00',
+  `total_egresos_general` decimal(10,2) DEFAULT '0.00',
+  `saldo_neto_reunion` decimal(10,2) DEFAULT '0.00',
+  `saldo_acumulado_caja` decimal(10,2) DEFAULT '0.00',
+  `desglose_json` longtext COLLATE utf8mb4_general_ci,
+  `fecha_cierre` datetime DEFAULT CURRENT_TIMESTAMP,
+  `cerrado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `reunion_id` (`reunion_id`),
+  KEY `cerrado_por_usuario_id` (`cerrado_por_usuario_id`),
+  CONSTRAINT `natillera_cierres_reunion_ibfk_1` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_cierres_reunion_ibfk_2` FOREIGN KEY (`cerrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- SUSCRIPCIONES WEB PUSH NOTIFICATIONS
-CREATE TABLE IF NOT EXISTS natillera_push_subscriptions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    socio_id INT NOT NULL,
-    endpoint TEXT NOT NULL,
-    p256dh TEXT NOT NULL,
-    auth TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_entregas_beneficios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `socio_id` int NOT NULL,
+  `prestamo_id` int DEFAULT NULL,
+  `tipo_beneficio` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `monto_entregado` decimal(10,2) NOT NULL,
+  `fecha_entrega` datetime DEFAULT CURRENT_TIMESTAMP,
+  `firma_digital_path` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `foto_evidencia_path` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `entregado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `reunion_id` (`reunion_id`),
+  KEY `socio_id` (`socio_id`),
+  KEY `entregado_por_usuario_id` (`entregado_por_usuario_id`),
+  KEY `fk_entregas_prestamo` (`prestamo_id`),
+  CONSTRAINT `fk_entregas_prestamo` FOREIGN KEY (`prestamo_id`) REFERENCES `natillera_prestamos` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `natillera_entregas_beneficios_ibfk_1` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_entregas_beneficios_ibfk_2` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`),
+  CONSTRAINT `natillera_entregas_beneficios_ibfk_3` FOREIGN KEY (`entregado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- HISTORIAL DE NOTIFICACIONES
-CREATE TABLE IF NOT EXISTS natillera_notificaciones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(150) NOT NULL,
-    mensaje TEXT NOT NULL,
-    destinatario_tipo VARCHAR(20) DEFAULT 'TODOS', -- 'TODOS', 'SOCIO_ESPECIFICO'
-    socio_id INT,
-    enviado_por_usuario_id INT NOT NULL,
-    fecha_envio DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
-    FOREIGN KEY (enviado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_fondo_beneficios_cronograma` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `tipo_beneficio` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `aporte_por_socio` decimal(10,2) NOT NULL,
+  `total_recaudado` decimal(10,2) NOT NULL,
+  `monto_beneficio_unidad` decimal(10,2) NOT NULL,
+  `saldo_restante_reunion` decimal(10,2) NOT NULL,
+  `saldo_acumulado_fondo` decimal(10,2) NOT NULL,
+  `personas_liberadas_planificadas` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `reunion_id` (`reunion_id`),
+  CONSTRAINT `natillera_fondo_beneficios_cronograma_ibfk_1` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- TABLA DE PLANIFICACIÓN DE RONDAS Y RIFAS POR REUNIÓN
-CREATE TABLE IF NOT EXISTS natillera_fondo_beneficios_cronograma (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reunion_id INT NOT NULL,
-    tipo_beneficio VARCHAR(10) NOT NULL, -- 'RONDA' ($300k) o 'RIFA' ($150k)
-    aporte_por_socio DECIMAL(10,2) NOT NULL, -- $10.000 (o $20.000) para Ronda; $5.000 (o $10.000) para Rifa
-    total_recaudado DECIMAL(10,2) NOT NULL, -- Ej: 50 * $10.000 = $500.000
-    monto_beneficio_unidad DECIMAL(10,2) NOT NULL, -- $300.000 para Ronda, $150.000 para Rifa
-    saldo_restante_reunion DECIMAL(10,2) NOT NULL,
-    saldo_acumulado_fondo DECIMAL(10,2) NOT NULL, -- Saldo acumulado arrastrado a la sig. reunión
-    personas_liberadas_planificadas INT NOT NULL, -- Cantidad de ganadores en esta quincena (1, 2, 3 o 4)
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_historico` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(120) NOT NULL,
+  `tipo` varchar(30) NOT NULL DEFAULT 'ANIO',
+  `cargado` tinyint(1) NOT NULL DEFAULT '0',
+  `snapshot` longblob NOT NULL,
+  `huella` char(64) NOT NULL,
+  `conteos_json` text,
+  `archivo` varchar(255) DEFAULT NULL,
+  `origen_id` int DEFAULT NULL,
+  `creado_por_usuario_id` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_historico_tipo` (`tipo`,`cargado`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- REGISTRO Y EVIDENCIA DE ENTREGAS A BENEFICIARIOS
-CREATE TABLE IF NOT EXISTS natillera_entregas_beneficios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reunion_id INT NOT NULL,
-    socio_id INT NOT NULL,
-    prestamo_id INT NULL,
-    tipo_beneficio VARCHAR(10) NOT NULL, -- 'PRESTAMO', 'RONDA' o 'RIFA'
-    monto_entregado DECIMAL(10,2) NOT NULL,
-    fecha_entrega DATETIME DEFAULT CURRENT_TIMESTAMP,
-    firma_digital_path VARCHAR(255), -- Ruta de la firma guardada en formato SVG/PNG
-    foto_evidencia_path VARCHAR(255), -- Ruta de la foto del socio recibiendo el premio
-    entregado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
-    FOREIGN KEY (prestamo_id) REFERENCES natillera_prestamos(id) ON DELETE SET NULL,
-    FOREIGN KEY (entregado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_inyecciones_capital` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `socio_id` int NOT NULL,
+  `reunion_id` int NOT NULL,
+  `reunion_id_retiro` int DEFAULT NULL,
+  `monto_inyectado` decimal(10,2) NOT NULL,
+  `tasa_rendimiento_porcentaje` decimal(5,2) DEFAULT '5.00',
+  `monto_rendimiento_generado` decimal(10,2) DEFAULT '0.00',
+  `fecha_inyeccion` datetime DEFAULT CURRENT_TIMESTAMP,
+  `fecha_retiro_permitido` date NOT NULL,
+  `estado` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'ACTIVA',
+  `fecha_retiro` datetime DEFAULT NULL,
+  `observaciones` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `registrado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `socio_id` (`socio_id`),
+  KEY `reunion_id` (`reunion_id`),
+  KEY `registrado_por_usuario_id` (`registrado_por_usuario_id`),
+  KEY `fk_inyecciones_reunion_retiro` (`reunion_id_retiro`),
+  CONSTRAINT `fk_inyecciones_reunion_retiro` FOREIGN KEY (`reunion_id_retiro`) REFERENCES `natillera_reuniones` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `natillera_inyecciones_capital_ibfk_1` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`),
+  CONSTRAINT `natillera_inyecciones_capital_ibfk_2` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_inyecciones_capital_ibfk_3` FOREIGN KEY (`registrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- INYECCIONES DE CAPITAL DE SOCIOS
-CREATE TABLE IF NOT EXISTS natillera_inyecciones_capital (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    socio_id INT NOT NULL,
-    reunion_id INT NOT NULL,
-    reunion_id_retiro INT NULL,
-    monto_inyectado DECIMAL(10,2) NOT NULL,
-    tasa_rendimiento_porcentaje DECIMAL(5,2) DEFAULT 5.00,
-    monto_rendimiento_generado DECIMAL(10,2) DEFAULT 0.00,
-    fecha_inyeccion DATETIME DEFAULT CURRENT_TIMESTAMP,
-    fecha_retiro_permitido DATE NOT NULL,
-    estado VARCHAR(20) DEFAULT 'ACTIVA', -- 'ACTIVA', 'RETIRADA'
-    fecha_retiro DATETIME NULL,
-    observaciones VARCHAR(255),
-    registrado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (socio_id) REFERENCES natillera_usuarios(id),
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (reunion_id_retiro) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_login_intentos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cedula` varchar(30) NOT NULL,
+  `ip` varchar(45) NOT NULL,
+  `exitoso` tinyint(1) NOT NULL DEFAULT '0',
+  `fecha_intento` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_login_cedula_ip_fecha` (`cedula`,`ip`,`fecha_intento`),
+  KEY `idx_login_fecha` (`fecha_intento`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- CIERRE DE CAJA Y LIQUIDACIÓN FINANCIERA POR REUNIÓN
-CREATE TABLE IF NOT EXISTS natillera_cierres_reunion (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reunion_id INT NOT NULL UNIQUE,
-    total_ingresos_cuotas_base DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_ahorro_extra DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_rondas_rifas DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_abono_capital DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_intereses_prestamos DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_actividades DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_inyecciones DECIMAL(10,2) DEFAULT 0.00,
-    total_ingresos_general DECIMAL(10,2) DEFAULT 0.00,
-    total_egresos_prestamos_otorgados DECIMAL(10,2) DEFAULT 0.00,
-    total_egresos_premios_entregados DECIMAL(10,2) DEFAULT 0.00,
-    total_egresos_inyecciones_devueltas DECIMAL(10,2) DEFAULT 0.00,
-    total_egresos_general DECIMAL(10,2) DEFAULT 0.00,
-    saldo_neto_reunion DECIMAL(10,2) DEFAULT 0.00,
-    saldo_acumulado_caja DECIMAL(10,2) DEFAULT 0.00,
-    desglose_json LONGTEXT,
-    fecha_cierre DATETIME DEFAULT CURRENT_TIMESTAMP,
-    cerrado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (cerrado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_migraciones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(190) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `huella` char(64) NOT NULL,
+  `aplicada_en` datetime NOT NULL,
+  `duracion_ms` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_migracion_nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- PRÉSTAMOS Y TRANSFERENCIAS ENTRE CAJA MAYOR Y CAJA DE ACTIVIDADES
-CREATE TABLE IF NOT EXISTS natillera_transferencias_cajas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    reunion_id INT NOT NULL,
-    actividad_id INT NULL,
-    tipo_movimiento VARCHAR(30) NOT NULL, -- 'PRESTAMO_A_ACTIVIDAD', 'DEVOLUCION_A_CAJA_MAYOR'
-    monto DECIMAL(10,2) NOT NULL,
-    concepto VARCHAR(255) NOT NULL,
-    fecha_transferencia DATETIME DEFAULT CURRENT_TIMESTAMP,
-    registrado_por_usuario_id INT NOT NULL,
-    FOREIGN KEY (reunion_id) REFERENCES natillera_reuniones(id),
-    FOREIGN KEY (actividad_id) REFERENCES natillera_actividades(id),
-    FOREIGN KEY (registrado_por_usuario_id) REFERENCES natillera_usuarios(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS `natillera_notificaciones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `titulo` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `mensaje` text COLLATE utf8mb4_general_ci NOT NULL,
+  `destinatario_tipo` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'TODOS',
+  `socio_id` int DEFAULT NULL,
+  `enviado_por_usuario_id` int NOT NULL,
+  `fecha_envio` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `socio_id` (`socio_id`),
+  KEY `enviado_por_usuario_id` (`enviado_por_usuario_id`),
+  CONSTRAINT `natillera_notificaciones_ibfk_1` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`),
+  CONSTRAINT `natillera_notificaciones_ibfk_2` FOREIGN KEY (`enviado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- ============================================================================
--- VISTAS SQL PARA AUDITORÍA, REVISIÓN Y REPORTES CONSOLIDADOS
--- ============================================================================
+CREATE TABLE IF NOT EXISTS `natillera_notificaciones_leidas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `notificacion_id` int NOT NULL,
+  `socio_id` int NOT NULL,
+  `fecha_lectura` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unq_notif_socio` (`notificacion_id`,`socio_id`),
+  KEY `socio_id` (`socio_id`),
+  CONSTRAINT `natillera_notificaciones_leidas_ibfk_1` FOREIGN KEY (`notificacion_id`) REFERENCES `natillera_notificaciones` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `natillera_notificaciones_leidas_ibfk_2` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 1. VISTA RESUMEN CONSOLIDADO SOCIOS
-CREATE OR REPLACE VIEW v_resumen_consolidado_socios AS
-SELECT 
-    u.id AS socio_id,
-    u.cedula,
-    u.nombre_completo,
-    r.nombre AS rol,
-    u.estado AS estado_socio_codigo,
-    CASE WHEN u.estado = 1 THEN 'ACTIVO' ELSE 'INACTIVO' END AS estado_socio,
-    IFNULL((SELECT SUM(CASE WHEN ac.cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END) FROM natillera_ahorros_cuotas ac WHERE ac.socio_id = u.id), 0) AS total_cuotas_base_pagadas,
-    IFNULL((SELECT SUM(ac.monto_ahorro_extra) FROM natillera_ahorros_cuotas ac WHERE ac.socio_id = u.id), 0) AS total_ahorro_extra,
-    (SELECT COUNT(*) FROM natillera_prestamos p WHERE p.socio_deudor_id = u.id AND p.estado != 'ANULADO') AS total_prestamos_tomados,
-    (SELECT IFNULL(SUM(p.monto_prestado), 0) FROM natillera_prestamos p WHERE p.socio_deudor_id = u.id AND p.estado != 'ANULADO') AS monto_total_prestado,
-    (SELECT IFNULL(SUM(p.monto_prestado - IFNULL((SELECT SUM(ab.monto_capital_pagado) FROM natillera_abonos_prestamos ab WHERE ab.prestamo_id = p.id), 0)), 0) 
-     FROM natillera_prestamos p WHERE p.socio_deudor_id = u.id AND p.estado = 'ACTIVO') AS saldo_pendiente_prestamos,
-    (SELECT IFNULL(SUM(ab.monto_interes_pagado), 0) FROM natillera_abonos_prestamos ab JOIN natillera_prestamos p ON ab.prestamo_id = p.id WHERE p.socio_deudor_id = u.id) AS total_intereses_pagados,
-    (SELECT IFNULL(SUM(ic.monto_inyectado), 0) FROM natillera_inyecciones_capital ic WHERE ic.socio_id = u.id AND ic.estado = 'ACTIVA') AS total_inyecciones_activas,
-    (SELECT IFNULL(SUM(ic.monto_rendimiento_generado), 0) FROM natillera_inyecciones_capital ic WHERE ic.socio_id = u.id AND ic.estado = 'ACTIVA') AS total_rendimiento_inyecciones
-FROM natillera_usuarios u
-JOIN natillera_roles r ON u.rol_id = r.id;
+CREATE TABLE IF NOT EXISTS `natillera_pagos_notificaciones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `socio_id` int NOT NULL,
+  `reunion_id` int DEFAULT NULL,
+  `tipo_pago` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `referencia_id` int DEFAULT NULL,
+  `titulo` varchar(150) COLLATE utf8mb4_general_ci NOT NULL,
+  `concepto` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `monto_cuota` decimal(10,2) DEFAULT '0.00',
+  `monto_aporte_ronda` decimal(10,2) DEFAULT '0.00',
+  `monto_aporte_rifa` decimal(10,2) DEFAULT '0.00',
+  `monto_ahorro_extra` decimal(10,2) DEFAULT '0.00',
+  `monto_total` decimal(10,2) NOT NULL,
+  `detalles_json` longtext COLLATE utf8mb4_general_ci,
+  `registrado_por_usuario_id` int NOT NULL,
+  `fecha_pago` datetime DEFAULT CURRENT_TIMESTAMP,
+  `leido` tinyint(1) DEFAULT '0',
+  `fecha_leido` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_pago_socio_leido` (`socio_id`,`leido`),
+  KEY `idx_pago_socio_reunion` (`socio_id`,`reunion_id`),
+  KEY `registrado_por_usuario_id` (`registrado_por_usuario_id`),
+  CONSTRAINT `natillera_pagos_notificaciones_ibfk_1` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `natillera_pagos_notificaciones_ibfk_2` FOREIGN KEY (`registrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 2. VISTA ESTADO DETALLADO DE PRÉSTAMOS
-CREATE OR REPLACE VIEW v_estado_prestamos_detalle AS
-SELECT 
-    p.id AS prestamo_id,
-    p.socio_deudor_id,
-    u.nombre_completo AS deudor_nombre,
-    u.cedula AS deudor_cedula,
-    p.nombre_referencia,
-    p.reunion_id,
-    r.numero_quincena AS numero_quincena_otorgamiento,
-    p.fecha_inicio AS fecha_otorgamiento,
-    p.monto_prestado,
-    p.tasa_interes_mensual,
-    IFNULL(SUM(ab.monto_capital_pagado), 0) AS total_capital_pagado,
-    IFNULL(SUM(ab.monto_interes_pagado), 0) AS total_interes_pagado,
-    (p.monto_prestado - IFNULL(SUM(ab.monto_capital_pagado), 0)) AS saldo_pendiente_capital,
-    p.estado AS estado_prestamo,
-    CASE WHEN p.es_autoprestamo = 1 THEN 'SÍ' ELSE 'NO' END AS es_autoprestamo,
-    CASE WHEN eb.firma_digital_path IS NOT NULL AND eb.firma_digital_path != '' THEN 'SÍ' ELSE 'NO' END AS tiene_firma_digital,
-    CASE WHEN eb.foto_evidencia_path IS NOT NULL AND eb.foto_evidencia_path != '' THEN 'SÍ' ELSE 'NO' END AS tiene_foto_evidencia
-FROM natillera_prestamos p
-JOIN natillera_usuarios u ON p.socio_deudor_id = u.id
-LEFT JOIN natillera_reuniones r ON p.reunion_id = r.id
-LEFT JOIN natillera_abonos_prestamos ab ON p.id = ab.prestamo_id
-LEFT JOIN natillera_entregas_beneficios eb ON p.id = eb.prestamo_id
-GROUP BY p.id, p.socio_deudor_id, u.nombre_completo, u.cedula, p.nombre_referencia, p.reunion_id, r.numero_quincena, p.fecha_inicio, p.monto_prestado, p.tasa_interes_mensual, p.estado, p.es_autoprestamo, eb.firma_digital_path, eb.foto_evidencia_path;
+CREATE TABLE IF NOT EXISTS `natillera_prestamos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `socio_deudor_id` int NOT NULL,
+  `reunion_id` int DEFAULT NULL,
+  `fecha_prestamo` date DEFAULT NULL,
+  `nombre_referencia` varchar(150) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `monto_prestado` decimal(10,2) NOT NULL,
+  `tasa_interes_mensual` decimal(5,2) DEFAULT '10.00',
+  `tipo_prestamo` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'DIRECTO',
+  `fecha_inicio` datetime DEFAULT CURRENT_TIMESTAMP,
+  `es_autoprestamo` tinyint(1) DEFAULT '0',
+  `anulado_sin_interes` tinyint(1) DEFAULT '0',
+  `estado` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'ACTIVO',
+  PRIMARY KEY (`id`),
+  KEY `socio_deudor_id` (`socio_deudor_id`),
+  KEY `fk_prestamos_reunion` (`reunion_id`),
+  CONSTRAINT `fk_prestamos_reunion` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_prestamos_ibfk_1` FOREIGN KEY (`socio_deudor_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 3. VISTA ARQUEO DE CAJA Y FLUJO DE REUNIONES
-CREATE OR REPLACE VIEW v_arqueo_caja_reuniones AS
-SELECT 
-    r.id AS reunion_id,
-    r.numero_quincena,
-    r.fecha_reunion,
-    r.estado AS estado_reunion,
-    IFNULL((SELECT SUM(CASE WHEN ac.cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) AS ingreso_cuotas_base,
-    IFNULL((SELECT SUM(ac.monto_ahorro_extra) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) AS ingreso_ahorro_extra,
-    IFNULL((SELECT SUM(ab.monto_capital_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) AS ingreso_abonos_capital,
-    IFNULL((SELECT SUM(ab.monto_interes_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) AS ingreso_intereses_prestamos,
-    IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'DEVOLUCION_A_CAJA_MAYOR'), 0) AS ingreso_devolucion_actividades,
-    IFNULL((SELECT SUM(ic.monto_inyectado) FROM natillera_inyecciones_capital ic WHERE ic.reunion_id = r.id), 0) AS ingreso_inyecciones_capital,
-    (
-        IFNULL((SELECT SUM(CASE WHEN ac.cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) +
-        IFNULL((SELECT SUM(ac.monto_ahorro_extra) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) +
-        IFNULL((SELECT SUM(ab.monto_capital_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) +
-        IFNULL((SELECT SUM(ab.monto_interes_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) +
-        IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'DEVOLUCION_A_CAJA_MAYOR'), 0) +
-        IFNULL((SELECT SUM(ic.monto_inyectado) FROM natillera_inyecciones_capital ic WHERE ic.reunion_id = r.id), 0)
-    ) AS total_ingresos_caja,
-    IFNULL((SELECT SUM(eb.monto_entregado) FROM natillera_entregas_beneficios eb WHERE eb.reunion_id = r.id AND eb.tipo_beneficio = 'PRESTAMO'), 0) AS egreso_prestamos_otorgados,
-    IFNULL((SELECT SUM(ic.monto_inyectado + ic.monto_rendimiento_generado) FROM natillera_inyecciones_capital ic WHERE ic.estado = 'RETIRADA' AND (ic.reunion_id_retiro = r.id OR (ic.reunion_id_retiro IS NULL AND DATE(ic.fecha_retiro) = r.fecha_reunion))), 0) AS egreso_inyecciones_retiradas,
-    IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'PRESTAMO_A_ACTIVIDAD'), 0) AS egreso_prestamos_actividades,
-    (
-        IFNULL((SELECT SUM(eb.monto_entregado) FROM natillera_entregas_beneficios eb WHERE eb.reunion_id = r.id AND eb.tipo_beneficio = 'PRESTAMO'), 0) +
-        IFNULL((SELECT SUM(ic.monto_inyectado + ic.monto_rendimiento_generado) FROM natillera_inyecciones_capital ic WHERE ic.estado = 'RETIRADA' AND (ic.reunion_id_retiro = r.id OR (ic.reunion_id_retiro IS NULL AND DATE(ic.fecha_retiro) = r.fecha_reunion))), 0) +
-        IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'PRESTAMO_A_ACTIVIDAD'), 0)
-    ) AS total_egresos_caja,
-    (
-        (
-            IFNULL((SELECT SUM(CASE WHEN ac.cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) +
-            IFNULL((SELECT SUM(ac.monto_ahorro_extra) FROM natillera_ahorros_cuotas ac WHERE ac.reunion_id = r.id), 0) +
-            IFNULL((SELECT SUM(ab.monto_capital_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) +
-            IFNULL((SELECT SUM(ab.monto_interes_pagado) FROM natillera_abonos_prestamos ab WHERE ab.reunion_id = r.id), 0) +
-            IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'DEVOLUCION_A_CAJA_MAYOR'), 0) +
-            IFNULL((SELECT SUM(ic.monto_inyectado) FROM natillera_inyecciones_capital ic WHERE ic.reunion_id = r.id), 0)
-        ) - (
-            IFNULL((SELECT SUM(eb.monto_entregado) FROM natillera_entregas_beneficios eb WHERE eb.reunion_id = r.id AND eb.tipo_beneficio = 'PRESTAMO'), 0) +
-            IFNULL((SELECT SUM(ic.monto_inyectado + ic.monto_rendimiento_generado) FROM natillera_inyecciones_capital ic WHERE ic.estado = 'RETIRADA' AND (ic.reunion_id_retiro = r.id OR (ic.reunion_id_retiro IS NULL AND DATE(ic.fecha_retiro) = r.fecha_reunion))), 0) +
-            IFNULL((SELECT SUM(tc.monto) FROM natillera_transferencias_cajas tc WHERE tc.reunion_id = r.id AND tc.tipo_movimiento = 'PRESTAMO_A_ACTIVIDAD'), 0)
-        )
-    ) AS saldo_neto_quincena
-FROM natillera_reuniones r
-ORDER BY r.numero_quincena ASC;
+CREATE TABLE IF NOT EXISTS `natillera_push_envios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `notificacion_id` int DEFAULT NULL,
+  `suscripcion_id` int DEFAULT NULL,
+  `socio_id` int DEFAULT NULL,
+  `http_status` smallint NOT NULL DEFAULT '0',
+  `exitoso` tinyint(1) NOT NULL DEFAULT '0',
+  `detalle` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_push_envios_notif` (`notificacion_id`),
+  KEY `idx_push_envios_fecha` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 4. VISTA DE ACTIVIDADES Y APORTES DE SOCIOS
-CREATE OR REPLACE VIEW v_actividades_estado_socios AS
-SELECT 
-    a.id AS actividad_id,
-    a.nombre_actividad,
-    a.fecha_actividad,
-    a.estado AS estado_actividad,
-    ap.socio_id,
-    u.nombre_completo AS socio_nombre,
-    u.cedula AS socio_cedula,
-    ap.cuota_asignada,
-    ap.monto_pagado,
-    (ap.cuota_asignada - ap.monto_pagado) AS saldo_pendiente,
-    ap.ganancia_asignada,
-    ap.estado_pago
-FROM natillera_actividades a
-JOIN natillera_actividad_participantes ap ON a.id = ap.actividad_id
-JOIN natillera_usuarios u ON ap.socio_id = u.id;
+CREATE TABLE IF NOT EXISTS `natillera_push_subscriptions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `socio_id` int NOT NULL,
+  `endpoint` text COLLATE utf8mb4_general_ci NOT NULL,
+  `p256dh` text COLLATE utf8mb4_general_ci NOT NULL,
+  `auth` text COLLATE utf8mb4_general_ci NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `socio_id` (`socio_id`),
+  CONSTRAINT `natillera_push_subscriptions_ibfk_1` FOREIGN KEY (`socio_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 5. VISTA DE INYECCIONES DE CAPITAL
-CREATE OR REPLACE VIEW v_inyecciones_capital_detalle AS
-SELECT 
-    ic.id AS inyeccion_id,
-    ic.socio_id,
-    u.nombre_completo AS inversionista_nombre,
-    u.cedula AS inversionista_cedula,
-    ic.reunion_id AS reunion_apertura_id,
-    r1.numero_quincena AS quincena_apertura,
-    ic.monto_inyectado,
-    ic.tasa_rendimiento_porcentaje,
-    ic.monto_rendimiento_generado,
-    (ic.monto_inyectado + ic.monto_rendimiento_generado) AS monto_total_devolver,
-    ic.fecha_inyeccion,
-    ic.fecha_retiro_permitido,
-    DATEDIFF(ic.fecha_retiro_permitido, CURDATE()) AS dias_restantes_para_retiro,
-    ic.estado AS estado_inyeccion,
-    ic.reunion_id_retiro,
-    r2.numero_quincena AS quincena_retiro,
-    ic.fecha_retiro,
-    u2.nombre_completo AS registrado_por_nombre
-FROM natillera_inyecciones_capital ic
-JOIN natillera_usuarios u ON ic.socio_id = u.id
-JOIN natillera_reuniones r1 ON ic.reunion_id = r1.id
-JOIN natillera_usuarios u2 ON ic.registrado_por_usuario_id = u2.id
-LEFT JOIN natillera_reuniones r2 ON ic.reunion_id_retiro = r2.id;
+CREATE TABLE IF NOT EXISTS `natillera_recordatorios_enviados` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `socio_id` int NOT NULL,
+  `franja` varchar(5) NOT NULL,
+  `notificacion_id` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_recordatorio` (`reunion_id`,`socio_id`,`franja`),
+  KEY `idx_recordatorio_reunion` (`reunion_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 6. VISTA DE ENTREGAS Y CONSTANCIAS DE EVIDENCIA
-CREATE OR REPLACE VIEW v_constancias_entregas_evidencia AS
-SELECT 
-    eb.id AS entrega_id,
-    eb.reunion_id,
-    r.numero_quincena,
-    eb.socio_id,
-    u.nombre_completo AS beneficiario_nombre,
-    u.cedula AS beneficiario_cedula,
-    eb.tipo_beneficio,
-    eb.monto_entregado,
-    eb.prestamo_id,
-    eb.fecha_entrega,
-    CASE WHEN eb.firma_digital_path IS NOT NULL AND eb.firma_digital_path != '' THEN 'SÍ' ELSE 'NO' END AS tiene_firma,
-    CASE WHEN eb.foto_evidencia_path IS NOT NULL AND eb.foto_evidencia_path != '' THEN 'SÍ' ELSE 'NO' END AS tiene_foto,
-    u2.nombre_completo AS entregado_por_nombre
-FROM natillera_entregas_beneficios eb
-JOIN natillera_usuarios u ON eb.socio_id = u.id
-JOIN natillera_reuniones r ON eb.reunion_id = r.id
-JOIN natillera_usuarios u2 ON eb.entregado_por_usuario_id = u2.id;
+CREATE TABLE IF NOT EXISTS `natillera_reuniones` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `numero_quincena` int NOT NULL,
+  `fecha_reunion` date NOT NULL,
+  `hora_reunion` time DEFAULT '14:00:00',
+  `valor_cuota_base` decimal(10,2) NOT NULL DEFAULT '55000.00',
+  `tipo_evento_extra` varchar(50) COLLATE utf8mb4_general_ci DEFAULT 'NINGUNO',
+  `monto_premio_extra` decimal(10,2) DEFAULT '0.00',
+  `ganador_socio_id` int DEFAULT NULL,
+  `estado` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'PROGRAMADA',
+  `aporte_ronda` decimal(10,2) DEFAULT NULL,
+  `aporte_rifa` decimal(10,2) DEFAULT NULL,
+  `premios_ronda_planificados` int DEFAULT NULL,
+  `premios_rifa_planificados` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ganador_socio_id` (`ganador_socio_id`),
+  CONSTRAINT `natillera_reuniones_ibfk_1` FOREIGN KEY (`ganador_socio_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `natillera_roles` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `natillera_transferencias_cajas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `reunion_id` int NOT NULL,
+  `actividad_id` int DEFAULT NULL,
+  `tipo_movimiento` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `concepto` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `fecha_transferencia` datetime DEFAULT CURRENT_TIMESTAMP,
+  `registrado_por_usuario_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `reunion_id` (`reunion_id`),
+  KEY `actividad_id` (`actividad_id`),
+  KEY `registrado_por_usuario_id` (`registrado_por_usuario_id`),
+  CONSTRAINT `natillera_transferencias_cajas_ibfk_1` FOREIGN KEY (`reunion_id`) REFERENCES `natillera_reuniones` (`id`),
+  CONSTRAINT `natillera_transferencias_cajas_ibfk_2` FOREIGN KEY (`actividad_id`) REFERENCES `natillera_actividades` (`id`),
+  CONSTRAINT `natillera_transferencias_cajas_ibfk_3` FOREIGN KEY (`registrado_por_usuario_id`) REFERENCES `natillera_usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS `natillera_usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cedula` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `nombre_completo` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `telefono` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `fecha_nacimiento` date DEFAULT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `rol_id` int NOT NULL,
+  `tope_prestamo_personalizado` decimal(10,2) DEFAULT '2000000.00',
+  `interes_minimo_meta` decimal(10,2) DEFAULT '400000.00',
+  `estado` tinyint(1) DEFAULT '1',
+  `password_changed` tinyint(1) DEFAULT '0',
+  `orden` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `cedula` (`cedula`),
+  KEY `rol_id` (`rol_id`),
+  CONSTRAINT `natillera_usuarios_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `natillera_roles` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_actividades_estado_socios` AS select `a`.`id` AS `actividad_id`,`a`.`nombre_actividad` AS `nombre_actividad`,`a`.`fecha_actividad` AS `fecha_actividad`,`a`.`estado` AS `estado_actividad`,`ap`.`socio_id` AS `socio_id`,`u`.`nombre_completo` AS `socio_nombre`,`u`.`cedula` AS `socio_cedula`,`ap`.`cuota_asignada` AS `cuota_asignada`,`ap`.`monto_pagado` AS `monto_pagado`,(`ap`.`cuota_asignada` - `ap`.`monto_pagado`) AS `saldo_pendiente`,`ap`.`ganancia_asignada` AS `ganancia_asignada`,`ap`.`estado_pago` AS `estado_pago` from ((`natillera_actividades` `a` join `natillera_actividad_participantes` `ap` on((`a`.`id` = `ap`.`actividad_id`))) join `natillera_usuarios` `u` on((`ap`.`socio_id` = `u`.`id`)));
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_arqueo_caja_reuniones` AS select `r`.`id` AS `reunion_id`,`r`.`numero_quincena` AS `numero_quincena`,`r`.`fecha_reunion` AS `fecha_reunion`,`r`.`estado` AS `estado_reunion`,ifnull((select sum((case when (`ac`.`cuota_pagada` = 1) then 40000.00 else 0.00 end)) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0) AS `ingreso_cuotas_base`,ifnull((select sum(`ac`.`monto_ahorro_extra`) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0) AS `ingreso_ahorro_extra`,ifnull((select sum(`ab`.`monto_capital_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0) AS `ingreso_abonos_capital`,ifnull((select sum(`ab`.`monto_interes_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0) AS `ingreso_intereses_prestamos`,ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'DEVOLUCION_A_CAJA_MAYOR'))),0) AS `ingreso_devolucion_actividades`,ifnull((select sum(`ic`.`monto_inyectado`) from `natillera_inyecciones_capital` `ic` where (`ic`.`reunion_id` = `r`.`id`)),0) AS `ingreso_inyecciones_capital`,(((((ifnull((select sum((case when (`ac`.`cuota_pagada` = 1) then 40000.00 else 0.00 end)) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0) + ifnull((select sum(`ac`.`monto_ahorro_extra`) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`ab`.`monto_capital_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`ab`.`monto_interes_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'DEVOLUCION_A_CAJA_MAYOR'))),0)) + ifnull((select sum(`ic`.`monto_inyectado`) from `natillera_inyecciones_capital` `ic` where (`ic`.`reunion_id` = `r`.`id`)),0)) AS `total_ingresos_caja`,ifnull((select sum(`eb`.`monto_entregado`) from `natillera_entregas_beneficios` `eb` where ((`eb`.`reunion_id` = `r`.`id`) and (`eb`.`tipo_beneficio` = 'PRESTAMO'))),0) AS `egreso_prestamos_otorgados`,ifnull((select sum((`ic`.`monto_inyectado` + `ic`.`monto_rendimiento_generado`)) from `natillera_inyecciones_capital` `ic` where ((`ic`.`estado` = 'RETIRADA') and ((`ic`.`reunion_id_retiro` = `r`.`id`) or ((`ic`.`reunion_id_retiro` is null) and (cast(`ic`.`fecha_retiro` as date) = `r`.`fecha_reunion`))))),0) AS `egreso_inyecciones_retiradas`,ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'PRESTAMO_A_ACTIVIDAD'))),0) AS `egreso_prestamos_actividades`,((ifnull((select sum(`eb`.`monto_entregado`) from `natillera_entregas_beneficios` `eb` where ((`eb`.`reunion_id` = `r`.`id`) and (`eb`.`tipo_beneficio` = 'PRESTAMO'))),0) + ifnull((select sum((`ic`.`monto_inyectado` + `ic`.`monto_rendimiento_generado`)) from `natillera_inyecciones_capital` `ic` where ((`ic`.`estado` = 'RETIRADA') and ((`ic`.`reunion_id_retiro` = `r`.`id`) or ((`ic`.`reunion_id_retiro` is null) and (cast(`ic`.`fecha_retiro` as date) = `r`.`fecha_reunion`))))),0)) + ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'PRESTAMO_A_ACTIVIDAD'))),0)) AS `total_egresos_caja`,((((((ifnull((select sum((case when (`ac`.`cuota_pagada` = 1) then 40000.00 else 0.00 end)) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0) + ifnull((select sum(`ac`.`monto_ahorro_extra`) from `natillera_ahorros_cuotas` `ac` where (`ac`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`ab`.`monto_capital_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`ab`.`monto_interes_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`reunion_id` = `r`.`id`)),0)) + ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'DEVOLUCION_A_CAJA_MAYOR'))),0)) + ifnull((select sum(`ic`.`monto_inyectado`) from `natillera_inyecciones_capital` `ic` where (`ic`.`reunion_id` = `r`.`id`)),0)) - ((ifnull((select sum(`eb`.`monto_entregado`) from `natillera_entregas_beneficios` `eb` where ((`eb`.`reunion_id` = `r`.`id`) and (`eb`.`tipo_beneficio` = 'PRESTAMO'))),0) + ifnull((select sum((`ic`.`monto_inyectado` + `ic`.`monto_rendimiento_generado`)) from `natillera_inyecciones_capital` `ic` where ((`ic`.`estado` = 'RETIRADA') and ((`ic`.`reunion_id_retiro` = `r`.`id`) or ((`ic`.`reunion_id_retiro` is null) and (cast(`ic`.`fecha_retiro` as date) = `r`.`fecha_reunion`))))),0)) + ifnull((select sum(`tc`.`monto`) from `natillera_transferencias_cajas` `tc` where ((`tc`.`reunion_id` = `r`.`id`) and (`tc`.`tipo_movimiento` = 'PRESTAMO_A_ACTIVIDAD'))),0))) AS `saldo_neto_quincena` from `natillera_reuniones` `r` order by `r`.`numero_quincena`;
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_constancias_entregas_evidencia` AS select `eb`.`id` AS `entrega_id`,`eb`.`reunion_id` AS `reunion_id`,`r`.`numero_quincena` AS `numero_quincena`,`eb`.`socio_id` AS `socio_id`,`u`.`nombre_completo` AS `beneficiario_nombre`,`u`.`cedula` AS `beneficiario_cedula`,`eb`.`tipo_beneficio` AS `tipo_beneficio`,`eb`.`monto_entregado` AS `monto_entregado`,`eb`.`prestamo_id` AS `prestamo_id`,`eb`.`fecha_entrega` AS `fecha_entrega`,(case when ((`eb`.`firma_digital_path` is not null) and (`eb`.`firma_digital_path` <> '')) then 'SÍ' else 'NO' end) AS `tiene_firma`,(case when ((`eb`.`foto_evidencia_path` is not null) and (`eb`.`foto_evidencia_path` <> '')) then 'SÍ' else 'NO' end) AS `tiene_foto`,`u2`.`nombre_completo` AS `entregado_por_nombre` from (((`natillera_entregas_beneficios` `eb` join `natillera_usuarios` `u` on((`eb`.`socio_id` = `u`.`id`))) join `natillera_reuniones` `r` on((`eb`.`reunion_id` = `r`.`id`))) join `natillera_usuarios` `u2` on((`eb`.`entregado_por_usuario_id` = `u2`.`id`)));
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_estado_prestamos_detalle` AS select `p`.`id` AS `prestamo_id`,`p`.`socio_deudor_id` AS `socio_deudor_id`,`u`.`nombre_completo` AS `deudor_nombre`,`u`.`cedula` AS `deudor_cedula`,`p`.`nombre_referencia` AS `nombre_referencia`,`p`.`reunion_id` AS `reunion_id`,`r`.`numero_quincena` AS `numero_quincena_otorgamiento`,`p`.`fecha_inicio` AS `fecha_otorgamiento`,`p`.`monto_prestado` AS `monto_prestado`,`p`.`tasa_interes_mensual` AS `tasa_interes_mensual`,ifnull(sum(`ab`.`monto_capital_pagado`),0) AS `total_capital_pagado`,ifnull(sum(`ab`.`monto_interes_pagado`),0) AS `total_interes_pagado`,(`p`.`monto_prestado` - ifnull(sum(`ab`.`monto_capital_pagado`),0)) AS `saldo_pendiente_capital`,`p`.`estado` AS `estado_prestamo`,(case when (`p`.`es_autoprestamo` = 1) then 'SÍ' else 'NO' end) AS `es_autoprestamo`,(case when ((`eb`.`firma_digital_path` is not null) and (`eb`.`firma_digital_path` <> '')) then 'SÍ' else 'NO' end) AS `tiene_firma_digital`,(case when ((`eb`.`foto_evidencia_path` is not null) and (`eb`.`foto_evidencia_path` <> '')) then 'SÍ' else 'NO' end) AS `tiene_foto_evidencia` from ((((`natillera_prestamos` `p` join `natillera_usuarios` `u` on((`p`.`socio_deudor_id` = `u`.`id`))) left join `natillera_reuniones` `r` on((`p`.`reunion_id` = `r`.`id`))) left join `natillera_abonos_prestamos` `ab` on((`p`.`id` = `ab`.`prestamo_id`))) left join `natillera_entregas_beneficios` `eb` on((`p`.`id` = `eb`.`prestamo_id`))) group by `p`.`id`,`p`.`socio_deudor_id`,`u`.`nombre_completo`,`u`.`cedula`,`p`.`nombre_referencia`,`p`.`reunion_id`,`r`.`numero_quincena`,`p`.`fecha_inicio`,`p`.`monto_prestado`,`p`.`tasa_interes_mensual`,`p`.`estado`,`p`.`es_autoprestamo`,`eb`.`firma_digital_path`,`eb`.`foto_evidencia_path`;
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_inyecciones_capital_detalle` AS select `ic`.`id` AS `inyeccion_id`,`ic`.`socio_id` AS `socio_id`,`u`.`nombre_completo` AS `inversionista_nombre`,`u`.`cedula` AS `inversionista_cedula`,`ic`.`reunion_id` AS `reunion_apertura_id`,`r1`.`numero_quincena` AS `quincena_apertura`,`ic`.`monto_inyectado` AS `monto_inyectado`,`ic`.`tasa_rendimiento_porcentaje` AS `tasa_rendimiento_porcentaje`,`ic`.`monto_rendimiento_generado` AS `monto_rendimiento_generado`,(`ic`.`monto_inyectado` + `ic`.`monto_rendimiento_generado`) AS `monto_total_devolver`,`ic`.`fecha_inyeccion` AS `fecha_inyeccion`,`ic`.`fecha_retiro_permitido` AS `fecha_retiro_permitido`,(to_days(`ic`.`fecha_retiro_permitido`) - to_days(curdate())) AS `dias_restantes_para_retiro`,`ic`.`estado` AS `estado_inyeccion`,`ic`.`reunion_id_retiro` AS `reunion_id_retiro`,`r2`.`numero_quincena` AS `quincena_retiro`,`ic`.`fecha_retiro` AS `fecha_retiro`,`u2`.`nombre_completo` AS `registrado_por_nombre` from ((((`natillera_inyecciones_capital` `ic` join `natillera_usuarios` `u` on((`ic`.`socio_id` = `u`.`id`))) join `natillera_reuniones` `r1` on((`ic`.`reunion_id` = `r1`.`id`))) join `natillera_usuarios` `u2` on((`ic`.`registrado_por_usuario_id` = `u2`.`id`))) left join `natillera_reuniones` `r2` on((`ic`.`reunion_id_retiro` = `r2`.`id`)));
+
+CREATE OR REPLACE SQL SECURITY INVOKER VIEW `v_resumen_consolidado_socios` AS select `u`.`id` AS `socio_id`,`u`.`cedula` AS `cedula`,`u`.`nombre_completo` AS `nombre_completo`,`r`.`nombre` AS `rol`,`u`.`estado` AS `estado_socio_codigo`,(case when (`u`.`estado` = 1) then 'ACTIVO' else 'INACTIVO' end) AS `estado_socio`,ifnull((select sum((case when (`ac`.`cuota_pagada` = 1) then 40000.00 else 0.00 end)) from `natillera_ahorros_cuotas` `ac` where (`ac`.`socio_id` = `u`.`id`)),0) AS `total_cuotas_base_pagadas`,ifnull((select sum(`ac`.`monto_ahorro_extra`) from `natillera_ahorros_cuotas` `ac` where (`ac`.`socio_id` = `u`.`id`)),0) AS `total_ahorro_extra`,(select count(0) from `natillera_prestamos` `p` where ((`p`.`socio_deudor_id` = `u`.`id`) and (`p`.`estado` <> 'ANULADO'))) AS `total_prestamos_tomados`,(select ifnull(sum(`p`.`monto_prestado`),0) from `natillera_prestamos` `p` where ((`p`.`socio_deudor_id` = `u`.`id`) and (`p`.`estado` <> 'ANULADO'))) AS `monto_total_prestado`,(select ifnull(sum((`p`.`monto_prestado` - ifnull((select sum(`ab`.`monto_capital_pagado`) from `natillera_abonos_prestamos` `ab` where (`ab`.`prestamo_id` = `p`.`id`)),0))),0) from `natillera_prestamos` `p` where ((`p`.`socio_deudor_id` = `u`.`id`) and (`p`.`estado` = 'ACTIVO'))) AS `saldo_pendiente_prestamos`,(select ifnull(sum(`ab`.`monto_interes_pagado`),0) from (`natillera_abonos_prestamos` `ab` join `natillera_prestamos` `p` on((`ab`.`prestamo_id` = `p`.`id`))) where (`p`.`socio_deudor_id` = `u`.`id`)) AS `total_intereses_pagados`,(select ifnull(sum(`ic`.`monto_inyectado`),0) from `natillera_inyecciones_capital` `ic` where ((`ic`.`socio_id` = `u`.`id`) and (`ic`.`estado` = 'ACTIVA'))) AS `total_inyecciones_activas`,(select ifnull(sum(`ic`.`monto_rendimiento_generado`),0) from `natillera_inyecciones_capital` `ic` where ((`ic`.`socio_id` = `u`.`id`) and (`ic`.`estado` = 'ACTIVA'))) AS `total_rendimiento_inyecciones` from (`natillera_usuarios` `u` join `natillera_roles` `r` on((`u`.`rol_id` = `r`.`id`)));
+
+SET FOREIGN_KEY_CHECKS = 1;

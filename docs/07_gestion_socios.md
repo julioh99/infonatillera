@@ -1,29 +1,25 @@
-# 👥 Módulo 07: Gestión de Socios y Directorio
+# Módulo 07: Gestión de socios y directorio
 
-El módulo de Gestión de Socios controla el padrón oficial de la natillera, su información personal, cumpleaños, roles administrativos y límites individuales de crédito.
+Padrón de la natillera: datos personales, roles, límites de crédito y orden de la lista.
 
----
+## Componentes
+- Controlador: [`app/Controllers/SocioController.php`](../app/Controllers/SocioController.php)
+- Modelo: [`app/Models/Usuario.php`](../app/Models/Usuario.php)
+- Vista: `app/Views/admin/socios.php`
+- Permisos: Presidente y Secretaria General.
 
-## 🛠️ Clases y Componentes Relacionados
+## Funciones
+1. **Nuevo socio:** cédula, nombre, teléfono, cumpleaños y rol. **No se escribe clave**: el sistema genera una **clave temporal aleatoria** y la muestra **una sola vez** a quien lo crea (hay que anotarla y entregarla). El socio debe cambiarla en su primer ingreso. Ver módulo 01.
+2. **Restablecer clave:** genera otra clave temporal aleatoria con el mismo mecanismo y obliga de nuevo al cambio.
+3. **Hoja del socio (expediente):** resumen con total ahorrado (cuotas de $40.000 más extras), intereses frente a la meta de $400.000, deudas (préstamos y actividades), beneficios recibidos, cuotas por reunión, actividades, préstamos con abonos y entregas con firma y foto.
+4. **Edición de datos** personales, rol y tope de préstamo personalizado.
+5. **Cumpleaños:** widget con los cumpleaños por mes.
+6. **Orden de socios:** la columna `natillera_usuarios.orden` ordena todas las listas (llamado a lista, préstamos, actividades, entregas). Se cambia desde el Histórico de años (guardar solo el orden) o al crear el año nuevo.
+7. **Activos e inactivos:** al crear un año nuevo se elige quiénes continúan; los demás quedan inactivos sin perder su historia.
+8. **Liquidación anual:** vista de cierre por socio; un socio solo ve la suya.
 
-- **Controlador:** [`app/Controllers/SocioController.php`](../app/Controllers/SocioController.php)
-- **Modelo:** [`app/Models/Usuario.php`](../app/Models/Usuario.php)
-- **Vista:** [`app/Views/admin/socios.php`](../app/Views/admin/socios.php)
-
----
-
-## ⚙️ Funciones Principales
-
-1. **Nuevo Socio:** Botón y modal **"+ Nuevo Socio"** para registrar nuevos integrantes asignándoles cédula, teléfono, cumpleaños, rol y clave inicial.
-2. **Hoja del Socio / Expediente Financiero Completo:** Al hacer clic sobre el nombre del socio o en el botón **"📁 Ver Hoja del Socio"**, se abre un expediente dinámico que consolida:
-   - **Metricas KPI:** Total ahorrado (cuotas $40.000 + extras), intereses abonados a la meta ($400k), deudas activas (préstamos y actividades) y beneficios recibidos.
-   - **Cuotas y Ahorros de Reunión:** Desglose quincenal de cuotas pagadas ($40.000) y ahorros voluntarios.
-   - **Actividades Comunitarias:** Registro de cuotas asignadas en eventos (tamales, rifas), montos pagados, saldo pendiente e historial de abonos.
-   - **Préstamos e Intereses:** Capital prestado, amortizaciones a capital, saldo restante, e intereses abonados.
-   - **Entregas y Comprobantes:** Registro de rondas, rifas y desembolsos con fotos de comprobantes y firmas digitales en alta resolución.
-3. **Edición de Datos Personales:** Permite corregir teléfonos, nombres y fechas de nacimiento.
-4. **Control de Cumpleaños:** Widget colapsable que lista los cumpleaños organizados por mes para felicitaciones comunitarias.
-5. **Límites de Crédito Personalizados:** Modificación de los topes individuales para préstamos solicitados por socios con buena trayectoria.
+## Seguridad
+La Secretaria General no puede asignar el rol Presidente. Las claves nunca se guardan en claro ni se incluyen en las copias del histórico.
 
 ---
-[⬅️ Anterior: Notificaciones Push](./06_notificaciones_push.md) | [📋 Índice](./README.md) | [➡️ Siguiente: Dashboard Socio](./08_dashboard_socio.md)
+[Anterior](./06_notificaciones_push.md) | [Índice](./README.md) | [Siguiente: Panel del socio](./08_dashboard_socio.md)

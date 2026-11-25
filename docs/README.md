@@ -1,34 +1,23 @@
-# 📚 Índice de Documentación por Módulos - InfoNatillera
+# Documentación de InfoNatillera
 
-Bienvenido a la documentación técnica y funcional de **InfoNatillera**. Cada documento detalla las reglas de negocio, controladores, modelos, vistas y casos de uso de los distintos módulos del sistema.
+Guías por módulo con las reglas vigentes del sistema (MySQL, ciclo diciembre a noviembre, cuota $55.000 / $60.000 / $65.000 con ronda y rifa). Despliegue, pruebas y respaldos están en el [README principal](../README.md).
 
----
+1. [Autenticación, roles y modo dual](./01_autenticacion_y_roles.md): permisos, claves temporales, CSRF y límite de intentos.
+2. [Llamado a lista y autopréstamos](./02_llamado_a_lista.md): cuotas, desglose ahorro/ronda/rifa, regla de 24 horas.
+3. [Préstamos e intereses](./03_prestamos_e_intereses.md): interés progresivo, abonos, validaciones.
+4. [Actividades (tamales)](./04_actividades_tamales.md)
+5. [Programación de reuniones, ronda y rifa](./05_programacion_reuniones.md)
+6. [Notificaciones push y recordatorios](./06_notificaciones_push.md)
+7. [Gestión de socios](./07_gestion_socios.md)
+8. [Panel del socio](./08_dashboard_socio.md)
+9. [Entregas, cierres, fondos y histórico de años](./09_entregas_rondas_rifas.md)
+10. [Identidad visual 2027](./10_identidad_visual_logo.md)
 
-## 📖 Módulos del Sistema
+Otros: [Pruebas locales](./PRUEBAS_LOCALES.md), [permisos del llamado a lista](./permisos_roles_modulo_llamado_lista.md).
 
-1. [🔐 01. Autenticación, Permisos y Modo Dual](./01_autenticacion_y_roles.md)
-   - Inicio de sesión, control de acceso por roles (RBAC) y alternancia ejecutiva/socio para el Presidente.
+Operación rápida:
+- Desplegar: copiar archivos, `php scripts/migrate.php --status`, `--dry-run`, `php scripts/migrate.php`, revisar `.env`, DocumentRoot en `public/`.
+- Probar: `DB_DATABASE=nt_higiene DB_USERNAME=root DB_PASSWORD= php tests/run.php`.
+- Regenerar `db.sql` tras nuevas migraciones: `php scripts/migrate.php` y `php scripts/generar_db_sql.php` sobre una base local.
 
-2. [📋 02. Llamado a Lista Quincenal y Autopréstamos](./02_llamado_a_lista.md)
-   - Registro en lote de cuotas, ahorro voluntario, generación automática de autopréstamos al 10%, selección automática de la quincena activa y regla de anulación en 24 horas.
-
-3. [💰 03. Gestión de Préstamos e Historial de Cuotas](./03_prestamos_e_intereses.md)
-   - Registro de créditos directos con alias o persona referente, amortizaciones, edición de préstamos pagados e historial de cuotas.
-
-4. [🫔 04. Actividades Comunitarias (Tamales)](./04_actividades_tamales.md)
-   - Registro y control del recaudo de fondos por venta de tamales y eventos colectivos.
-
-5. [📅 05. Programación de Reuniones, Rifas y Rondas](./05_programacion_reuniones.md)
-   - Calendario de 26 quincenas, valor de cuotas variables ($55k, $60k, $65k) y pasarelas de sorteos.
-
-6. [🔔 06. Notificaciones Push Web](./06_notificaciones_push.md)
-   - Suscripción en segundo plano del navegador y broadcast masivo de notificaciones a los socios.
-
-7. [👥 07. Gestión de Socios y Directorio](./07_gestion_socios.md)
-   - Registro de nuevos socios, fechas de cumpleaños, control de limites de crédito y asignación de roles.
-
-8. [📊 08. Dashboard Individual del Socio](./08_dashboard_socio.md)
-   - Consulta de estado de cuenta individual, rentabilidad acumulada, cuotas pagadas y saldo pendiente.
-
----
-[⬅️ Volver al README Principal](../README.md)
+[Volver al README](../README.md)

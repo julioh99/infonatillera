@@ -1,34 +1,23 @@
-# 🫔 Módulo 04: Gestión de Actividades Comunitarias (Tamales)
+# Módulo 04: Actividades comunitarias (tamales)
 
-Este módulo gestiona la venta colectiva de alimentos o actividades extraordinarias (como venta de tamales) para incrementar la bolsa común y las utilidades al final del año.
+Venta colectiva de productos u otros eventos para aumentar las utilidades de fin de año.
 
----
+## Componentes
+- Controlador: [`app/Controllers/ActividadController.php`](../app/Controllers/ActividadController.php)
+- Modelo: [`app/Models/Actividad.php`](../app/Models/Actividad.php)
+- Vista: `app/Views/admin/actividades.php`
+- Permisos: Presidente y Secretaria Actividades.
+- Tablas: `natillera_actividades`, `natillera_actividad_participantes`, `natillera_abonos_actividades`.
 
-## 🛠️ Clases y Componentes Relacionados
-
-- **Controlador:** [`app/Controllers/ActividadController.php`](../app/Controllers/ActividadController.php)
-- **Modelo:** [`app/Models/Actividad.php`](../app/Models/Actividad.php)
-- **Vista:** [`app/Views/admin/actividades.php`](../app/Views/admin/actividades.php)
-
----
-
-## ⚙️ Reglas Operativas
-
-1. **Creación de Actividad y Cuotas Diferenciadas:** La **Secretaria de Actividades** o el Presidente pueden definir una actividad especificando su nombre, fecha, ingresos recaudados, gastos y asignando a cada socio seleccionado su **cuota/deuda individual a pagar** (*ej: Socio A 3 tamales = $30.000, Socio B 5 tamales = $50.000*).
-2. **Autocompletado de Cuota Base:** Se dispone de un botón *"Aplicar Cuota Base"* para establecer rápidamente un valor común a todos los socios activos y ajustar únicamente las excepciones.
-3. **Abonos Parciales por Separado:** Cada pago parcial efectuado por el socio (*ej: primer pago $12.000, segundo pago $24.000, tercer pago $50.000*) se almacena en la tabla `abonos_actividades` manteniendo el registro individual de fechas, montos y responsable.
-4. **Formateador Monetario con Puntos:** Los campos de monto de abono incluyen formateador de miles dinámico (`money-input`) con separador de puntos (*ej: 12.000*).
-5. **Control de Sobrepagos y Bloqueo al Estar Al Día:** 
-   - Cuando un socio ya pagó el 100% de su cuota (`saldo <= 0`), la interfaz deshabilita el formulario de abono y muestra la insignia **Completo**.
-   - Tanto en el cliente (JS) como en el servidor (PHP `Actividad.php`), se valida que ningún abono supere el saldo pendiente restante para prevenir sobrecostos o cobros excesivos.
-6. **Permanencia del Modal mediante AJAX:** Al registrar o eliminar abonos, la solicitud se ejecuta asincrónicamente por AJAX, refrescando la lista de saldos de inmediato y **manteniendo el modal abierto** para que la directiva pueda ingresar valores a múltiples socios consecutivamente.
-7. **Identificación por # ID (1 a 50) y Buscador Dinámico:**
-   - La tabla de participantes incluye de primera columna el **# ID** de socio (posición del 1 al 50).
-   - Se incorpora un **Buscador en tiempo real** por número de # ID o Nombre para encontrar rápidamente a cualquier socio dentro de listados extensos.
-8. **Visibilidad Dual (Directiva y Socio):**
-   - **Directiva:** Desde el modal *"Participantes y Recaudo"* en `/admin/actividades`, la directiva puede buscar socios por ID/Nombre, registrar abonos parciales individualmente y expandir la lista *"Abonos"* para ver el desglose y eliminar abonos erróneos.
-   - **Socio:** En su panel `/socio/dashboard` (*Mis Actividades Comunitarias*), el socio dispone del botón *"Ver mis abonados"* para consultar el desglose exacto y las fechas de cada entrega parcial realizada.
-9. **Balance Final:** Los fondos y ganancias netas generadas por actividades se distribuyen entre los socios o alimentan los excedentes repartibles de fin de año.
+## Reglas
+1. **Actividad y cuotas diferenciadas:** nombre, fecha, ingresos, gastos y la cuota que debe cada socio participante (por ejemplo 3 tamales = $30.000). El botón **Aplicar cuota base** pone un valor común y se ajustan las excepciones.
+2. **Abonos parciales:** cada pago del socio es un registro con fecha, monto y responsable. Los montos usan separador de miles con punto.
+3. **Sin sobrepagos:** ningún abono puede superar el saldo pendiente (validado en pantalla y en el servidor). Con saldo cero el formulario se deshabilita.
+4. **AJAX:** registrar o borrar un abono refresca la lista sin cerrar el modal.
+5. **Identificación:** la tabla de participantes muestra el número de socio y tiene buscador por número o nombre.
+6. **Visibilidad:** la directiva ve el recaudo completo; el socio ve sus cuotas, abonos y saldo en su panel (**Mis actividades comunitarias**).
+7. **Utilidad:** ingresos menos gastos se reparte en partes iguales solo entre los socios participantes de esa edición.
+8. **Caja de actividades:** los préstamos entre la caja mayor y la caja de actividades se registran como transferencias entre cajas, sin interés (ver módulo 09). Los préstamos a la caja de actividades salen como egreso del cierre y las devoluciones entran como ingreso.
 
 ---
-[⬅️ Anterior: Préstamos](./03_prestamos_e_intereses.md) | [📋 Índice](./README.md) | [➡️ Siguiente: Programación Reuniones](./05_programacion_reuniones.md)
+[Anterior](./03_prestamos_e_intereses.md) | [Índice](./README.md) | [Siguiente: Reuniones](./05_programacion_reuniones.md)

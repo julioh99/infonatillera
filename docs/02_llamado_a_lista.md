@@ -1,36 +1,45 @@
-# 📋 Módulo 02: Llamado a Lista Quincenal y Autopréstamos
+# Módulo 02: Llamado a lista y autopréstamos
 
-El módulo de Llamado a Lista es el núcleo operativo de las reuniones quincenales de la natillera. Permite registrar masivamente el cobro de cuotas, ahorros extraordinarios y generar autopréstamos automáticos cuando un socio entra en mora.
+Registro en lote de las cuotas de cada reunión, del ahorro extra y de los autopréstamos de quienes no pagan.
+
+## Componentes
+- Controlador: [`app/Controllers/LlamadoListaController.php`](../app/Controllers/LlamadoListaController.php)
+- Modelos: [`app/Models/Reunion.php`](../app/Models/Reunion.php) (`guardarLlamadoListaBatch`, `anularAutoprestamo24Horas`) y [`app/Models/Prestamo.php`](../app/Models/Prestamo.php)
+- Vista: `app/Views/admin/llamado_lista.php`
+- Permisos: Presidente, Tesorera y Secretaria General.
+
+## Reglas
+
+### Reunión activa
+`Reunion::getReunionActual()` propone la primera reunión sin registros de asistencia y que no esté `CERRADA`.
+
+### Cuota y su desglose
+Cada reunión tiene su cuota (`valor_cuota_base`): $55.000 normal, $60.000 o $65.000 en las reuniones con cuota extra. El desglose por socio es:
+
+| Cuota | Ahorro | Ronda | Rifa |
+| :--- | ---: | ---: | ---: |
+| $55.000 | $40.000 | $10.000 | $5.000 |
+| $60.000 | $40.000 | $10.000 | $10.000 |
+| $65.000 | $40.000 | $20.000 | $5.000 |
+
+El ahorro neto es siempre $40.000. La ronda y la rifa de cada pago quedan en `monto_aporte_ronda` y `monto_aporte_rifa` y alimentan los fondos reservados (ver módulo 09). El **ahorro extra** es un monto voluntario adicional.
+
+### Notificación de pago
+Al guardar, cada socio que pagó recibe una notificación de pago (ventana que aparece en su panel). Volver a guardar sin cambios no la duplica.
+
+### Autopréstamo
+Si el socio no pagó, el interruptor **Generar autopréstamo** crea un préstamo por el valor de la cuota con la tasa mensual de `config/natillera.php` (10%), asociado a su registro de la reunión.
+
+### Regla de 24 horas
+- Si el socio paga dentro de las **24 horas siguientes a la creación del autopréstamo**, la directiva usa **Anular autopréstamo (24h)**: el préstamo queda anulado sin interés, la cuota queda pagada y el socio recibe la notificación de pago.
+- El plazo se mide con la fecha y hora de creación del autopréstamo (no con la fecha de la reunión). Pasadas 24 horas, o si el autopréstamo ya tiene abonos, la anulación se rechaza con un mensaje.
+- Un autopréstamo anulado cuenta interés 0.
+
+### Reuniones cerradas
+Una reunión `CERRADA` ya no admite cambios en el llamado a lista. Si hay que corregir algo, la directiva debe seguir el procedimiento del módulo 09 (cierres).
+
+### Integridad
+Existe un índice único (`reunion_id`, `socio_id`) en `natillera_ahorros_cuotas`: un socio no puede tener dos registros en la misma reunión.
 
 ---
-
-## 🛠️ Clases y Componentes Relacionados
-
-- **Controlador:** [`app/Controllers/LlamadoListaController.php`](../app/Controllers/LlamadoListaController.php)
-- **Modelos:**
-  - [`app/Models/Reunion.php`](../app/Models/Reunion.php)
-  - [`app/Models/Prestamo.php`](../app/Models/Prestamo.php)
-- **Vista:** [`app/Views/admin/llamado_lista.php`](../app/Views/admin/llamado_lista.php)
-
----
-
-## ⚙️ Reglas de Negocio Operativas
-
-### 1. Seleccionador Inteligente de Quincena Activa
-Al ingresar a la vista de Llamado a Lista (`/admin/llamado-lista`), el método `Reunion::getReunionActual()` consulta la primera reunión que **aún no tiene registros de asistencia** y cuyo estado no sea `CERRADA`.
-- *Ejemplo:* Si las quincenas 1, 2 y 3 ya fueron guardadas, el sistema seleccionará por defecto la **Quincena 4**.
-
-### 2. Registro de Cuota Base y Ahorro Extra
-- En cada quincena el valor de la cuota base está prefijado ($55.000 en regulares, $60.000 en rifas, $65.000 en rondas).
-- Los socios pueden ingresar un monto adicional en la columna **Ahorro Extra**.
-
-### 3. Autopréstamo Automático al 10%
-- Si un socio **no pagó su cuota quincenal**, el sistema permite activar el switch **"Generar Autopréstamo"**.
-- Se inserta automáticamente un préstamo por el valor de la cuota base con una **tasa de interés mensual del 10%**.
-
-### 4. Regla de Anulación dentro de las 24 Horas
-- Si el socio se pone al día dentro de las **24 horas posteriores** a la reunión, la directiva puede hacer clic en el botón **"Anular Autopréstamo (24h)"**.
-- Esto elimina el interés cobrado y devuelve la cuota como pagada sin recargo.
-
----
-[⬅️ Anterior: Autenticación](./01_autenticacion_y_roles.md) | [📋 Índice](./README.md) | [➡️ Siguiente: Préstamos](./03_prestamos_e_intereses.md)
+[Anterior](./01_autenticacion_y_roles.md) | [Índice](./README.md) | [Siguiente: Préstamos](./03_prestamos_e_intereses.md)
