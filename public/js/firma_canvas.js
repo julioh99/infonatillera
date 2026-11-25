@@ -122,12 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectTipo && inputMonto) {
         selectTipo.addEventListener('change', (e) => {
             const val = e.target.value;
-            if (val === 'RONDA') {
-                inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('300000') : '300.000';
-            } else if (val === 'RIFA') {
-                inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('150000') : '150.000';
-            } else if (val === 'PRESTAMO') {
-                inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString('500000') : '500.000';
+            // Montos por defecto desde data-* del select (los escribe PHP desde config/natillera.php)
+            const ds = selectTipo.dataset;
+            const porTipo = { RONDA: ds.premioRonda, RIFA: ds.premioRifa, PRESTAMO: ds.prestamoDefecto };
+            if (porTipo[val] !== undefined && porTipo[val] !== '') {
+                inputMonto.value = typeof formatMoneyString === 'function' ? formatMoneyString(String(porTipo[val])) : String(porTipo[val]);
             }
             cargarSociosPendientes(val);
         });

@@ -67,7 +67,7 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($historial as $n): 
-                        $textWa = "📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *{$n['titulo']}*\n{$n['mensaje']}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/";
+                        $textWa = "📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *{$n['titulo']}*\n{$n['mensaje']}\n\n🌐 *Ingresa a la plataforma aquí:*\n" . rtrim((string)(getenv('APP_URL') ?: $this->natillera('web.app_url', '')), '/') . '/';
                         $urlWa = "https://api.whatsapp.com/send?text=" . urlencode($textWa);
                     ?>
                         <tr>
@@ -152,6 +152,7 @@
 </div>
 
 <script>
+const NT_APP_URL = <?= json_encode(rtrim((string)(getenv('APP_URL') ?: $this->natillera('web.app_url', '')), '/') . '/') ?>;
 function toggleSocioSelect(tipo) {
     const div = document.getElementById('divSocioSelect');
     if (tipo === 'SOCIO_ESPECIFICO') {
@@ -169,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Swal.fire('Atención', 'Ingresa título y mensaje para poder generar el mensaje de WhatsApp.', 'warning');
             return;
         }
-        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${t}*\n${m}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${t}*\n${m}\n\n🌐 *Ingresa a la plataforma aquí:*\n${NT_APP_URL}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`, '_blank');
     });
 });

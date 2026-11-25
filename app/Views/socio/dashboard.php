@@ -40,7 +40,8 @@
     </div>
 </div>
 
-<!-- Progress Bar de Meta de Intereses ($400.000 COP) -->
+<!-- Progress Bar de Meta de Intereses (meta desde config/natillera.php) -->
+<?php $nt_meta = number_format((float)$this->natillera('prestamo.meta_intereses_anual', 400000), 0, ',', '.'); ?>
 <div class="card nt-meta mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-2">
         <h5 class="nt-panel__title">
@@ -48,10 +49,10 @@
             Avance de Meta Individual de Intereses
         </h5>
         <span class="nt-meta__figure nt-money">
-            $<?= number_format($resumen['total_interes_generado'], 0, ',', '.') ?> / $400.000 COP (<?= $resumen['porcentaje_meta'] ?>%)
+            $<?= number_format($resumen['total_interes_generado'], 0, ',', '.') ?> / $<?= $nt_meta ?> COP (<?= $resumen['porcentaje_meta'] ?>%)
         </span>
     </div>
-    <p class="nt-fineprint mb-3">Compromiso anual de abonar al menos $400.000 COP en intereses por concepto de préstamos personales o generados.</p>
+    <p class="nt-fineprint mb-3">Compromiso anual de abonar al menos $<?= $nt_meta ?> COP en intereses por concepto de préstamos personales o generados.</p>
     <div class="progress rounded-pill overflow-hidden">
         <div class="progress-bar" 
              role="progressbar" 

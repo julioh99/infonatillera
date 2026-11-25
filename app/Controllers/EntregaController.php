@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/Money.php';
+require_once __DIR__ . '/../../core/Evidencia.php';
 require_once __DIR__ . '/../Models/FondoBeneficio.php';
 require_once __DIR__ . '/../Models/EntregaBeneficio.php';
 require_once __DIR__ . '/../Models/Reunion.php';
@@ -74,38 +75,6 @@ class EntregaController extends Controller {
         ]);
     }
 
-    /**
-     * Valida y decodifica una imagen en base64 (data URI). Devuelve [bytes, extension] o lanza RuntimeException.
-     * @param string[] $mimesPermitidos
-     */
-    private function decodificarImagenBase64(string $dataUri, array $mimesPermitidos, int $maxBytes, string $nombre): array {
-        if (!preg_match('#^data:(image/[a-z0-9.+-]+);base64,#i', $dataUri, $m)) {
-            throw new RuntimeException("La {$nombre} no es una imagen válida.");
-        }
-        $bytes = base64_decode(substr($dataUri, strlen($m[0])), true);
-        if ($bytes === false || $bytes === '') {
-            throw new RuntimeException("La {$nombre} no se pudo decodificar.");
-        }
-        if (strlen($bytes) > $maxBytes) {
-            throw new RuntimeException("La {$nombre} supera el tamaño permitido (" . round($maxBytes / 1048576, 1) . " MB).");
-        }
-        $info = @getimagesizefromstring($bytes);
-        if ($info === false || empty($info[0]) || empty($info[1]) || !in_array($info['mime'], $mimesPermitidos, true)) {
-            throw new RuntimeException("La {$nombre} no es una imagen real de un tipo permitido.");
-        }
-        return [$bytes, $this->extensionDeMime($info['mime'])];
-    }
-
-    private function extensionDeMime(string $mime): string {
-        $mapa = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'];
-        return $mapa[$mime] ?? 'bin';
-    }
-
-    private function nombreSeguro(string $prefijo, int $socioId, string $tipo, string $ext): string {
-        // $tipo ya viene de la lista blanca; el sufijo aleatorio evita colisiones y nombres adivinables
-        return $prefijo . '_' . $socioId . '_' . strtolower($tipo) . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-    }
-
     public function guardar(): void {
         $this->requireRole(['Presidente', 'Tesorera', 'Secretaria General']);
 
@@ -174,68 +143,22 @@ class EntregaController extends Controller {
             }
         }
 
-        // ---- Evidencias: se validan TODAS antes de escribir cualquier archivo ----
-        $maxFirma = (int)Money::config('fondos.firma_max_bytes', 1048576);
-        $maxFoto = (int)Money::config('fondos.foto_max_bytes', 5242880);
-        $mimesFoto = (array)Money::config('fondos.foto_tipos', ['image/jpeg', 'image/png', 'image/webp']);
-
-        $firmaBytes = null;
-        $fotoBytes = null; $fotoExt = null; $fotoTmp = null;
+        // ---- Evidencias: se validan TODAS antes de escribir cualquier archivo (core/Evidencia.php) ----
         try {
-            if (!empty($_POST['firma_base64'])) {
-                list($firmaBytes, ) = $this->decodificarImagenBase64((string)$_POST['firma_base64'], ['image/png'], $maxFirma, 'firma digital');
-            }
-
-            if (!empty($_FILES['foto_evidencia']['tmp_name'])) {
-                $f = $_FILES['foto_evidencia'];
-                if (($f['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
-                    throw new RuntimeException("No se pudo recibir la foto de evidencia.");
-                }
-                if ((int)$f['size'] > $maxFoto) {
-                    throw new RuntimeException("La foto de evidencia supera el tamaño permitido (" . round($maxFoto / 1048576, 1) . " MB).");
-                }
-                $info = @getimagesize($f['tmp_name']);
-                if ($info === false || !in_array($info['mime'], $mimesFoto, true)) {
-                    throw new RuntimeException("La foto de evidencia no es una imagen válida (JPG, PNG o WEBP).");
-                }
-                $fotoTmp = $f['tmp_name'];
-                $fotoExt = $this->extensionDeMime($info['mime']);
-            } elseif (!empty($_POST['foto_base64'])) {
-                list($fotoBytes, $fotoExt) = $this->decodificarImagenBase64((string)$_POST['foto_base64'], $mimesFoto, $maxFoto, 'foto de evidencia');
-            }
+            $firmaBytes = Evidencia::validarFirma();
+            $foto = Evidencia::validarFoto();
         } catch (RuntimeException $e) {
             $_SESSION['error'] = $e->getMessage();
             $this->redirect('/admin/entregas');
         }
 
-        $firmasDir = __DIR__ . '/../../public/uploads/firmas';
-        $evidenciasDir = __DIR__ . '/../../public/uploads/evidencias';
-        foreach ([$firmasDir, $evidenciasDir] as $dir) {
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0775, true);
-            }
-        }
-
         $firmaPath = null; $fotoPath = null; $escritos = [];
         try {
             if ($firmaBytes !== null) {
-                $nombre = $this->nombreSeguro('firma', $socioId, $tipoBeneficio, 'png');
-                if (@file_put_contents("{$firmasDir}/{$nombre}", $firmaBytes) === false) {
-                    throw new RuntimeException("No se pudo guardar la firma digital.");
-                }
-                $escritos[] = "{$firmasDir}/{$nombre}";
-                $firmaPath = "/uploads/firmas/{$nombre}";
+                $firmaPath = Evidencia::guardarFirma($firmaBytes, $socioId, $tipoBeneficio, $escritos);
             }
-            if ($fotoTmp !== null || $fotoBytes !== null) {
-                $nombre = $this->nombreSeguro('foto', $socioId, $tipoBeneficio, $fotoExt);
-                $okFoto = ($fotoTmp !== null)
-                    ? @move_uploaded_file($fotoTmp, "{$evidenciasDir}/{$nombre}")
-                    : (@file_put_contents("{$evidenciasDir}/{$nombre}", $fotoBytes) !== false);
-                if (!$okFoto) {
-                    throw new RuntimeException("No se pudo guardar la foto de evidencia.");
-                }
-                $escritos[] = "{$evidenciasDir}/{$nombre}";
-                $fotoPath = "/uploads/evidencias/{$nombre}";
+            if ($foto !== null) {
+                $fotoPath = Evidencia::guardarFoto($foto, $socioId, $tipoBeneficio, $escritos);
             }
 
             $ok = $entregaModel->registrarEntrega([

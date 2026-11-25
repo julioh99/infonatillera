@@ -291,7 +291,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-12 col-md-5">
                             <label for="entrega_tipo_beneficio" class="form-label fw-semibold fs-7">Tipo de Entrega</label>
-                            <select name="tipo_beneficio" id="entrega_tipo_beneficio" class="form-select fw-bold text-dark" required>
+                            <select name="tipo_beneficio" id="entrega_tipo_beneficio" class="form-select fw-bold text-dark" required data-premio-ronda="<?= (int)$montosDefecto['RONDA'] ?>" data-premio-rifa="<?= (int)$montosDefecto['RIFA'] ?>" data-prestamo-defecto="<?= (int)$montosDefecto['PRESTAMO'] ?>">
                                 <option value="PRESTAMO" <?= ($tipoQuery === 'PRESTAMO') ? 'selected' : '' ?>>PRÉSTAMO (Desembolso Crédito)</option>
                                 <option value="RONDA" <?= ($tipoQuery === 'RONDA') ? 'selected' : '' ?>>RONDA ($<?= number_format($montosDefecto['RONDA'], 0, ',', '.') ?> COP)</option>
                                 <option value="RIFA" <?= ($tipoQuery === 'RIFA') ? 'selected' : '' ?>>RIFA ($<?= number_format($montosDefecto['RIFA'], 0, ',', '.') ?> COP)</option>

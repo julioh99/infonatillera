@@ -511,6 +511,9 @@
     </div>
 
     <script>
+    // URL publica y color de marca desde config/natillera.php (web.app_url, web.color_marca); APP_URL del .env tiene prioridad
+    const NT_APP_URL = <?= json_encode(rtrim((string)(getenv('APP_URL') ?: $this->natillera('web.app_url', '')), '/') . '/') ?>;
+    const NT_COLOR_MARCA = <?= json_encode((string)$this->natillera('web.color_marca', '#14573D')) ?>;
     document.addEventListener('DOMContentLoaded', () => {
         const btnBells = document.querySelectorAll('.btnAbrirNotificaciones');
         btnBells.forEach(btn => {
@@ -537,7 +540,7 @@
                     let html = '<div class="list-group list-group-flush">';
                     data.notificaciones.forEach(n => {
                         const fecha = n.fecha_envio ? n.fecha_envio.substring(0, 16) : '';
-                        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${n.titulo}*\n${n.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+                        const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${n.titulo}*\n${n.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\n${NT_APP_URL}`;
                         const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
 
                         html += `
@@ -690,7 +693,7 @@
                 `💰 *Total Acreditado:* ${formatMoney(data.total_abonado_general)}\n\n` +
                 `📋 *Detalle de Pagos:*\n${waDetalle}\n` +
                 `🏦 *Nuevo Saldo Total Ahorrado:* ${formatMoney(data.saldo_ahorro_actual)}\n\n` +
-                `🌐 *Verificado en InfoNatillera:*\nhttps://natillera.skylinedev.top/`;
+                `🌐 *Verificado en InfoNatillera:*\n${NT_APP_URL}`;
             const btnWa = document.getElementById('btnCompartirPagoWa');
             if (btnWa) {
                 btnWa.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
@@ -733,9 +736,12 @@
             fetch('/socio/notificaciones-pendientes-json')
                 .then(r => r.json())
                 .then(async data => {
-                    if (data.success && data.pendientes && data.pendientes.length > 0) {
+                    // Punto de "sin leer" en la campana (CSS: .nt-iconbtn[data-has-unread="true"])
+                    const hayPendientes = !!(data.success && data.pendientes && data.pendientes.length > 0);
+                    document.querySelectorAll('.btnAbrirNotificaciones').forEach(b => b.setAttribute('data-has-unread', hayPendientes ? 'true' : 'false'));
+                    if (hayPendientes) {
                         for (const notif of data.pendientes) {
-                            const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${notif.titulo}*\n${notif.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\nhttps://natillera.skylinedev.top/`;
+                            const textWa = `📢 *INFONATILLERA - NOTIFICACIÓN*\n\n📌 *${notif.titulo}*\n${notif.mensaje}\n\n🌐 *Ingresa a la plataforma aquí:*\n${NT_APP_URL}`;
                             const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textWa)}`;
 
                             await Swal.fire({
@@ -757,7 +763,7 @@
                                 timerProgressBar: true,
                                 showConfirmButton: true,
                                 confirmButtonText: 'Entendido / Cerrar (30s)',
-                                confirmButtonColor: '#198754',
+                                confirmButtonColor: NT_COLOR_MARCA,
                                 allowOutsideClick: false
                             });
 
@@ -765,6 +771,7 @@
                             formData.append('notificacion_id', notif.id);
                             fetch('/socio/notificacion-marcar-leida', { method: 'POST', body: formData });
                         }
+                        document.querySelectorAll('.btnAbrirNotificaciones').forEach(b => b.setAttribute('data-has-unread', 'false'));
                     }
                 })
                 .catch(err => console.error(err));

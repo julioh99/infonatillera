@@ -67,6 +67,14 @@ return [
         'extra_max_factor'      => 2,        // una cuota que excede la base en mas de (extra_ronda+extra_rifa)*factor se trata como dato erroneo
     ],
 
+    // ---- Textos y marca de la web (vistas) ----
+    'web' => [
+        'ciclo_nombre' => '2026',                                  // año/ciclo que se muestra en login y reglamento; cambiar solo aqui
+        'ciclo_pais'   => 'Colombia',
+        'app_url'      => 'https://natillera.skylinedev.top/',     // se usa en los mensajes de WhatsApp; APP_URL del .env lo sobrescribe
+        'color_marca'  => '#14573D',                               // pino (botones de SweetAlert)
+    ],
+
     // ---- Zona horaria de las reuniones ----
     'zona_horaria' => 'America/Bogota',
 ];

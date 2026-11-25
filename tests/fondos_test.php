@@ -140,9 +140,9 @@ t_igual($r3['creadas'], (int)CajaGlobal::cfg('reuniones_por_ciclo', 26), 'cantid
 t_ok($r3['distribucion']['ok'], 'el ciclo generado con extras sugeridas cierra en $0');
 
 echo "== Entregas: validacion de imagenes\n";
-require_once __DIR__ . '/../app/Controllers/EntregaController.php';
-$obj = new EntregaController();
-$m = new ReflectionMethod('EntregaController', 'decodificarImagenBase64');
+require_once __DIR__ . '/../core/Evidencia.php'; // el validador seguro vive ahora en core/Evidencia.php (estatico)
+$obj = null;
+$m = new ReflectionMethod('Evidencia', 'decodificarImagenBase64');
 $m->setAccessible(true);
 $png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 $r = $m->invoke($obj, $png, array('image/png'), 1048576, 'firma');

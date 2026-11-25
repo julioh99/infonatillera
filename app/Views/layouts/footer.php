@@ -3,7 +3,7 @@
 
     <footer class="nt-footer">
         <div class="container-fluid px-3 px-lg-4">
-            <p>InfoNatillera &copy; <?= date('Y') ?> &bull; Sistema de Gestión de Natillera Comunitaria (50 Socios)</p>
+            <p>InfoNatillera &copy; <?= date('Y') ?> &bull; Sistema de Gestión de Natillera Comunitaria (<?= (int)$this->natillera('cupos', 50) ?> Socios)</p>
         </div>
     </footer>
 </div> <!-- Cierra .app-main-wrapper -->

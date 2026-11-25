@@ -8,6 +8,7 @@ require_once __DIR__ . '/../Models/Reunion.php';
 require_once __DIR__ . '/../Models/EntregaBeneficio.php';
 require_once __DIR__ . '/../Models/Auditoria.php';
 require_once __DIR__ . '/../../core/Money.php';
+require_once __DIR__ . '/../../core/Evidencia.php';
 
 class PrestamoController extends Controller {
 
@@ -87,6 +88,15 @@ class PrestamoController extends Controller {
             $this->redirectConBusqueda();
         }
 
+        // Evidencias opcionales: se validan (imagen real, tamano) antes de crear nada
+        try {
+            $firmaBytes = Evidencia::validarFirma();
+            $foto = Evidencia::validarFoto();
+        } catch (RuntimeException $e) {
+            $_SESSION['error'] = $e->getMessage();
+            $this->redirectConBusqueda();
+        }
+
         try {
             // El prestamo queda ligado a la reunion donde se registra su egreso
             $prestamoId = $prestamoModel->crearPrestamo([
@@ -106,35 +116,21 @@ class PrestamoController extends Controller {
 
         if ($prestamoId) {
             // Firma Digital y Foto Evidencia son opcionales; el egreso se registra siempre
-            $firmasDir = __DIR__ . '/../../public/uploads/firmas';
-            $evidenciasDir = __DIR__ . '/../../public/uploads/evidencias';
-
-            if (!is_dir($firmasDir)) @mkdir($firmasDir, 0777, true);
-            if (!is_dir($evidenciasDir)) @mkdir($evidenciasDir, 0777, true);
-
             $firmaPath = null;
-            if (!empty($_POST['firma_base64'])) {
-                $firmaData = $_POST['firma_base64'];
-                if (preg_match('/^data:image\/(\w+);base64,/', $firmaData, $type)) {
-                    $data = substr($firmaData, strpos($firmaData, ',') + 1);
-                    $data = base64_decode($data);
-                    if ($data !== false) {
-                        $fileNameFirma = "firma_{$socioDeudorId}_PRESTAMO_" . time() . ".png";
-                        @file_put_contents("{$firmasDir}/{$fileNameFirma}", $data);
-                        $firmaPath = "/uploads/firmas/{$fileNameFirma}";
-                    }
-                }
-            }
-
             $fotoPath = null;
-            if (!empty($_FILES['foto_evidencia']['tmp_name']) && is_uploaded_file($_FILES['foto_evidencia']['tmp_name'])) {
-                $ext = strtolower(pathinfo($_FILES['foto_evidencia']['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                    $fileNameFoto = "foto_{$socioDeudorId}_PRESTAMO_" . time() . ".{$ext}";
-                    if (@move_uploaded_file($_FILES['foto_evidencia']['tmp_name'], "{$evidenciasDir}/{$fileNameFoto}")) {
-                        $fotoPath = "/uploads/evidencias/{$fileNameFoto}";
-                    }
+            $escritos = [];
+            try {
+                if ($firmaBytes !== null) {
+                    $firmaPath = Evidencia::guardarFirma($firmaBytes, $socioDeudorId, 'PRESTAMO', $escritos);
                 }
+                if ($foto !== null) {
+                    $fotoPath = Evidencia::guardarFoto($foto, $socioDeudorId, 'PRESTAMO', $escritos);
+                }
+            } catch (RuntimeException $e) {
+                // No se pudo guardar un archivo: el prestamo sigue, solo sin esa evidencia
+                foreach ($escritos as $a) { @unlink($a); }
+                $firmaPath = null;
+                $fotoPath = null;
             }
 
             try {

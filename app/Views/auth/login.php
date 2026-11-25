@@ -1,3 +1,11 @@
+<?php
+// Textos del ciclo desde config/natillera.php (no hay nada del ciclo escrito a mano aqui)
+$nt_ciclo = htmlspecialchars((string)$this->natillera('web.ciclo_nombre', date('Y')));
+$nt_pais = htmlspecialchars((string)$this->natillera('web.ciclo_pais', 'Colombia'));
+$nt_cupos = (int)$this->natillera('cupos', 50);
+$nt_meta = number_format((float)$this->natillera('prestamo.meta_intereses_anual', 400000), 0, ',', '.');
+$nt_metaRaw = (int)$this->natillera('prestamo.meta_intereses_anual', 400000);
+?>
 <div class="nt-login">
     <div class="row align-items-start g-4">
         <!-- Columna Derecha en Desktop / Primero en Móvil: Formulario de Login -->
@@ -34,7 +42,7 @@
 
                     <div class="nt-login-foot">
                         <p class="mb-1"><i class="fa-solid fa-shield-halved text-success me-1"></i> Acceso seguro con roles de usuario</p>
-                        <span class="nt-chip">Ciclo 2026 &bull; Colombia</span>
+                        <span class="nt-chip">Ciclo <?= $nt_ciclo ?> &bull; <?= $nt_pais ?></span>
                         <div class="d-lg-none mt-2">
                             <a href="#reglamento"><i class="fa-solid fa-book-bookmark"></i>Ver reglamento interno</a>
                         </div>
@@ -43,20 +51,20 @@
             </div>
         </div>
 
-        <!-- Columna Izquierda en Desktop / Abajo en Móvil: Landing Page - Reglamento Interno 2026 -->
+        <!-- Columna Izquierda en Desktop / Abajo en Móvil: Landing Page - Reglamento Interno -->
         <div class="col-12 col-lg-7 col-xl-8 order-2 order-lg-1">
             <div class="card nt-rules" id="reglamento">
                 <!-- Banner de Cabecera del Reglamento -->
                 <div class="nt-hero nt-rules__hero">
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div>
-                            <span class="nt-eyebrow"><i class="fa-solid fa-scroll"></i>Normativa Oficial 2026</span>
+                            <span class="nt-eyebrow"><i class="fa-solid fa-scroll"></i>Normativa Oficial <?= $nt_ciclo ?></span>
                             <h2 class="font-outfit nt-page-title">Requisitos y Normas Natillera</h2>
-                            <p>Conoce las reglas financieras y de funcionamiento aprobadas para el ciclo 2026.</p>
+                            <p>Conoce las reglas financieras y de funcionamiento aprobadas para el ciclo <?= $nt_ciclo ?>.</p>
                         </div>
                         <div>
                             <span class="nt-rules__count">
-                                <i class="fa-solid fa-users"></i>50 Socios Activos
+                                <i class="fa-solid fa-users"></i><?= $nt_cupos ?> Socios Activos
                             </span>
                         </div>
                     </div>
@@ -70,7 +78,7 @@
                             <input type="text" id="searchNormas" class="form-control border-start-0" placeholder="Buscar norma o regla (ej: préstamo, 5%, cuota)...">
                         </div>
                         <div id="filterBadges">
-                            <button type="button" class="btn btn-sm nt-filter btn-dark text-nowrap active filter-btn" data-filter="all">Todas (12)</button>
+                            <button type="button" class="btn btn-sm nt-filter btn-dark text-nowrap active filter-btn" data-filter="all">Todas (<span id="totalNormas">12</span>)</button>
                             <button type="button" class="btn btn-sm nt-filter text-nowrap filter-btn" data-filter="cuotas">Cuotas & Préstamos</button>
                             <button type="button" class="btn btn-sm nt-filter text-nowrap filter-btn" data-filter="intereses">Intereses & Inyecciones</button>
                             <button type="button" class="btn btn-sm nt-filter text-nowrap filter-btn" data-filter="administracion">Organización</button>
@@ -105,13 +113,13 @@
                         </div>
 
                         <!-- Norma 3 -->
-                        <div class="col-12 col-md-6 norma-card" data-category="intereses" data-search="meta minimo 400000 interes ano obligatorio">
+                        <div class="col-12 col-md-6 norma-card" data-category="intereses" data-search="meta minimo <?= $nt_metaRaw ?> interes ano obligatorio">
                             <div class="nt-norma">
                                 <div class="nt-norma__icon"><i class="fa-solid fa-bullseye"></i></div>
                                 <div>
                                     <span class="nt-norma__tag">Meta Individual</span>
                                     <h3 class="font-outfit nt-norma__title">3. Mínimo de Interés Anual</h3>
-                                    <p class="nt-norma__text">Cada socio deberá generar como mínimo <strong>$400.000 COP</strong> de interés al año.</p>
+                                    <p class="nt-norma__text">Cada socio deberá generar como mínimo <strong>$<?= $nt_meta ?> COP</strong> de interés al año.</p>
                                 </div>
                             </div>
                         </div>
@@ -141,13 +149,13 @@
                         </div>
 
                         <!-- Norma 6 -->
-                        <div class="col-12 col-md-6 norma-card" data-category="intereses" data-search="excedente tope 400000 75 ganancia premio">
+                        <div class="col-12 col-md-6 norma-card" data-category="intereses" data-search="excedente tope <?= $nt_metaRaw ?> 75 ganancia premio">
                             <div class="nt-norma">
                                 <div class="nt-norma__icon"><i class="fa-solid fa-trophy"></i></div>
                                 <div>
                                     <span class="nt-norma__tag">Premios & Rendimiento</span>
                                     <h3 class="font-outfit nt-norma__title">6. Bonificación por Excedente de Intereses</h3>
-                                    <p class="nt-norma__text">El excedente sobre la meta de $400.000 de interés generará el <strong>75% de retribución</strong> para quien lo produzca.</p>
+                                    <p class="nt-norma__text">El excedente sobre la meta de $<?= $nt_meta ?> de interés generará el <strong>75% de retribución</strong> para quien lo produzca.</p>
                                 </div>
                             </div>
                         </div>
@@ -236,6 +244,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputSearch = document.getElementById('searchNormas');
     const filterBtns = document.querySelectorAll('.filter-btn');
     const cards = document.querySelectorAll('.norma-card');
+
+    // El total de normas se cuenta de las tarjetas (no se escribe a mano)
+    const totalNormas = document.getElementById('totalNormas');
+    if (totalNormas) totalNormas.textContent = cards.length;
 
     let currentFilter = 'all';
     let currentSearch = '';
