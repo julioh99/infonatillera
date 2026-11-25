@@ -1,17 +1,17 @@
-/* public/css/app.css */
+/* public/css/app.css · estructura base. Los colores finales los define theme.css (tokens --nt-*). */
 
 :root {
     --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
     --font-heading: 'Outfit', system-ui, -apple-system, sans-serif;
-    --color-bg-navy: #0f172a;
-    --color-accent-gold: #f59e0b;
-    --color-accent-green: #10b981;
+    --color-bg-navy: #14573d;      /* heredado: ahora verde pino */
+    --color-accent-gold: #e8a317;
+    --color-accent-green: #14573d;
 }
 
 body {
     font-family: var(--font-primary);
-    background-color: #f8fafc;
-    color: #1e293b;
+    background-color: #f7f8f6;
+    color: #14231b;
 }
 
 .font-outfit {
@@ -19,29 +19,29 @@ body {
 }
 
 .bg-light-gradient {
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    background: #f7f8f6;
 }
 
 .bg-glass-dark {
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(20, 87, 61, 0.94);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bg-gradient-dark {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: #0f4630;
 }
 
 .bg-gradient-navy {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    background: linear-gradient(160deg, #14573d 0%, #115038 100%);
 }
 
 .bg-gradient-gold {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background: #e8a317;
 }
 
 .text-gradient-gold {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    background: #e8a317;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -72,8 +72,8 @@ body {
 /* Sidebar Styles */
 .app-sidebar {
     width: 260px;
-    background: #0f172a;
-    color: #f8fafc;
+    background: #14573d;
+    color: #f7f8f6;
     position: fixed;
     top: 0;
     left: 0;
@@ -90,7 +90,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: margin-left 0.3s ease;
+    transition: margin-left 0.25s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 @media (max-width: 991.98px) {
@@ -118,12 +118,12 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.62);
     padding: 0.75rem 1.5rem 0.35rem 1.5rem;
 }
 
 .sidebar-nav .nav-link {
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.82);
     padding: 0.7rem 1.25rem;
     font-size: 0.9rem;
     font-weight: 500;
@@ -132,7 +132,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.16s cubic-bezier(0.23, 1, 0.32, 1), color 0.16s cubic-bezier(0.23, 1, 0.32, 1);
     text-decoration: none;
 }
 
@@ -151,15 +151,14 @@ body {
 
 .sidebar-nav .nav-link.active {
     color: #ffffff;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 .sidebar-user-footer {
     margin-top: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding: 1.25rem 1.5rem;
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(15, 70, 48, 0.55);
 }
 
 /* Custom Scrollbars */
@@ -168,12 +167,12 @@ body {
     height: 6px;
 }
 ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgba(20, 35, 27, 0.2);
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: rgba(20, 35, 27, 0.35);
 }
