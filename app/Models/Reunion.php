@@ -3,6 +3,8 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/PagoNotificacion.php';
+require_once __DIR__ . '/CajaGlobal.php';
+require_once __DIR__ . '/FondoBeneficio.php';
 
 class Reunion extends Model {
 
@@ -75,38 +77,57 @@ class Reunion extends Model {
         return $stmt->fetch() ?: null;
     }
 
+    /** Id de la ultima reunion creada con crearReunion(). */
+    public $ultimoId = 0;
+
+    /** Convierte '' / null en NULL y lo demas en float (campos de fondos opcionales). */
+    private static function nullableFloat($v) {
+        return ($v === null || $v === '') ? null : (float)$v;
+    }
+
+    private static function nullableInt($v) {
+        return ($v === null || $v === '') ? null : max(0, (int)$v);
+    }
+
     public function crearReunion(array $datos): bool {
         // Calcular número de quincena automáticamente
         $stmtMax = $this->db->query("SELECT IFNULL(MAX(numero_quincena), 0) + 1 as siguiente FROM natillera_reuniones");
         $siguienteNum = (int)$stmtMax->fetch()['siguiente'];
 
         $stmt = $this->db->prepare("
-            INSERT INTO natillera_reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado)
-            VALUES (:num, :fecha, :hora, :cuota, :evento, :premio, 'PROGRAMADA')
+            INSERT INTO natillera_reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado,
+                                             aporte_ronda, aporte_rifa, premios_ronda_planificados, premios_rifa_planificados)
+            VALUES (:num, :fecha, :hora, :cuota, :evento, :premio, 'PROGRAMADA', :ap_ronda, :ap_rifa, :pr_ronda, :pr_rifa)
         ");
-        return $stmt->execute([
+        $ok = $stmt->execute([
             ':num' => $siguienteNum,
             ':fecha' => $datos['fecha_reunion'],
             ':hora' => $datos['hora_reunion'] ?? '14:00:00',
-            ':cuota' => $datos['valor_cuota_base'] ?? 55000.00,
+            ':cuota' => $datos['valor_cuota_base'] ?? CajaGlobal::cfg('cuota.base_total', 55000),
             ':evento' => $datos['tipo_evento_extra'] ?? 'NINGUNO',
-            ':premio' => $datos['monto_premio_extra'] ?? 0.00
+            ':premio' => $datos['monto_premio_extra'] ?? 0.00,
+            ':ap_ronda' => self::nullableFloat($datos['aporte_ronda'] ?? null),
+            ':ap_rifa' => self::nullableFloat($datos['aporte_rifa'] ?? null),
+            ':pr_ronda' => self::nullableInt($datos['premios_ronda_planificados'] ?? null),
+            ':pr_rifa' => self::nullableInt($datos['premios_rifa_planificados'] ?? null)
         ]);
+        $this->ultimoId = $ok ? (int)$this->db->lastInsertId() : 0;
+        if ($ok) {
+            $this->refrescarCronograma();
+        }
+        return $ok;
     }
 
     public function actualizarReunion(int $id, array $datos): bool {
-        $stmt = $this->db->prepare("
-            UPDATE natillera_reuniones SET 
-                fecha_reunion = :fecha,
-                hora_reunion = :hora,
-                valor_cuota_base = :cuota,
-                tipo_evento_extra = :evento,
-                monto_premio_extra = :premio,
-                ganador_socio_id = :ganador,
-                estado = :estado
-            WHERE id = :id
-        ");
-        return $stmt->execute([
+        $actual = $this->getReunionById($id);
+        if (!$actual) {
+            return false;
+        }
+        $cerrada = ($actual['estado'] === 'CERRADA');
+
+        $sets = "fecha_reunion = :fecha, hora_reunion = :hora, valor_cuota_base = :cuota, tipo_evento_extra = :evento,
+                 monto_premio_extra = :premio, ganador_socio_id = :ganador, estado = :estado";
+        $params = [
             ':id' => $id,
             ':fecha' => $datos['fecha_reunion'],
             ':hora' => $datos['hora_reunion'] ?? '14:00:00',
@@ -115,7 +136,144 @@ class Reunion extends Model {
             ':premio' => $datos['monto_premio_extra'] ?? 0.00,
             ':ganador' => !empty($datos['ganador_socio_id']) ? $datos['ganador_socio_id'] : null,
             ':estado' => $datos['estado'] ?? 'PROGRAMADA'
+        ];
+        // Una reunión CERRADA no cambia sus fondos planificados ni su cuota (el cierre ya consolidó la caja)
+        if ($cerrada) {
+            $sets = "fecha_reunion = :fecha, hora_reunion = :hora, tipo_evento_extra = :evento, monto_premio_extra = :premio,
+                     ganador_socio_id = :ganador, estado = :estado";
+            unset($params[':cuota']);
+        } elseif (array_key_exists('aporte_ronda', $datos) || array_key_exists('premios_ronda_planificados', $datos)) {
+            $sets .= ", aporte_ronda = :ap_ronda, aporte_rifa = :ap_rifa, premios_ronda_planificados = :pr_ronda, premios_rifa_planificados = :pr_rifa";
+            $params[':ap_ronda'] = self::nullableFloat($datos['aporte_ronda'] ?? null);
+            $params[':ap_rifa'] = self::nullableFloat($datos['aporte_rifa'] ?? null);
+            $params[':pr_ronda'] = self::nullableInt($datos['premios_ronda_planificados'] ?? null);
+            $params[':pr_rifa'] = self::nullableInt($datos['premios_rifa_planificados'] ?? null);
+        }
+        $stmt = $this->db->prepare("UPDATE natillera_reuniones SET {$sets} WHERE id = :id");
+        $ok = $stmt->execute($params);
+        if ($ok) {
+            $this->refrescarCronograma();
+        }
+        return $ok;
+    }
+
+    /** Recalcula el cronograma de fondos (las reuniones cerradas conservan su fila). */
+    public function refrescarCronograma(): void {
+        try {
+            (new FondoBeneficio())->regenerarCronograma();
+        } catch (Throwable $e) {
+            // el cronograma es un plan derivado: no debe impedir guardar la reunión
+            error_log('No se pudo regenerar el cronograma de fondos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crea las reuniones de un ciclo: una cada N dias (config fondos.dias_entre_reuniones, 14) desde la fecha dada.
+     * No duplica: si ya existe una reunion en esa fecha la omite. numero_quincena sigue consecutivo (MAX+1).
+     *
+     * @param string   $fechaPrimeraReunion  YYYY-MM-DD
+     * @param int|null $cantidad             por defecto config('reuniones_por_ciclo')
+     * @param array    $opciones             valor_cuota_base, hora_reunion, dias_entre, cupos,
+     *                                       extras_ronda / extras_rifa (listas de numeros de reunion 1..N con cuota extra),
+     *                                       sugerir_extras (true = reparte las extras con FondoBeneficio::sugerirDistribucion
+     *                                       y deja los premios planificados)
+     * @return array ['creadas'=>int, 'omitidas'=>int, 'ids'=>int[], 'fechas'=>string[], 'distribucion'=>?array]
+     */
+    public function generarCiclo(string $fechaPrimeraReunion, int $cantidad = null, array $opciones = []): array {
+        $fecha = DateTime::createFromFormat('Y-m-d', $fechaPrimeraReunion);
+        if (!$fecha || $fecha->format('Y-m-d') !== $fechaPrimeraReunion) {
+            throw new InvalidArgumentException('Fecha de la primera reunión inválida (use AAAA-MM-DD).');
+        }
+        $cantidad = ($cantidad === null) ? (int)CajaGlobal::cfg('reuniones_por_ciclo', 26) : $cantidad;
+        if ($cantidad < 1 || $cantidad > 60) {
+            throw new InvalidArgumentException('La cantidad de reuniones debe estar entre 1 y 60.');
+        }
+        $dias = (int)($opciones['dias_entre'] ?? CajaGlobal::cfg('fondos.dias_entre_reuniones', 14));
+        if ($dias < 1) { $dias = 14; }
+        $hora = $opciones['hora_reunion'] ?? CajaGlobal::cfg('fondos.hora_reunion', '14:00:00');
+        $cuotaBase = (float)($opciones['valor_cuota_base'] ?? CajaGlobal::cfg('cuota.base_total', 55000));
+        $ahorro = CajaGlobal::ahorroPorCuota();
+
+        // Aportes por reunión del ciclo
+        $baseRonda = FondoBeneficio::aporteBase('RONDA');
+        $baseRifa = FondoBeneficio::aporteBase('RIFA');
+        $extrasRonda = array_map('intval', (array)($opciones['extras_ronda'] ?? []));
+        $extrasRifa = array_map('intval', (array)($opciones['extras_rifa'] ?? []));
+        $personas = [];
+        $distribucion = null;
+        if (!empty($opciones['sugerir_extras'])) {
+            $distribucion = FondoBeneficio::sugerirDistribucion(array_fill(0, $cantidad, ['bloqueada' => false]), $opciones['cupos'] ?? null);
+            foreach ($distribucion['filas'] as $i => $f) {
+                if ($f['extra'] === 'RONDA') { $extrasRonda[] = $i + 1; }
+                if ($f['extra'] === 'RIFA') { $extrasRifa[] = $i + 1; }
+                $personas[$i + 1] = [$f['personas_ronda'], $f['personas_rifa']];
+            }
+        }
+        $conFondos = !empty($extrasRonda) || !empty($extrasRifa) || !empty($personas);
+
+        $resultado = ['creadas' => 0, 'omitidas' => 0, 'ids' => [], 'fechas' => [], 'distribucion' => $distribucion];
+        $propia = !$this->db->inTransaction();
+        if ($propia) { $this->db->beginTransaction(); }
+        try {
+            $stmtExiste = $this->db->prepare("SELECT id FROM natillera_reuniones WHERE fecha_reunion = :f LIMIT 1");
+            for ($i = 1; $i <= $cantidad; $i++) {
+                $f = clone $fecha;
+                $f->modify('+' . (($i - 1) * $dias) . ' days');
+                $fechaStr = $f->format('Y-m-d');
+
+                $stmtExiste->execute([':f' => $fechaStr]);
+                if ($stmtExiste->fetchColumn()) {
+                    $resultado['omitidas']++;
+                    continue;
+                }
+
+                $apRonda = null; $apRifa = null; $cuota = $cuotaBase; $evento = 'NINGUNO';
+                if ($conFondos) {
+                    $apRonda = $baseRonda + (in_array($i, $extrasRonda, true) ? FondoBeneficio::aporteExtra('RONDA') : 0);
+                    $apRifa = $baseRifa + (in_array($i, $extrasRifa, true) ? FondoBeneficio::aporteExtra('RIFA') : 0);
+                    $cuota = $ahorro + $apRonda + $apRifa;
+                    $evento = in_array($i, $extrasRonda, true) ? 'RONDA' : (in_array($i, $extrasRifa, true) ? 'RIFA' : 'NINGUNO');
+                }
+                $this->crearReunionSinRefrescar([
+                    'fecha_reunion' => $fechaStr,
+                    'hora_reunion' => $hora,
+                    'valor_cuota_base' => $cuota,
+                    'tipo_evento_extra' => $evento,
+                    'monto_premio_extra' => 0,
+                    'aporte_ronda' => $apRonda,
+                    'aporte_rifa' => $apRifa,
+                    'premios_ronda_planificados' => isset($personas[$i]) ? $personas[$i][0] : null,
+                    'premios_rifa_planificados' => isset($personas[$i]) ? $personas[$i][1] : null,
+                ]);
+                $resultado['creadas']++;
+                $resultado['ids'][] = $this->ultimoId;
+                $resultado['fechas'][] = $fechaStr;
+            }
+            if ($propia) { $this->db->commit(); }
+        } catch (Throwable $e) {
+            if ($propia && $this->db->inTransaction()) { $this->db->rollBack(); }
+            throw $e;
+        }
+        if ($resultado['creadas'] > 0) {
+            $this->refrescarCronograma();
+        }
+        return $resultado;
+    }
+
+    private function crearReunionSinRefrescar(array $datos): void {
+        $stmtMax = $this->db->query("SELECT IFNULL(MAX(numero_quincena), 0) + 1 AS siguiente FROM natillera_reuniones");
+        $num = (int)$stmtMax->fetch()['siguiente'];
+        $stmt = $this->db->prepare("
+            INSERT INTO natillera_reuniones (numero_quincena, fecha_reunion, hora_reunion, valor_cuota_base, tipo_evento_extra, monto_premio_extra, estado,
+                                             aporte_ronda, aporte_rifa, premios_ronda_planificados, premios_rifa_planificados)
+            VALUES (:num, :fecha, :hora, :cuota, :evento, :premio, 'PROGRAMADA', :ap_ronda, :ap_rifa, :pr_ronda, :pr_rifa)");
+        $stmt->execute([
+            ':num' => $num, ':fecha' => $datos['fecha_reunion'], ':hora' => $datos['hora_reunion'],
+            ':cuota' => $datos['valor_cuota_base'], ':evento' => $datos['tipo_evento_extra'], ':premio' => $datos['monto_premio_extra'],
+            ':ap_ronda' => self::nullableFloat($datos['aporte_ronda']), ':ap_rifa' => self::nullableFloat($datos['aporte_rifa']),
+            ':pr_ronda' => self::nullableInt($datos['premios_ronda_planificados']), ':pr_rifa' => self::nullableInt($datos['premios_rifa_planificados']),
         ]);
+        $this->ultimoId = (int)$this->db->lastInsertId();
     }
 
     public function getAhorrosPorReunion(int $reunionId): array {
@@ -125,7 +283,7 @@ class Reunion extends Model {
             JOIN natillera_usuarios u ON ac.socio_id = u.id
             LEFT JOIN natillera_prestamos p ON ac.prestamo_id_asociado = p.id
             WHERE ac.reunion_id = :reunion_id
-            ORDER BY u.id ASC
+            ORDER BY u.orden ASC, u.id ASC
         ");
         $stmt->execute([':reunion_id' => $reunionId]);
         return $stmt->fetchAll();
@@ -135,7 +293,7 @@ class Reunion extends Model {
         $this->db->beginTransaction();
 
         try {
-            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion, estado FROM natillera_reuniones WHERE id = :id FOR UPDATE");
+            $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, aporte_ronda, aporte_rifa, numero_quincena, fecha_reunion, estado FROM natillera_reuniones WHERE id = :id FOR UPDATE");
             $stmtReunion->execute([':id' => $reunionId]);
             $reunion = $stmtReunion->fetch();
             if (!$reunion) {
@@ -146,17 +304,11 @@ class Reunion extends Model {
             }
             $valorCuotaBase = (float)($reunion['valor_cuota_base'] ?? 55000);
 
-            if ($valorCuotaBase >= 65000) {
-                $aporteRondaBase = 20000.00;
-                $aporteRifaBase = 5000.00;
-            } else if ($valorCuotaBase >= 60000) {
-                $aporteRondaBase = 10000.00;
-                $aporteRifaBase = 10000.00;
-            } else {
-                $aporteRondaBase = 10000.00;
-                $aporteRifaBase = 5000.00;
-            }
-            $ahorroNetoConstante = 40000.00; // Ahorro neto acreditado al socio es SIEMPRE $40.000 COP
+            // Aportes de ronda y rifa de ESTA reunion (guardados en la reunion o derivados de la cuota; ver FondoBeneficio)
+            $aportesReunion = FondoBeneficio::aportesDeReunion($reunion);
+            $aporteRondaBase = $aportesReunion['ronda'];
+            $aporteRifaBase = $aportesReunion['rifa'];
+            $ahorroNetoConstante = CajaGlobal::ahorroPorCuota(); // Ahorro neto acreditado al socio por cuota (config cuota.ahorro)
 
             // Consultar autopréstamos previamente registrados en esta reunión para no duplicar
             $stmtPrevP = $this->db->prepare("
@@ -395,21 +547,15 @@ class Reunion extends Model {
 
             {
                 // Consultar cuota base de la reunión para calcular desgloses
-                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
+                $stmtReunion = $this->db->prepare("SELECT valor_cuota_base, aporte_ronda, aporte_rifa, numero_quincena, fecha_reunion FROM natillera_reuniones WHERE id = :id");
                 $stmtReunion->execute([':id' => $ahorro['reunion_id']]);
                 $rInfo = $stmtReunion->fetch();
                 $vBase = (float)($rInfo['valor_cuota_base'] ?? 55000);
 
-                if ($vBase >= 65000) {
-                    $apRonda = 20000.00;
-                    $apRifa = 5000.00;
-                } else if ($vBase >= 60000) {
-                    $apRonda = 10000.00;
-                    $apRifa = 10000.00;
-                } else {
-                    $apRonda = 10000.00;
-                    $apRifa = 5000.00;
-                }
+                $aportesR = FondoBeneficio::aportesDeReunion($rInfo ?: []);
+                $apRonda = $aportesR['ronda'];
+                $apRifa = $aportesR['rifa'];
+                $ahorroCuota = CajaGlobal::ahorroPorCuota();
 
                 // Marcar préstamo como anulado sin interés y pagado
                 $stmtP = $this->db->prepare("
@@ -419,11 +565,11 @@ class Reunion extends Model {
                 ");
                 $stmtP->execute([':p_id' => $prestamoId]);
 
-                // Actualizar ahorro a cuota pagada ($40.000 COP netos)
+                // Actualizar ahorro a cuota pagada (ahorro neto por config cuota.ahorro)
                 $stmtA = $this->db->prepare("
                     UPDATE natillera_ahorros_cuotas 
                     SET cuota_pagada = 1, 
-                        monto_cuota = 40000.00,
+                        monto_cuota = :ahorro_cuota,
                         monto_aporte_ronda = :ap_ronda,
                         monto_aporte_rifa = :ap_rifa,
                         autoprestamo_generado = 0 
@@ -431,6 +577,7 @@ class Reunion extends Model {
                 ");
                 $stmtA->execute([
                     ':a_id' => $ahorroId,
+                    ':ahorro_cuota' => $ahorroCuota,
                     ':ap_ronda' => $apRonda,
                     ':ap_rifa' => $apRifa
                 ]);
@@ -448,7 +595,7 @@ class Reunion extends Model {
                     $reunionId,
                     "Pago de Cuota Acreditado (Plazo 24 Horas)",
                     "Cuota Reunión Nº {$numQuincena} pagada en plazo de 24 horas - Autopréstamo anulado",
-                    40000.00,
+                    $ahorroCuota,
                     $apRonda,
                     $apRifa,
                     $totalPagado24h,
@@ -457,7 +604,7 @@ class Reunion extends Model {
                         'numero_quincena' => $numQuincena,
                         'fecha_reunion' => $rInfo['fecha_reunion'] ?? '',
                         'cuota_base' => $vBase,
-                        'ahorro_cuota' => 40000.00,
+                        'ahorro_cuota' => $ahorroCuota,
                         'aporte_ronda' => $apRonda,
                         'aporte_rifa' => $apRifa,
                         'ahorro_extra' => $ahorroExtraActual,

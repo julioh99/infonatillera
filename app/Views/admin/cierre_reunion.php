@@ -193,6 +193,20 @@
         </div>
     </div>
 
+    <!-- Fondos reservados de ronda y rifa (CajaGlobal): parte de la caja que ya está comprometida -->
+    <?php $fd = $resumen['fondos'] ?? null; if ($fd): $f0 = function ($v) { return '$' . number_format((float)$v, 0, ',', '.'); }; ?>
+    <link rel="stylesheet" href="/css/pages/fondos.css">
+    <div class="fd-cards fd-cards--small mb-3">
+        <div class="fd-card"><span class="fd-label">Ingreso ronda + rifa (esta reunión)</span><strong class="fd-value"><?= $f0($ing['rondas_rifas']) ?></strong>
+            <small class="fd-muted">Ronda <?= $f0($fd['aporte_ronda_reunion']) ?> · Rifa <?= $f0($fd['aporte_rifa_reunion']) ?></small></div>
+        <div class="fd-card"><span class="fd-label">Premios entregados (esta reunión)</span><strong class="fd-value"><?= $f0($egr['premios_entregados']) ?></strong>
+            <small class="fd-muted">Ronda <?= $f0($fd['premios_ronda_reunion']) ?> · Rifa <?= $f0($fd['premios_rifa_reunion']) ?></small></div>
+        <div class="fd-card"><span class="fd-label">Reservado ronda</span><strong class="fd-value"><?= $f0($fd['reservado_ronda']) ?></strong></div>
+        <div class="fd-card"><span class="fd-label">Reservado rifa</span><strong class="fd-value"><?= $f0($fd['reservado_rifa']) ?></strong></div>
+        <div class="fd-card fd-card--main"><span class="fd-label">Caja disponible para prestar</span><strong class="fd-value"><?= $f0($fd['caja_disponible_prestar']) ?></strong></div>
+    </div>
+    <?php endif; ?>
+
     <!-- Balance Final y Acción de Cierre -->
     <div class="gd-balance">
         <div class="gd-balance__grid">

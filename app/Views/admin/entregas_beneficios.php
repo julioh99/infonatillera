@@ -49,11 +49,11 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                     </div>
                     <div class="min-w-0">
-                        <h5 class="gg-fund__title">Fondo Rondas ($300k)</h5>
-                        <span class="gg-fund__sub">Total 50 Beneficiados</span>
+                        <h5 class="gg-fund__title">Fondo Rondas ($<?= number_format($montosDefecto['RONDA'] / 1000, 0, ',', '.') ?>k)</h5>
+                        <span class="gg-fund__sub">Total <?= (int)$cupos ?> Beneficiados</span>
                     </div>
                 </div>
-                <span class="gg-fund__badge"><?= $resumenFondos['ronda']['entregados_count'] ?> / 50</span>
+                <span class="gg-fund__badge"><?= $resumenFondos['ronda']['entregados_count'] ?> / <?= (int)$cupos ?></span>
             </div>
             <div class="row g-2">
                 <div class="col-6">
@@ -81,11 +81,11 @@
                         <i class="fa-solid fa-ticket"></i>
                     </div>
                     <div class="min-w-0">
-                        <h5 class="gg-fund__title">Fondo Rifas ($150k)</h5>
-                        <span class="gg-fund__sub">Total 50 Beneficiados</span>
+                        <h5 class="gg-fund__title">Fondo Rifas ($<?= number_format($montosDefecto['RIFA'] / 1000, 0, ',', '.') ?>k)</h5>
+                        <span class="gg-fund__sub">Total <?= (int)$cupos ?> Beneficiados</span>
                     </div>
                 </div>
-                <span class="gg-fund__badge"><?= $resumenFondos['rifa']['entregados_count'] ?> / 50</span>
+                <span class="gg-fund__badge"><?= $resumenFondos['rifa']['entregados_count'] ?> / <?= (int)$cupos ?></span>
             </div>
             <div class="row g-2">
                 <div class="col-6">
@@ -102,6 +102,25 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/css/pages/fondos.css">
+<!-- Turno de la ronda y ganadores (rifa excluye a quienes ya ganaron) -->
+<div class="fd-strip mb-3">
+    <div class="fd-strip__item">
+        <span class="fd-label">Siguiente turno de la ronda</span>
+        <strong><?= $siguienteTurno ? htmlspecialchars($siguienteTurno['nombre_completo']) : 'Todos ya recibieron' ?></strong>
+    </div>
+    <div class="fd-strip__item">
+        <span class="fd-label">Ronda: ya recibieron</span>
+        <strong><?= count($ganadoresRonda) ?> / <?= (int)$cupos ?></strong>
+        <?php if ($ganadoresRonda): ?><small class="fd-muted"><?= htmlspecialchars(implode(', ', array_map(function ($g) { return $g['nombre_completo'] . ' (R' . $g['numero_quincena'] . ')'; }, $ganadoresRonda))) ?></small><?php endif; ?>
+    </div>
+    <div class="fd-strip__item">
+        <span class="fd-label">Rifa: ya ganaron (fuera del sorteo)</span>
+        <strong><?= count($ganadoresRifa) ?> ganadores, <?= count($sociosRifa) ?> en sorteo</strong>
+        <?php if ($ganadoresRifa): ?><small class="fd-muted"><?= htmlspecialchars(implode(', ', array_map(function ($g) { return $g['nombre_completo'] . ' (R' . $g['numero_quincena'] . ')'; }, $ganadoresRifa))) ?></small><?php endif; ?>
     </div>
 </div>
 
@@ -220,7 +239,10 @@
                             <th>Recaudo Total</th>
                             <th>Monto Premio</th>
                             <th>Personas Liberadas</th>
-                            <th class="pe-3 text-end">Saldo Acumulado</th>
+                            <th>Cobrado real</th>
+                            <th>Entregados real</th>
+                            <th class="text-end">Reservado plan</th>
+                            <th class="pe-3 text-end">Reservado real</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -241,7 +263,10 @@
                                         <?= $c['personas_liberadas_planificadas'] ?> Socio(s)
                                     </span>
                                 </td>
-                                <td data-label="Saldo acumulado" class="pe-3 text-end fw-bold font-outfit nt-money">$<?= number_format($c['saldo_acumulado_fondo'], 0, ',', '.') ?></td>
+                                <td data-label="Cobrado real" class="nt-money">$<?= number_format($c['real_cobrado'], 0, ',', '.') ?></td>
+                                <td data-label="Entregados real"><?= (int)$c['entregas_reales_count'] ?> ($<?= number_format($c['entregas_reales_monto'], 0, ',', '.') ?>)</td>
+                                <td data-label="Reservado plan" class="text-end nt-money">$<?= number_format($c['saldo_acumulado_fondo'], 0, ',', '.') ?></td>
+                                <td data-label="Reservado real" class="pe-3 text-end fw-bold font-outfit nt-money">$<?= number_format($c['saldo_real_acumulado'], 0, ',', '.') ?></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -268,8 +293,8 @@
                             <label for="entrega_tipo_beneficio" class="form-label fw-semibold fs-7">Tipo de Entrega</label>
                             <select name="tipo_beneficio" id="entrega_tipo_beneficio" class="form-select fw-bold text-dark" required>
                                 <option value="PRESTAMO" <?= ($tipoQuery === 'PRESTAMO') ? 'selected' : '' ?>>PRÉSTAMO (Desembolso Crédito)</option>
-                                <option value="RONDA" <?= ($tipoQuery === 'RONDA') ? 'selected' : '' ?>>RONDA ($300.000 COP)</option>
-                                <option value="RIFA" <?= ($tipoQuery === 'RIFA') ? 'selected' : '' ?>>RIFA ($150.000 COP)</option>
+                                <option value="RONDA" <?= ($tipoQuery === 'RONDA') ? 'selected' : '' ?>>RONDA ($<?= number_format($montosDefecto['RONDA'], 0, ',', '.') ?> COP)</option>
+                                <option value="RIFA" <?= ($tipoQuery === 'RIFA') ? 'selected' : '' ?>>RIFA ($<?= number_format($montosDefecto['RIFA'], 0, ',', '.') ?> COP)</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-4">
@@ -284,7 +309,7 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <label for="entrega_monto_entregado" class="form-label fw-semibold fs-7">Monto Entregado (COP)</label>
-                            <?php $valMonto = ($montoQuery > 0) ? number_format($montoQuery, 0, ',', '.') : (($tipoQuery === 'RONDA') ? '300.000' : (($tipoQuery === 'RIFA') ? '150.000' : '500.000')); ?>
+                            <?php $valMonto = ($montoQuery > 0) ? number_format($montoQuery, 0, ',', '.') : (number_format($montosDefecto[$tipoQuery] ?? $montosDefecto['PRESTAMO'], 0, ',', '.')); ?>
                             <input type="text" name="monto_entregado" id="entrega_monto_entregado" class="form-control money-input fw-bold text-success" inputmode="numeric" value="<?= $valMonto ?>" required>
                         </div>
                     </div>
@@ -296,7 +321,7 @@
                             <?php 
                             $listSocios = ($tipoQuery === 'RONDA') ? $sociosRonda : (($tipoQuery === 'RIFA') ? $sociosRifa : $sociosPrestamo);
                             foreach ($listSocios as $s): 
-                                $sel = ($socioIdQuery > 0 && $socioIdQuery == $s['id']) ? 'selected' : '';
+                                $sel = ($socioIdQuery > 0 && $socioIdQuery == $s['id']) ? 'selected' : (($socioIdQuery <= 0 && $tipoQuery === 'RONDA' && $siguienteTurno && (int)$siguienteTurno['id'] === (int)$s['id']) ? 'selected' : '');
                             ?>
                                 <option value="<?= $s['id'] ?>" <?= $sel ?>><?= htmlspecialchars($s['nombre_completo']) ?> (C.C. <?= htmlspecialchars($s['cedula']) ?>)</option>
                             <?php endforeach; ?>

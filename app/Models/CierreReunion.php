@@ -2,6 +2,7 @@
 // app/Models/CierreReunion.php
 
 require_once __DIR__ . '/../../core/Model.php';
+require_once __DIR__ . '/CajaGlobal.php';
 
 class CierreReunion extends Model {
 
@@ -30,23 +31,17 @@ class CierreReunion extends Model {
         $fechaReunion = $reunion['fecha_reunion'];
 
         // 2. INGRESOS (+)
-        // a) Cuotas base ($40.000), Ahorros Voluntarios Extras y Aportes a Rondas/Rifas
-        $stmtCuotas = $this->db->prepare("
-            SELECT 
-                IFNULL(SUM(CASE WHEN cuota_pagada = 1 THEN 40000.00 ELSE 0.00 END), 0) as total_cuotas_base,
-                IFNULL(SUM(monto_ahorro_extra), 0) as total_ahorro_extra,
-                IFNULL(SUM(monto_aporte_ronda + monto_aporte_rifa), 0) as total_rondas_rifas,
-                COUNT(*) as cantidad_registros
-            FROM natillera_ahorros_cuotas
-            WHERE reunion_id = :reunion_id
-        ");
-        $stmtCuotas->execute([':reunion_id' => $reunionId]);
-        $resCuotas = $stmtCuotas->fetch();
+        // a) Cuotas base (ahorro por config), ahorro voluntario extra y aportes de ronda/rifa cobrados.
+        // Fuente unica: CajaGlobal (la misma que usa el tablero del presidente).
+        $caja = new CajaGlobal();
+        $resCuotas = $caja->cuotas($reunionId);
 
-        $cuotasBase = (float)$resCuotas['total_cuotas_base'];
-        $ahorroExtra = (float)$resCuotas['total_ahorro_extra'];
-        $rondasRifas = (float)$resCuotas['total_rondas_rifas'];
-        $tieneLlamado = ((int)$resCuotas['cantidad_registros'] > 0);
+        $cuotasBase = $resCuotas['cuotas_base'];
+        $ahorroExtra = $resCuotas['ahorro_extra'];
+        $aporteRonda = $resCuotas['aporte_ronda'];
+        $aporteRifa = $resCuotas['aporte_rifa'];
+        $rondasRifas = $aporteRonda + $aporteRifa;
+        $tieneLlamado = ($resCuotas['registros'] > 0);
 
         // b) Abonos a préstamos (Capital e Intereses) asociados a esta quincena o realizados en el rango de fechas
         $quincenaNum = (int)$reunion['numero_quincena'];
@@ -100,17 +95,16 @@ class CierreReunion extends Model {
         $stmtInyecciones->execute([':reunion_id' => $reunionId]);
         $inyecciones = (float)$stmtInyecciones->fetch()['total_inyecciones'];
 
-        $totalIngresos = $cuotasBase + $ahorroExtra + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
+        // Los aportes de ronda y rifa SON ingreso real de caja (quedan reservados, ver CajaGlobal): resuelve 2.2 y 2.12
+        $totalIngresos = $cuotasBase + $ahorroExtra + $rondasRifas + $abonoCapital + $interesesPrestamos + $devolucionesActividades + $inyecciones;
 
         // 3. EGRESOS (-)
-        // a) Préstamos otorgados / desembolsados a socios en esta reunión
-        $stmtEgrPrestamos = $this->db->prepare("
-            SELECT IFNULL(SUM(monto_entregado), 0) as total_prestamos_otorgados
-            FROM natillera_entregas_beneficios
-            WHERE reunion_id = :reunion_id AND tipo_beneficio = 'PRESTAMO'
-        ");
-        $stmtEgrPrestamos->execute([':reunion_id' => $reunionId]);
-        $prestamosOtorgados = (float)$stmtEgrPrestamos->fetch()['total_prestamos_otorgados'];
+        // a) Préstamos otorgados / desembolsados a socios en esta reunión (no anulados)
+        $prestamosOtorgados = $caja->prestamosEntregados($reunionId);
+
+        // a.2) Premios de ronda y rifa realmente entregados en esta reunión
+        $premiosReunion = $caja->premios($reunionId);
+        $premiosEntregados = $premiosReunion['ronda'] + $premiosReunion['rifa'];
 
         // b) Inyecciones de capital devueltas/retiradas en esta reunión
         $stmtEgrInyDev = $this->db->prepare("
@@ -134,7 +128,7 @@ class CierreReunion extends Model {
         $stmtPrestAct->execute([':reunion_id' => $reunionId]);
         $prestamosAActividades = (float)$stmtPrestAct->fetch()['total_prestamos_actividades'];
 
-        $totalEgresos = $prestamosOtorgados + $inyeccionesDevueltas + $prestamosAActividades;
+        $totalEgresos = $prestamosOtorgados + $premiosEntregados + $inyeccionesDevueltas + $prestamosAActividades;
 
         // 4. DESGLOSE DETALLADO POR RUBRO (Detalle por socio / movimiento)
         // a) Cuotas Base ($40.000)
@@ -294,6 +288,17 @@ class CierreReunion extends Model {
         $stmtDetPrestAct->execute([':reunion_id' => $reunionId]);
         $detPrestamosActividades = $stmtDetPrestAct->fetchAll();
 
+        // j) Premios de ronda y rifa entregados (Egresos)
+        $stmtDetPrem = $this->db->prepare("
+            SELECT eb.*, u.nombre_completo as socio_nombre, u.cedula as socio_cedula
+            FROM natillera_entregas_beneficios eb
+            JOIN natillera_usuarios u ON eb.socio_id = u.id
+            WHERE eb.reunion_id = :reunion_id AND eb.tipo_beneficio IN ('RONDA','RIFA')
+            ORDER BY eb.tipo_beneficio ASC, eb.fecha_entrega DESC
+        ");
+        $stmtDetPrem->execute([':reunion_id' => $reunionId]);
+        $detPremios = $stmtDetPrem->fetchAll();
+
         // 5. Saldo Neto de la Reunión
         $saldoNetoReunion = $totalIngresos - $totalEgresos;
 
@@ -309,12 +314,25 @@ class CierreReunion extends Model {
 
         $saldoAcumuladoCaja = $acumuladoPrevio + $saldoNetoReunion;
 
+        // Fondos reservados (ronda/rifa) acumulados hasta esta reunión y caja disponible para prestar
+        $reservados = $caja->reservadosHasta((int)$reunion['numero_quincena']);
+        $disponiblePrestar = $saldoAcumuladoCaja - $reservados['ronda'] - $reservados['rifa'];
+
         return [
             'reunion' => $reunion,
+            'fondos' => [
+                'reservado_ronda' => $reservados['ronda'],
+                'reservado_rifa' => $reservados['rifa'],
+                'aporte_ronda_reunion' => $aporteRonda,
+                'aporte_rifa_reunion' => $aporteRifa,
+                'premios_ronda_reunion' => $premiosReunion['ronda'],
+                'premios_rifa_reunion' => $premiosReunion['rifa'],
+                'caja_disponible_prestar' => $disponiblePrestar
+            ],
             'ingresos' => [
                 'cuotas_base' => $cuotasBase,
                 'ahorro_extra' => $ahorroExtra,
-                'rondas_rifas' => 0.00,
+                'rondas_rifas' => $rondasRifas,
                 'abono_capital' => $abonoCapital,
                 'intereses_prestamos' => $interesesPrestamos,
                 'devoluciones_actividades' => $devolucionesActividades,
@@ -325,7 +343,7 @@ class CierreReunion extends Model {
                 'prestamos_otorgados' => $prestamosOtorgados,
                 'inyecciones_devueltas' => $inyeccionesDevueltas,
                 'prestamos_actividades' => $prestamosAActividades,
-                'premios_entregados' => 0.00,
+                'premios_entregados' => $premiosEntregados,
                 'total' => $totalEgresos
             ],
             'detalles' => [
@@ -337,7 +355,8 @@ class CierreReunion extends Model {
                 'inyecciones' => $detInyecciones,
                 'prestamos_otorgados' => $detPrestamosOtorgados,
                 'inyecciones_devueltas' => $detInyeccionesDevueltas,
-                'prestamos_actividades' => $detPrestamosActividades
+                'prestamos_actividades' => $detPrestamosActividades,
+                'premios_entregados' => $detPremios
             ],
             'saldo_inicial_caja' => $acumuladoPrevio,
             'saldo_neto_reunion' => $saldoNetoReunion,
@@ -457,6 +476,50 @@ class CierreReunion extends Model {
                 $stmtUpd->execute([':saldo' => $acumulado, ':id' => $c['id']]);
             }
         }
+    }
+
+    /**
+     * Compara cada cierre guardado con lo que dan hoy los datos de su reunión (movimientos registrados después
+     * de cerrar). Con $aplicar = true reescribe los totales del cierre y recalcula la cadena de saldos.
+     * Devuelve las diferencias por reunión: [numero_quincena, neto_guardado, neto_actual, diferencia].
+     */
+    public function reconciliarCierres(bool $aplicar = false): array {
+        $cierres = $this->db->query("
+            SELECT cr.id, cr.reunion_id, cr.saldo_neto_reunion, r.numero_quincena
+            FROM natillera_cierres_reunion cr JOIN natillera_reuniones r ON cr.reunion_id = r.id
+            ORDER BY r.numero_quincena ASC")->fetchAll();
+        $diffs = [];
+        $upd = $this->db->prepare("UPDATE natillera_cierres_reunion SET
+                total_ingresos_cuotas_base = :cb, total_ingresos_ahorro_extra = :ae, total_ingresos_rondas_rifas = :rr,
+                total_ingresos_abono_capital = :ac, total_ingresos_intereses_prestamos = :ip, total_ingresos_actividades = :ia,
+                total_ingresos_inyecciones = :ii, total_ingresos_general = :ti, total_egresos_prestamos_otorgados = :ep,
+                total_egresos_premios_entregados = :epr, total_egresos_inyecciones_devueltas = :ed, total_egresos_general = :te,
+                saldo_neto_reunion = :neto, desglose_json = :json WHERE id = :id");
+        if ($aplicar) { $this->db->beginTransaction(); }
+        try {
+            foreach ($cierres as $c) {
+                $res = $this->calcularResumenReunion((int)$c['reunion_id']);
+                $dif = round($res['saldo_neto_reunion'] - (float)$c['saldo_neto_reunion'], 2);
+                if (abs($dif) < 0.005) { continue; }
+                $diffs[] = ['numero_quincena' => (int)$c['numero_quincena'], 'neto_guardado' => (float)$c['saldo_neto_reunion'],
+                            'neto_actual' => $res['saldo_neto_reunion'], 'diferencia' => $dif];
+                if ($aplicar) {
+                    $i = $res['ingresos']; $e = $res['egresos'];
+                    $upd->execute([':cb' => $i['cuotas_base'], ':ae' => $i['ahorro_extra'], ':rr' => $i['rondas_rifas'], ':ac' => $i['abono_capital'],
+                        ':ip' => $i['intereses_prestamos'], ':ia' => $i['devoluciones_actividades'], ':ii' => $i['inyecciones'], ':ti' => $i['total'],
+                        ':ep' => $e['prestamos_otorgados'], ':epr' => $e['premios_entregados'], ':ed' => $e['inyecciones_devueltas'], ':te' => $e['total'],
+                        ':neto' => $res['saldo_neto_reunion'], ':json' => json_encode($res, JSON_UNESCAPED_UNICODE), ':id' => $c['id']]);
+                }
+            }
+            if ($aplicar) {
+                $this->recalcularSaldosAcumulados();
+                $this->db->commit();
+            }
+        } catch (Throwable $e) {
+            if ($aplicar && $this->db->inTransaction()) { $this->db->rollBack(); }
+            throw $e;
+        }
+        return $diffs;
     }
 
     public function getTodosCierres(): array {

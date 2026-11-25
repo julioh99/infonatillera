@@ -1,0 +1,34 @@
+/* public/css/pages/fondos.css - Caja, fondos reservados, plan vs real. Solo tokens var(--nt-*). */
+
+.fd-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+.fd-cards--small { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.fd-card {
+    display: flex; flex-direction: column; gap: .15rem;
+    background: var(--nt-surface); border: 1px solid var(--nt-line); border-radius: var(--nt-radius-sm);
+    padding: .55rem .75rem; min-width: 0;
+}
+.fd-card--main { border-color: var(--nt-pine-600); background: var(--nt-pine-50); }
+.fd-card.is-neg .fd-value { color: var(--nt-danger); }
+.fd-label { font-size: .72rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--nt-muted); }
+.fd-value { font-size: 1.05rem; font-weight: 800; color: var(--nt-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.fd-card--main .fd-value { font-size: 1.3rem; color: var(--nt-pine-700); }
+.fd-muted { color: var(--nt-muted); font-size: .72rem; }
+.fd-note { font-size: .75rem; color: var(--nt-muted); }
+.fd-warn { font-size: .72rem; font-weight: 700; color: var(--nt-danger); }
+.fd-ok { font-size: .8rem; font-weight: 700; color: var(--nt-pine-700); }
+.fd-diff { color: var(--nt-danger); font-weight: 700; }
+
+.fd-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .5rem; }
+.fd-strip__item { display: flex; flex-direction: column; gap: .1rem; background: var(--nt-surface); border: 1px solid var(--nt-line); border-radius: var(--nt-radius-sm); padding: .5rem .75rem; min-width: 0; }
+.fd-strip__item small { overflow-wrap: anywhere; max-height: 4.5rem; overflow: auto; }
+
+.fd-panel { background: var(--nt-surface); border: 1px solid var(--nt-line); border-radius: var(--nt-radius-sm); padding: .5rem .75rem; }
+.fd-panel > summary { cursor: pointer; font-weight: 700; color: var(--nt-pine-700); }
+.fd-table { font-size: .78rem; font-variant-numeric: tabular-nums; }
+.fd-table th { font-size: .7rem; text-transform: uppercase; color: var(--nt-muted); white-space: nowrap; }
+.fd-sim { border-top: 1px solid var(--nt-line); padding-top: .5rem; }
+.fd-edit { border: 1px solid var(--nt-line); border-radius: var(--nt-radius-sm); padding: .6rem; background: var(--nt-pine-50); }
+
+@media (max-width: 767.98px) {
+    .fd-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -16,60 +16,48 @@
     </div>
 </div>
 
-<!-- Héroe: Saldo Real Consolidado en Caja -->
-<div class="nt-hero nt-hero--dash mb-4">
-    <div class="nt-hero-grid nt-hero-grid--split">
-        <div>
-            <span class="nt-eyebrow"><i class="fa-solid fa-vault"></i>LIQUIDEZ REAL DISPONIBLE EN CAJA</span>
-            <h1 class="nt-hero__value nt-money mt-2<?= $resumen['saldo_real_caja'] < 0 ? ' is-negative' : '' ?>">
-                $<?= number_format($resumen['saldo_real_caja'], 0, ',', '.') ?> <small>COP</small>
-            </h1>
-            <p class="nt-hero__note">
-                Fórmula de Arqueo Real: (Cuotas Base + Ahorro Extra + Intereses Cobrados + Inyecciones) - (Cartera Prestada Pendiente + Retiros + Entregas).
-            </p>
-        </div>
-        <div>
-            <div class="nt-tiles nt-tiles--3">
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-arrow-down"></i>Ingresos Totales Recaudados</span>
-                        <span class="nt-stat__value nt-money">$<?= number_format($resumen['ingresos_totales'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-hand-holding-dollar"></i>Cartera Prestada en Calle</span>
-                        <span class="nt-stat__value nt-money is-gold">$<?= number_format($resumen['cartera_activa_pendiente'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-piggy-bank"></i>Total Ahorro Obligatorio</span>
-                        <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_cuotas'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-percent"></i>Intereses Cobrados</span>
-                        <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_intereses_cobrados'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-chart-line"></i>Inyecciones Capital Activas</span>
-                        <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_inyecciones_activas'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-                <div>
-                    <div class="nt-stat nt-stat--on-dark">
-                        <span class="nt-stat__label"><i class="fa-solid fa-gift"></i>Entregas Rifas/Rondas</span>
-                        <span class="nt-stat__value nt-money">$<?= number_format($resumen['total_entregas'], 0, ',', '.') ?></span>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- Caja y fondos reservados (fuente única: CajaGlobal, la misma del cierre de reunión) -->
+<?php
+$fmt = function ($v) { return '$' . number_format((float)$v, 0, ',', '.'); };
+$revisar = !empty($resumen['revisar_datos']);
+?>
+<link rel="stylesheet" href="/css/pages/fondos.css">
+<div class="fd-cards mb-3">
+    <div class="fd-card fd-card--main<?= $resumen['caja_total'] < 0 ? ' is-neg' : '' ?>">
+        <span class="fd-label">Caja total</span>
+        <strong class="fd-value"><?= $fmt($resumen['caja_total']) ?></strong>
+        <?php if ($revisar): ?><span class="fd-warn" title="Algún saldo salió negativo: hay datos inconsistentes">Revisar datos</span><?php endif; ?>
+    </div>
+    <div class="fd-card<?= $resumen['reservado_ronda'] < 0 ? ' is-neg' : '' ?>">
+        <span class="fd-label">Reservado ronda</span>
+        <strong class="fd-value"><?= $fmt($resumen['reservado_ronda']) ?></strong>
+    </div>
+    <div class="fd-card<?= $resumen['reservado_rifa'] < 0 ? ' is-neg' : '' ?>">
+        <span class="fd-label">Reservado rifa</span>
+        <strong class="fd-value"><?= $fmt($resumen['reservado_rifa']) ?></strong>
+    </div>
+    <div class="fd-card fd-card--main<?= $resumen['disponible_prestar'] < 0 ? ' is-neg' : '' ?>">
+        <span class="fd-label">Disponible para prestar</span>
+        <strong class="fd-value"><?= $fmt($resumen['disponible_prestar']) ?></strong>
     </div>
 </div>
+<div class="fd-cards fd-cards--small mb-2">
+    <div class="fd-card"><span class="fd-label">Ingresos totales</span><strong class="fd-value"><?= $fmt($resumen['ingresos_totales']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Cartera en la calle</span><strong class="fd-value"><?= $fmt($resumen['cartera_pendiente']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Ahorro obligatorio</span><strong class="fd-value"><?= $fmt($resumen['ahorro_obligatorio']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Intereses cobrados</span><strong class="fd-value"><?= $fmt($resumen['intereses']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Inyecciones activas</span><strong class="fd-value"><?= $fmt($resumen['inyecciones_activas']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Premios entregados</span><strong class="fd-value"><?= $fmt($resumen['premios_entregados']) ?></strong></div>
+    <div class="fd-card"><span class="fd-label">Préstamos entregados</span><strong class="fd-value"><?= $fmt($resumen['prestamos_entregados']) ?></strong></div>
+</div>
+<p class="fd-note mb-4">
+    Caja = ahorro + ahorro extra + aportes de ronda y rifa + abonos a capital + intereses + inyecciones y devoluciones
+    − préstamos entregados − premios − inyecciones devueltas − préstamos a actividades.
+    Cuadre con los cierres: <?= $fmt($resumen['caja_cierres']) ?>
+    <?php if (abs($resumen['diferencia_cierres']) > 0.5): ?>
+        (diferencia <?= $fmt($resumen['diferencia_cierres']) ?>: movimientos registrados después de cerrar alguna reunión)
+    <?php else: ?>(sin diferencia)<?php endif; ?>
+</p>
 
 <!-- Métricas de Participación e Inactividad de Socios -->
 <div class="row g-4 mb-4 nt-stagger">

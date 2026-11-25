@@ -6,6 +6,9 @@ require_once __DIR__ . '/../../core/Model.php';
 class EntregaBeneficio extends Model {
 
     public function registrarEntrega(array $datos): bool {
+        if (!in_array($datos['tipo_beneficio'] ?? '', self::tiposValidos(), true)) {
+            throw new InvalidArgumentException('Tipo de beneficio no válido.');
+        }
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
@@ -72,7 +75,7 @@ class EntregaBeneficio extends Model {
                 SELECT u.id, u.nombre_completo, u.cedula
                 FROM natillera_usuarios u
                 WHERE u.estado = 1
-                ORDER BY u.id ASC
+                ORDER BY u.orden ASC, u.id ASC
             ");
             return $stmt->fetchAll();
         }
@@ -83,9 +86,34 @@ class EntregaBeneficio extends Model {
             WHERE u.estado = 1 AND u.id NOT IN (
                 SELECT socio_id FROM natillera_entregas_beneficios WHERE tipo_beneficio = :tipo
             )
-            ORDER BY u.id ASC
+            ORDER BY u.orden ASC, u.id ASC
         ");
         $stmt->execute([':tipo' => $tipoBeneficio]);
         return $stmt->fetchAll();
+    }
+
+    /** Tipos de entrega validos (lista blanca). */
+    public static function tiposValidos(): array {
+        return ['RONDA', 'RIFA', 'PRESTAMO'];
+    }
+
+    /** Socios que ya recibieron una ronda/rifa, con la reunion en que la recibieron. */
+    public function getGanadores(string $tipoBeneficio): array {
+        $stmt = $this->db->prepare("
+            SELECT u.id, u.nombre_completo, r.numero_quincena, eb.monto_entregado
+            FROM natillera_entregas_beneficios eb
+            JOIN natillera_usuarios u ON eb.socio_id = u.id
+            JOIN natillera_reuniones r ON eb.reunion_id = r.id
+            WHERE eb.tipo_beneficio = :tipo
+            ORDER BY r.numero_quincena ASC, eb.id ASC
+        ");
+        $stmt->execute([':tipo' => $tipoBeneficio]);
+        return $stmt->fetchAll();
+    }
+
+    /** Siguiente turno de la ronda: el primer socio activo que aún no ha recibido, en el orden de turno. */
+    public function getSiguienteTurnoRonda() {
+        $pendientes = $this->getSociosPendientes('RONDA');
+        return $pendientes ? $pendientes[0] : null;
     }
 }
